@@ -1,0 +1,10 @@
+; VideoRenderer.def : Filter exports
+
+LIBRARY     "VideoRenderer.dll"
+
+EXPORTS
+            DllMain                 PRIVATE
+            DllCanUnloadNow         PRIVATE
+            DllGetClassObject       PRIVATE
+            DllRegisterServer       PRIVATE
+            DllUnregisterServer     PRIVATE

@@ -1,0 +1,124 @@
+;=============================================================================
+
+; START - Alchemy Video Renderer
+
+;-----------------------------------------------------------------------------
+
+
+
+[HKEY_CLASSES_ROOT\Filter\{0ba13ea1-70e5-11db-9690-00e08161165f}]
+
+@="Alchemy Video Renderer"
+
+
+
+[HKEY_CLASSES_ROOT\CLSID\{0ba13ea1-70e5-11db-9690-00e08161165f}]
+
+@="Alchemy Video Renderer"
+
+"Merit"=dword:00800300
+
+
+
+[HKEY_CLASSES_ROOT\Clsid\{0ba13ea1-70e5-11db-9690-00e08161165f}\InprocServer32]
+
+@="VideoRenderer.dll"
+
+"ThreadingModel"="Both"
+
+
+
+[HKEY_CLASSES_ROOT\CLSID\{0ba13ea1-70e5-11db-9690-00e08161165f}\Pins\Input]
+
+;"Direction"=dword:00000000
+
+"IsRendered"=dword:00000001
+
+;"AllowedZero"=dword:00000000
+
+;"AllowedMany"=dword:00000000
+
+
+
+; MEDIATYPE_Video / MEDIASUBTYPE_MPE1
+
+[HKEY_CLASSES_ROOT\CLSID\{0ba13ea1-70e5-11db-9690-00e08161165f}\Pins\Input\Types\{73646976-0000-0010-8000-00AA00389B71}\{3145504D-0000-0010-8000-00AA00389B71}]
+
+; MEDIATYPE_Video / MEDIASUBTYPE_YV12
+
+[HKEY_CLASSES_ROOT\CLSID\{0ba13ea1-70e5-11db-9690-00e08161165f}\Pins\Input\Types\{73646976-0000-0010-8000-00AA00389B71}\{32315659-0000-0010-8000-00AA00389B71}]
+
+; MEDIATYPE_Video / MEDIASUBTYPE_YUY2
+
+[HKEY_CLASSES_ROOT\CLSID\{0ba13ea1-70e5-11db-9690-00e08161165f}\Pins\Input\Types\{73646976-0000-0010-8000-00AA00389B71}\{32595559-0000-0010-8000-00AA00389B71}]
+
+; MEDIATYPE_Video / MEDIASUBTYPE_UYVY
+
+[HKEY_CLASSES_ROOT\CLSID\{0ba13ea1-70e5-11db-9690-00e08161165f}\Pins\Input\Types\{73646976-0000-0010-8000-00AA00389B71}\{59565955-0000-0010-8000-00AA00389B71}]
+
+; MEDIATYPE_Video / MEDIASUBTYPE_YVYU
+
+[HKEY_CLASSES_ROOT\CLSID\{0ba13ea1-70e5-11db-9690-00e08161165f}\Pins\Input\Types\{73646976-0000-0010-8000-00AA00389B71}\{55595659-0000-0010-8000-00AA00389B71}]
+
+
+
+
+
+
+[HKEY_LOCAL_MACHINE\Software\Microsoft\DirectX\DirectShow\Video Renderer]
+
+"SurfaceTypes"=dword:000000FF
+
+"UseScanLine"=dword:0
+
+"UseOverlayStretch"=dword:1
+
+"MaxBackBuffers"=dword:1
+
+; Valid DisplayBpp values
+; From Databook "Table 9-11. Frame Buffer Pixel Format" (pg. 293-294)
+; 0x0  - 1 bpp 1 I:1
+; 0x1  - 2 bpp 2 I:2
+; 0x2  - 4 bpp 4 I:4
+; 0x3  - 8 bpp 8 I:8
+; 0x4  - 12 bpp (4/4/4) 16 P:4 R:4 G:4 B:4
+; 0x5  - 16 bpp (6/5/5) 16 R:6 G:5 B:5
+; 0x6  - 16 bpp (5/6/5) 16 R:5 G:6 B:5
+; 0x7  - 16 bpp (5/5/6) 16 R:5 G:5 B:6
+; 0x8  - 16 bpp w/ intensity (1/5/5/5) 16 I:1 R:5 G:5 B:5
+; 0x9  - 16 bpp w/ intensity (5/5/5/1) 16 R:5 G:5 B:5 I:1
+; 0xA - 16 bpp w/ alpha (1/5/5/5) 16 A:1 R:5 G:5 B:5
+; 0xB - 16 bpp w/ alpha (5/5/5/1) 16 R:5 G:5 B:5 A:1
+; 0xC - 24 bpp (0/8/8/8) 32 P:8 R:8 G:8 B:8
+; 0xD - 32 bpp w/ alpha (8/8/8/8) 32 A:8 R:8 G:8 B:8
+"DisplayBpp"=dword:6
+
+; This value is used to set the color of the media player window when 
+; the video is not active.
+; "BackColor"=hex:RES,RED,GRN,BL
+"BackColor"=hex:00,00,00,00
+
+; Set CacheEveryFrame to anything other than 0 and it will cause the renderer to cache
+; every frame it renders insted of only on pause.  This runs the risk of impacting 
+; performance though because it essentially removes one buffer from the queue, but will 
+; allow resize even after a weak signal.
+"CacheEveryFrame"=dword:1
+
+; Set EnableCropAndAspectRatio to have the video renderer crop and set the video aspect
+; ratio based on the stream data.  For instance some Mpeg-2 clips may have an encoded size
+; of 352 x 480, but the stream has an aspect ratio of 4 x 3.  This means that the video
+; will be displayed at 640 x 480 if this is enabled.  This must be set for DIvX Certification
+; compliance.
+"EnableCropAndAspectRatio"=dword:1
+
+"OnScreenDisplay"=dword:0
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\DirectShow\ThreadPriority]
+    "AsyncVideoRenderer"=dword:D0
+
+;-----------------------------------------------------------------------------
+
+; END - Alchemy Video Render
+
+;=============================================================================
+

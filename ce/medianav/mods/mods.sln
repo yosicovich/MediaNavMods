@@ -1,0 +1,122 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "player_helper", "player_helper\player_helper.vcproj", "{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1F71555E-8F6E-4929-B425-04E006387F07} = {1F71555E-8F6E-4929-B425-04E006387F07}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "modstest", "modstest\modstest.vcproj", "{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142} = {5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libUtils", "libUtils\libUtils.vcproj", "{1F71555E-8F6E-4929-B425-04E006387F07}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VideoRenderer", "VideoRenderer\VideoRenderer.vcproj", "{61171C79-4A09-4C9F-B300-507A26DC1539}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1F71555E-8F6E-4929-B425-04E006387F07} = {1F71555E-8F6E-4929-B425-04E006387F07}
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3} = {459481D8-85A7-47DD-86DC-FA9B05D330A3}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SecureConnection", "SecureConnection\SecureConnection.vcproj", "{459481D8-85A7-47DD-86DC-FA9B05D330A3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|DbAu13xx (MIPSII) = Debug|DbAu13xx (MIPSII)
+		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Release|Any CPU = Release|Any CPU
+		Release|DbAu13xx (MIPSII) = Release|DbAu13xx (MIPSII)
+		Release|Mixed Platforms = Release|Mixed Platforms
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+		{459261E6-7E8F-41C7-B84F-F5E1B5B8FDF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{459261E6-7E8F-41C7-B84F-F5E1B5B8FDF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{459261E6-7E8F-41C7-B84F-F5E1B5B8FDF1}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{459261E6-7E8F-41C7-B84F-F5E1B5B8FDF1}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|Any CPU
+		{459261E6-7E8F-41C7-B84F-F5E1B5B8FDF1}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{459261E6-7E8F-41C7-B84F-F5E1B5B8FDF1}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{459261E6-7E8F-41C7-B84F-F5E1B5B8FDF1}.Debug|Mixed Platforms.Deploy.0 = Debug|Any CPU
+		{459261E6-7E8F-41C7-B84F-F5E1B5B8FDF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{459261E6-7E8F-41C7-B84F-F5E1B5B8FDF1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{459261E6-7E8F-41C7-B84F-F5E1B5B8FDF1}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{459261E6-7E8F-41C7-B84F-F5E1B5B8FDF1}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|Any CPU
+		{459261E6-7E8F-41C7-B84F-F5E1B5B8FDF1}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{459261E6-7E8F-41C7-B84F-F5E1B5B8FDF1}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{459261E6-7E8F-41C7-B84F-F5E1B5B8FDF1}.Release|Mixed Platforms.Deploy.0 = Release|Any CPU
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

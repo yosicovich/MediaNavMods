@@ -1,0 +1,7 @@
+LIBRARY	"player_helper"
+EXPORTS
+   fixCodecsPath   @1
+   extCheckMediaFilesExtList   @2
+   extCheckMediaFileMatch @3
+   extCheckMediaFileMatch2 @4
+   test   @100
