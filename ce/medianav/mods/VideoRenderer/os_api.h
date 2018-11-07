@@ -312,6 +312,7 @@ int OS_DestroyOverlay(OVERLAY_IOCTL ovlIoctl);
 ////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-int OS_Print(BOOL cond, const char* string, ...);
+void OS_PrintImpl(const char* string, ...);
+#define OS_Print(cond, ...) if(cond){ OS_PrintImpl(__VA_ARGS__);}
 
 #endif // __OS_API_H

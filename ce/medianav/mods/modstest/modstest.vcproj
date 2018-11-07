@@ -18,7 +18,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|DbAu13xx (MIPSII)"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)\$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="1"
@@ -99,14 +99,14 @@
 				ForceDirty="-1"
 				RemoteDirectory=""
 				RegisterOutput="0"
-				AdditionalFiles="player_helper.dll|C:\dev\workspace\medianav\mods\player_helper\DbAu13xx (MIPSII)\Debug|%CSIDL_PROGRAM_FILES%\modstest|0"
+				AdditionalFiles="player_helper.dll|$(SolutionDir)\$(PlatformName)\$(ConfigurationName)|%CSIDL_PROGRAM_FILES%\modstest|0"
 			/>
 			<DebuggerTool
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|DbAu13xx (MIPSII)"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)\$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="1"

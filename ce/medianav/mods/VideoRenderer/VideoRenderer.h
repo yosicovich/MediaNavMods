@@ -16,6 +16,7 @@
 #ifndef __VIDEORENDERER_H
 #define __VIDEORENDERER_H
 
+//#define TESTMODE
 // Forward declarations
 
 class CVideoRenderer;
@@ -220,6 +221,7 @@ public:
 	HRESULT Receive(IMediaSample* pMediaSample);
 	HRESULT PrepareReceive(IMediaSample *pMediaSample);
 	STDMETHODIMP Stop();
+    STDMETHODIMP Pause();
 	STDMETHODIMP Run(REFERENCE_TIME tStart);
 	HRESULT BeginFlush();
 	LONG RendererQueueCount();	

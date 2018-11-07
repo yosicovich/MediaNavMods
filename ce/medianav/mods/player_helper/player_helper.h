@@ -10,7 +10,7 @@
 #define PLAYER_HELPER_API __declspec(dllimport)
 #endif
 
-#define TESTMODE
+//#define TESTMODE
 
 #include "stdafx.h"
 #include "utils.h"

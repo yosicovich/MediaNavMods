@@ -18,8 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|DbAu13xx (MIPSII)"
-			OutputDirectory="$(SolutionDir)DbAu13xx (MIPSII)\$(ConfigurationName)"
-			IntermediateDirectory="DbAu13xx (MIPSII)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)\$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="4"
 			InheritedPropertySheets="..\mediasdk.vsprops"
 			CharacterSet="1"
@@ -98,8 +98,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|DbAu13xx (MIPSII)"
-			OutputDirectory="$(SolutionDir)DbAu13xx (MIPSII)\$(ConfigurationName)"
-			IntermediateDirectory="DbAu13xx (MIPSII)\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)\$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="4"
 			InheritedPropertySheets="..\mediasdk.vsprops"
 			CharacterSet="1"

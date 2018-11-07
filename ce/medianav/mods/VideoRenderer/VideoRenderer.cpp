@@ -93,7 +93,17 @@
 #include "VideoRenderer.h"
 #include "os_api.h"
 
-#define FUNC 0 //1
+#define ERR		1
+#define INFO    1
+#ifdef TESTMODE
+#define FUNC_TRACE 0
+#define FUNC	0 //1
+#define DBG	    1 
+#else
+#define FUNC_TRACE 0
+#define FUNC	0
+#define DBG	    0 
+#endif
 
 // List of class IDs and creator functions for the class factory. This
 // provides the link between the OLE entry point in the DLL and an object
@@ -208,6 +218,8 @@ HRESULT CVideoRenderer::EndOfStream()
     
     if (m_bStreaming) 
 	{
+        m_VideoWindow.ResetBuffers();
+        m_VideoWindow.DoShowWindow(SW_HIDE);
         SendEndOfStream();
     }
     return NOERROR;
@@ -230,7 +242,7 @@ void CVideoRenderer::ReadRegistry()
 	
 	if (nStatus != ERROR_SUCCESS) 
 	{
-		OS_Print(1, "CVideoRenderer: No video renderer registry entry\r\n");
+		OS_Print(ERR, "CVideoRenderer: No video renderer registry entry\r\n");
 	}	else 
 	{
 		dwSize = sizeof(dwResult);
@@ -357,7 +369,7 @@ HRESULT CVideoRenderer::DoRenderSample(IMediaSample *pMediaSample)
 {
 	PBYTE pbRGB = NULL;
 
-	OS_Print(FUNC, "CVideoRenderer::DoRenderSample\r\n");
+	OS_Print(FUNC_TRACE, "CVideoRenderer::DoRenderSample\r\n");
 
 	if ((m_State == State_Paused) || (m_bCacheEveryFrame)) 
 	{
@@ -498,33 +510,35 @@ HRESULT CVideoRenderer::SetMediaType(const CMediaType *pmt)
 
     m_mtIn = *pmt;
     VIDEOINFO *pVideoInfo = (VIDEOINFO *) m_mtIn.Format();
+    if(INFO) 
+        PrintVideoInfo(pVideoInfo);
 
 	if (pmt->subtype == MEDIASUBTYPE_UYVY)
 	{
-		OS_Print(FUNC, "SetMediaType -- MEDIASUBTYPE_UYVY\r\n");
+		OS_Print(INFO, "SetMediaType -- MEDIASUBTYPE_UYVY\r\n");
 		m_VideoWindow.SetInputFormat(FOURCC_UYVY);
 	}
 	else if (pmt->subtype == MEDIASUBTYPE_YV12)
 	{
-		OS_Print(FUNC, "SetMediaType -- YV12\r\n");
+		OS_Print(INFO, "SetMediaType -- YV12\r\n");
 		m_VideoWindow.SetInputFormat(FOURCC_YV12);
 	}
 	else if (pmt->subtype == MEDIASUBTYPE_YVYU)
 	{
-		OS_Print(FUNC, "SetMediaType -- YVYU\r\n");
+		OS_Print(INFO, "SetMediaType -- YVYU\r\n");
 		m_VideoWindow.SetInputFormat(FOURCC_YVYU);
 	}
 	else if (pmt->subtype == MEDIASUBTYPE_MPE1)
 	{
-		OS_Print(FUNC, "SetMediaType --  MEDIASUBTYPE_MPE1(FOURCC_MPEYUV)\r\n");
+		OS_Print(INFO, "SetMediaType --  MEDIASUBTYPE_MPE1(FOURCC_MPEYUV)\r\n");
 		m_VideoWindow.SetInputFormat(FOURCC_MPEYUV);
 	}else if (pmt->subtype == MEDIASUBTYPE_I420)
 	{
-		OS_Print(FUNC, "SetMediaType --  FOURCC_I420\r\n");
+		OS_Print(INFO, "SetMediaType --  FOURCC_I420\r\n");
 		m_VideoWindow.SetInputFormat(FOURCC_I420);
 	}else	
 	{
-		OS_Print(FUNC, "SetMediaType --  Not a valid mediatype\r\n");
+		OS_Print(INFO, "SetMediaType --  Not a valid mediatype\r\n");
 		return VFW_E_INVALIDMEDIATYPE;
 	}
     // Complete the initialisation
@@ -598,6 +612,8 @@ HRESULT CVideoRenderer::CompleteConnect(IPin *pReceivePin)
 	if (m_mtIn.formattype == FORMAT_VideoInfo)
 	{
 		pBMI = &(((VIDEOINFOHEADER*)m_mtIn.pbFormat)->bmiHeader);
+        if(INFO)
+            PrintVideoInfoHeader((VIDEOINFOHEADER*)m_mtIn.pbFormat);
 	}
 	else if (m_mtIn.formattype == FORMAT_VideoInfo2)
 	{
@@ -646,12 +662,8 @@ void CVideoRenderer::OnReceiveFirstSample(IMediaSample *pMediaSample)
 {
     ASSERT(pMediaSample);
 
+    OS_Print(FUNC, "CVideoRenderer::OnReceiveFirstSample\r\n");
 	DoRenderSample(pMediaSample);
-	
-	if (m_bActive)
-	{
-        m_VideoWindow.DoShowWindow(m_VideoWindow.getFullScreen() == TRUE ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
-	}
 } // OnReceiveFirstSample
 
 inline int INCLUSIVE_RECT_WIDTH(CroppingRect_t & r)
@@ -672,7 +684,7 @@ HRESULT CVideoRenderer::Receive(IMediaSample* pMediaSample)
 {
 	HRESULT hr;
 
-	OS_Print(FUNC, "CVideoRenderer::Receive\r\n");
+	OS_Print(FUNC_TRACE, "CVideoRenderer::Receive\r\n");
 
 	if (m_VideoWindow.IsMPERender())
 	{
@@ -713,7 +725,7 @@ HRESULT CVideoRenderer::PrepareReceive(IMediaSample *pMediaSample)
 {
 	HRESULT hr;
 
-	OS_Print(FUNC, "CVideoRenderer::PrepareReceive\r\n");
+	OS_Print(FUNC_TRACE, "CVideoRenderer::PrepareReceive\r\n");
 	
 	hr = CBaseRendererAsync::PrepareReceive(pMediaSample);
 
@@ -747,6 +759,16 @@ STDMETHODIMP CVideoRenderer::Stop()
 	return hr;
 }
 
+STDMETHODIMP CVideoRenderer::Pause()
+{
+    HRESULT hr;
+
+    OS_Print(FUNC, "CVideoRenderer::Pause()\r\n");
+
+    hr = CBaseRendererAsync::Pause();
+
+    return hr;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -758,6 +780,7 @@ STDMETHODIMP CVideoRenderer::Run(REFERENCE_TIME tStart)
   HRESULT hr;
   
   OS_Print(FUNC, "CVideoRenderer::Run\r\n");
+  m_VideoWindow.DoShowWindow(m_VideoWindow.getFullScreen() == TRUE ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
 
   hr = CBaseRendererAsync::Run(tStart);
   
@@ -872,7 +895,7 @@ CVideoInputPin::NotifyAllocator(IMemAllocator *pAllocator,BOOL bReadOnly)
 
 STDMETHODIMP CVideoInputPin::Receive(IMediaSample *pSample)
 {
-	OS_Print(FUNC, "InputPin -- RECEIVE\r\n");
+	OS_Print(FUNC_TRACE, "InputPin -- RECEIVE\r\n");
 	return CRendererInputPin::Receive(pSample);
 }
 

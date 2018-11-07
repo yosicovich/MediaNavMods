@@ -24,14 +24,28 @@
 #include "dshow\AuMedia.h"
 #include <utils.h>
 
-#define FUNC	0 //1
 #define ERR		1
+#define INFO    1
+#ifdef TESTMODE
+#define FUNC	0 //1
 #define DBG	    1 
+#else
+#define FUNC	0
+#define DBG	    0 
+#endif
 
 
 #define ASPECT_PRECISION 0x10000
 #define MAX_DOWNSCALE		32
 #define MAX_UPSCALE			4
+
+#define CHECK_SHOW_STATE_TIMER_ID 101
+
+#ifdef DEBUG
+#define CHECK_SHOW_STATE_TIMER_INTERVAL_MS 1000
+#else
+#define CHECK_SHOW_STATE_TIMER_INTERVAL_MS 300
+#endif
 
 CCritSec CVideoWindow::m_csMempool;
 
@@ -313,6 +327,14 @@ LRESULT CVideoWindow::OnReceiveMessage(HWND hwnd,          // Window handle
 
 	switch(uMsg)
 	{
+    case WM_CREATE:
+        if(SetTimer(hwnd, CHECK_SHOW_STATE_TIMER_ID, 1000, NULL) == 0)
+            OS_Print(DBG, "create show state timer failed!\r\n");
+        break;
+    case WM_DESTROY:
+        if(!KillTimer(hwnd, CHECK_SHOW_STATE_TIMER_ID))
+            OS_Print(DBG, "Kill show state timer failed!\r\n");
+        break;
 	case WM_PAINT:
 		OnPaint(hwnd);
 		break;
@@ -356,6 +378,29 @@ LRESULT CVideoWindow::OnReceiveMessage(HWND hwnd,          // Window handle
 	case WM_LBUTTONUP:
 		AjustWindowSize(!getFullScreen());
 		break;
+    case WM_TIMER:
+        switch (wParam)
+        {
+        case CHECK_SHOW_STATE_TIMER_ID:
+            {
+                if(isNoShowState())
+                {
+                    if(m_pOverlay->IsVisible())
+                    {
+                        m_pOverlay->ShowOverlay(FALSE);
+                        OS_Print(INFO, "VideoRenderer: switch to noShowState\r\n");
+                    }
+                    break;
+                }
+                if(!m_pOverlay->IsVisible() && m_visible)
+                {
+                    m_pOverlay->ShowOverlay(TRUE);
+                    OS_Print(INFO, "VideoRenderer: switch to normalState\r\n");
+                }
+                break;
+            }
+        }
+        break;
 	};
 
     return CBaseWindow::OnReceiveMessage(hwnd,uMsg,wParam,lParam);
@@ -924,7 +969,7 @@ void CVideoWindow::OnScreenDisplay(IMediaSample *pSample)
     RECT ClientRect;                // Client window size
     SIZE Size;                      // Size of text output
 
-	OS_Print(FUNC, "CAuITE::DisplaySampleTimes\r\n");
+	OS_Print(FUNC, "CVideoWindow::OnScreenDisplay\r\n");
 
     // Get the time stamps and window size
 
@@ -977,21 +1022,6 @@ HRESULT CVideoWindow::RenderSample(IMediaSample *pMediaSample)
 
 	CAutoLock lock(&m_csWindow);
     
-    if(isNoShowState())
-    {
-        if(m_pOverlay->IsVisible())
-        {
-            m_pOverlay->ShowOverlay(FALSE);
-            OS_Print(DBG, "VideoRenderer: switch to noShowState\r\n");
-        }
-        return NOERROR;
-    }
-    if(!m_pOverlay->IsVisible() && m_visible)
-    {
-        m_pOverlay->ShowOverlay(TRUE);
-        OS_Print(DBG, "VideoRenderer: switch to normalState\r\n");
-    }
-
 	bool bAdvance = true;
 
 	if (m_bMPE)
@@ -1137,7 +1167,18 @@ BOOL CVideoWindow::getFullScreen()
 
 BOOL CVideoWindow::isNoShowState()
 {
-    return FindWindow(L"RVC", NULL)!= NULL || Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, L"\\LGE\\SystemInfo", L"OGL_ENABLE", false);
+    HWND rvcWnd = FindWindow(L"RVC WND", NULL);
+    if(rvcWnd!= NULL && IsWindowVisible(rvcWnd))
+    {
+        OS_Print(DBG, "RVC Detected!!!\r\n");
+        return TRUE;
+    }
+    if(Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, L"\\LGE\\SystemInfo", L"OGL_ENABLE", false))
+    {
+        OS_Print(DBG, "OGL_ENABLE Detected!!!\r\n");
+        return TRUE;
+    }
+    return FALSE;
 }
 
 // This allows a client to set the complete window size and position in one
