@@ -25,8 +25,10 @@ int main(int argc, char* argv[])
 
     patchAppMain(std::string(argv[1]) + "\\AppMain.exe", std::string(argv[2]) + "\\AppMain.exe");
     patchMgrUsb(std::string(argv[1]) + "\\MgrUSB.exe", std::string(argv[2]) + "\\MgrUSB.exe");
-    patchRVC(std::string(argv[1]) + "\\RVC.dll", std::string(argv[2]) + "\\RVC.dll");
+    //patchRVC(std::string(argv[1]) + "\\RVC.dll", std::string(argv[2]) + "\\RVC.dll");
     patchMicomManager(std::string(argv[1]) + "\\MicomManager.exe", std::string(argv[2]) + "\\MicomManager.exe");
+
+    printf("Successfully patched!");
     return 0;
 
     PEFile pe(argv[1]);
@@ -140,6 +142,15 @@ void patchMgrUsb(const std::string& srcFile, const std::string& dstFile)
         }
     }
 
+    /*
+    // Enable full debug output
+    {
+        BYTE patch = 0x00;
+        pe.patchSection(0x00023D4A, &patch, sizeof(BYTE));
+        pe.patchSection(0x000235C6, &patch, sizeof(BYTE));
+
+    }
+    */
     pe.saveToFile(dstFile.c_str());
 }
 
@@ -148,13 +159,15 @@ void patchRVC(const std::string& srcFile, const std::string& dstFile)
     PEFile pe(srcFile.c_str());
 
     // Reduce number of ITE buffers 6->3
+    BYTE numBuffers = 3;
+    if(numBuffers != 6) // 6 is a default
     {
-        BYTE patch = 0x03;
-        pe.patchSection(0x1000B724, &patch, sizeof(BYTE));
-        pe.patchSection(0x1000B960, &patch, sizeof(BYTE));
-        pe.patchSection(0x1000BE04, &patch, sizeof(BYTE));
+       
+        pe.patchSection(0x1000B724, &numBuffers, sizeof(BYTE));
+        pe.patchSection(0x1000B960, &numBuffers, sizeof(BYTE));
+        pe.patchSection(0x1000BE04, &numBuffers, sizeof(BYTE));
 
-        patch = 0x0C;
+        BYTE patch = numBuffers * sizeof(DWORD);
         pe.patchSection(0x1000C3F8, &patch, sizeof(BYTE));
         pe.patchSection(0x1000BBD8, &patch, sizeof(BYTE));
     }

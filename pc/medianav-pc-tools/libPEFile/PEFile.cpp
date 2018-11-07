@@ -9,7 +9,7 @@
 **	Author:		MohammadHi [ in4matics at hotmail dot com ]                   **
 **	WwW:		AT4RE      [ http://www.at4re.com ]                           **
 **	Date:		2008-01-28                                                    **
-**                                                                            **
+**                                                                            **c
 ********************************************************************************
 *******************************************************************************/
 
@@ -49,6 +49,8 @@ void PEFile::init() {
 	peMemory = NULL;
     newImports.clear();
     importTable.clear();
+    memset(sections, 0, sizeof(sections));
+    memset(sectionTable, 0, sizeof(sectionTable));
 }
 //==============================================================================
 bool PEFile::readFileData(const char* filePath) {
@@ -68,7 +70,7 @@ bool PEFile::readFileData(const char* filePath) {
 	}
 	
 	// allocate memory to read the pe file (note that we used VirtualAlloc not GlobalAlloc!)
-	peMemory = (char*)VirtualAlloc(NULL, fileSize, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    peMemory = new char[fileSize];
 	if (peMemory == NULL) {
 		CloseHandle(fileHandle);
 		echo("Couldn't allocate memory!");
@@ -108,10 +110,10 @@ bool PEFile::checkValidity() {
 //==============================================================================
 bool PEFile::readHeaders() {
 	// read dos/pe headers
-	CopyMemory(&dosHeader, peMemory, sizeof(PE_DOS_HEADER));
+	memcpy(&dosHeader, peMemory, sizeof(PE_DOS_HEADER));
 	dosStub.RawData = peMemory + sizeof(PE_DOS_HEADER);
 	dosStub.Size = dosHeader.PEHeaderOffset - sizeof(PE_DOS_HEADER);
-	CopyMemory(&peHeaders, peMemory + dosHeader.PEHeaderOffset, sizeof(PE_NT_HEADERS));
+	memcpy(&peHeaders, peMemory + dosHeader.PEHeaderOffset, sizeof(PE_NT_HEADERS));
 
 	// check validity of the file to ensure that we loaded a "PE File" not another thing!
 	if (!checkValidity()) {
@@ -119,8 +121,8 @@ bool PEFile::readHeaders() {
 	}
 
 	// read section table
-	ZeroMemory(sectionTable, sizeof(sectionTable));
-	CopyMemory(sectionTable, peMemory + dosHeader.PEHeaderOffset + sizeof(PE_NT_HEADERS), 
+	memset(sectionTable, 0, sizeof(sectionTable));
+	memcpy(sectionTable, peMemory + dosHeader.PEHeaderOffset + sizeof(PE_NT_HEADERS), 
 		peHeaders.FileHeader.NumberOfSections * sizeof(PE_SECTION_HEADER));
 
 	return true;
@@ -265,7 +267,7 @@ bool PEFile::writePadding(HANDLE fileHandle, long paddingSize) {
 //==============================================================================
 void PEFile::unloadFile() {
 	if (peMemory != NULL) {
-		VirtualFree(peMemory, 0, MEM_RELEASE);
+		delete[] peMemory;
 		peMemory = NULL;
 	}
 
@@ -298,7 +300,7 @@ void PEFile::buildImportTable() {
 	// copy old import dll list
 	DWORD oldImportTableRVA = peHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
 	DWORD oldImportTableOffset = rvaToOffset(oldImportTableRVA);
-	CopyMemory(sections[index].RawData, peMemory + oldImportTableOffset, oldImportDllsSize);
+	memcpy(sections[index].RawData, peMemory + oldImportTableOffset, oldImportDllsSize);
 	
 	// copy new imports
 	char* newImportsData = buildNewImports(sectionTable[index].VirtualAddress + oldImportDllsSize);
@@ -489,7 +491,7 @@ void PEFile::fixReservedData() {
 	}
 
 	int sectionIndex = addSection(SECTION_RESERV, reservedData.Size, false);
-	CopyMemory(sections[sectionIndex].RawData, reservedData.RawData, reservedData.Size);
+	memcpy(sections[sectionIndex].RawData, reservedData.RawData, reservedData.Size);
 
 	for	(dirIndex = 0; dirIndex < peHeaders.OptionalHeader.NumberOfRvaAndSizes; dirIndex++) {
 		if (peHeaders.OptionalHeader.DataDirectory[dirIndex].VirtualAddress > 0 &&
