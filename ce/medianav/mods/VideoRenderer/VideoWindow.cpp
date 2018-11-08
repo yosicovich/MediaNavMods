@@ -49,6 +49,20 @@
 
 CCritSec CVideoWindow::m_csMempool;
 
+#ifdef TESTMODE
+#define GWL_HWNDPARENT (-8)
+
+BOOL CALLBACK EnumWindowsProc(_In_ HWND   hwnd, _In_ LPARAM lParam)
+{
+    DWORD wndProc = GetWindowLong(hwnd, GWL_WNDPROC);
+    DWORD owner = GetWindowLong(hwnd, GWL_HWNDPARENT);
+    wchar_t className[256];
+    className[256] = 0;
+    int classNameSize = GetClassName(hwnd, (LPWSTR)&className, 255);
+    OS_Print(1, "Found window class=%s, wndProc=%x, owner=%x\r\n", &className, wndProc, owner);
+    return TRUE;
+}
+#endif
 //
 // Constructor
 //
@@ -85,6 +99,11 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
 	m_ITE.SetRotation(m_pOverlay->GetRotation());
 	
 	AllocateBuffers();
+    
+#ifdef TESTMODE
+    EnumWindows(EnumWindowsProc, 0);
+    SetWindowPos(m_hwnd, HWND_TOPMOST, 0,0,0,0, SWP_NOSIZE |SWP_NOMOVE);
+#endif
 
 } // (Constructor)
 
@@ -209,23 +228,21 @@ LPTSTR CVideoWindow::GetClassWindowStyles(DWORD *pClassStyles,
 
 	*pClassStyles    = CS_HREDRAW | CS_VREDRAW; // | CS_BYTEALIGNCLIENT;
 	*pWindowStyles   = WS_POPUP | WS_CLIPCHILDREN;
-	*pWindowStylesEx = (DWORD) 0;
+	*pWindowStylesEx = WS_EX_NOANIMATION/* | WS_EX_TOPMOST*/;
 
 	return TEXT("VideoRenderer\0");
 } // GetClassWindowStyles
 
-static const int buttonsBarHeigh = 61;
 
 void CVideoWindow::AjustWindowSize(BOOL maximized)
 {
 	if(maximized)
 	{
         SetWindowPosition(0, 0, OS_GetScreenWidth(), OS_GetScreenHeight());
-        //SetWindowPos(m_hwnd, HWND_NOTOPMOST, 0, 0, OS_GetScreenWidth(), OS_GetScreenHeight(), 0);
 	}else
 	{
-        SetWindowPosition(0, 0, OS_GetScreenWidth(), OS_GetScreenHeight() - buttonsBarHeigh);
-		//SetWindowPos(m_hwnd, HWND_NOTOPMOST, 0, 0, OS_GetScreenWidth(), OS_GetScreenHeight() - buttonsBarHeigh, 0);
+        RECT rect = GetDefaultRect();
+        SetWindowPosition(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
 	}
     setFullScreen(maximized);
 }
@@ -300,11 +317,17 @@ HRESULT CVideoWindow::DoShowWindow(LONG ShowCmd)
 //
 // Return the default window rectangle
 //
+
+static const int buttonsBarHeigh = 61;
+
 RECT CVideoWindow::GetDefaultRect()
 {
-	SIZE VideoSize = m_pRenderer->m_VideoSize;
 	
-	RECT DefaultRect = {0, 0, VideoSize.cx, VideoSize.cy};
+    SIZE VideoSize = m_pRenderer->m_VideoSize;
+
+    //RECT DefaultRect = {27, 98, 27 + 278, 98 + 278};
+    RECT DefaultRect = {0, 0, OS_GetScreenWidth(), OS_GetScreenHeight() - buttonsBarHeigh};
+	//RECT DefaultRect = {0, 0, VideoSize.cx, VideoSize.cy};
     ASSERT(m_hwnd);
     ASSERT(m_hdc);
 
@@ -493,16 +516,12 @@ LRESULT CVideoWindow::OnPaint(HWND hwnd)
 //
 HRESULT CVideoWindow::SetDefaultTargetRect()
 {
-    // VIDEOINFOHEADER *pVideoInfo = (VIDEOINFOHEADER *) m_pRenderer->m_mtIn.Format();
-    // BITMAPINFOHEADER *pHeader = HEADER(pVideoInfo);
-
-	SIZE VideoSize = m_pRenderer->m_VideoSize;
-
-    RECT TargetRect = {0, 0, VideoSize.cx ,VideoSize.cy};
+    RECT TargetRect = {0, 0, OS_GetScreenWidth(), OS_GetScreenHeight()};
+    if(!getFullScreen())
+        TargetRect = GetDefaultRect();
 	SetTargetRect(&TargetRect);
 
     return NOERROR;
-
 } // SetDefaultTargetRect
 
 
