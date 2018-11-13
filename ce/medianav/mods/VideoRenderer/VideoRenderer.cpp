@@ -168,7 +168,6 @@ CVideoRenderer::CVideoRenderer(TCHAR *pName,
     m_VideoWindow.SetControlVideoPin(&m_InputPin);
     m_VideoWindow.SetControlWindowPin(&m_InputPin);
 
-	m_hPowerManagementEvent = OpenEvent(EVENT_ALL_ACCESS,FALSE,TEXT("PowerManager/ActivityTimer/UserActivity"));
 } // (Constructor)
 
 
@@ -178,9 +177,9 @@ CVideoRenderer::CVideoRenderer(TCHAR *pName,
 CVideoRenderer::~CVideoRenderer()
 {
 	OS_Print(FUNC, "CVideoRenderer::~CVideoRenderer\r\n");
+    ClearPendingSample();
+    m_VideoWindow.ResetBuffers();
     m_pInputPin = NULL;
-	CloseHandle(m_hPowerManagementEvent);
-
 } // (Destructor)
 
 
@@ -218,8 +217,8 @@ HRESULT CVideoRenderer::EndOfStream()
     
     if (m_bStreaming) 
 	{
-        m_VideoWindow.ResetBuffers();
-        m_VideoWindow.DoShowWindow(SW_HIDE);
+        //m_VideoWindow.ResetBuffers();
+        //m_VideoWindow.DoShowWindow(SW_HIDE);
         SendEndOfStream();
     }
     return NOERROR;
@@ -261,6 +260,7 @@ void CVideoRenderer::ReadRegistry()
 				m_bCacheEveryFrame = FALSE;
 			}
 		}
+        OS_Print(DBG, "CVideoRenderer::ReadRegistry(): CacheEveryFrame=%d\r\n", m_bCacheEveryFrame);
 
 		dwSize = sizeof(dwResult);
 		nStatus = RegQueryValueEx(hKey, TEXT("EnableCropAndAspectRatio"), NULL, &dwType, (LPBYTE)&dwResult, &dwSize);
@@ -345,10 +345,7 @@ STDMETHODIMP CVideoRenderer::NonDelegatingQueryInterface(REFIID riid,void **ppv)
 
 	OS_Print(FUNC, "CVideoRenderer::NonDelegatingQueryInterface\r\n");
 
-    if (riid == IID_ISpecifyPropertyPages) {
-        return GetInterface((ISpecifyPropertyPages *)this, ppv);
-
-    } else if (riid == IID_IVideoWindow) {
+    if (riid == IID_IVideoWindow) {
         return m_VideoWindow.NonDelegatingQueryInterface(riid,ppv);
 
     } else if (riid == IID_IBasicVideo) {
@@ -371,7 +368,8 @@ HRESULT CVideoRenderer::DoRenderSample(IMediaSample *pMediaSample)
 
 	OS_Print(FUNC_TRACE, "CVideoRenderer::DoRenderSample\r\n");
 
-	if ((m_State == State_Paused) || (m_bCacheEveryFrame)) 
+	
+    if ((m_State == State_Paused) || (m_bCacheEveryFrame)) 
 	{
         ClearPendingSample();
 		//
@@ -381,11 +379,8 @@ HRESULT CVideoRenderer::DoRenderSample(IMediaSample *pMediaSample)
         m_pMediaSample = pMediaSample;
         int c = m_pMediaSample->AddRef();
     }
-
+    
 	m_VideoWindow.RenderSample(pMediaSample);
-
-	// Keep the LCD going.
-	SetEvent(m_hPowerManagementEvent);
 
 	return NOERROR;
 } // DoRenderSample
@@ -412,9 +407,9 @@ HRESULT CVideoRenderer::Active()
         SetRepaintStatus(FALSE);
 
         m_VideoWindow.PerformanceAlignWindow();
-        m_VideoWindow.DoSetWindowForeground(TRUE);
     }
-
+        m_VideoWindow.refreshWindowState();
+    
     return CBaseVideoRendererAsync::Active();
 
 } // Active
@@ -663,6 +658,8 @@ void CVideoRenderer::OnReceiveFirstSample(IMediaSample *pMediaSample)
     ASSERT(pMediaSample);
 
     OS_Print(FUNC, "CVideoRenderer::OnReceiveFirstSample\r\n");
+    m_VideoWindow.refreshWindowState();
+
 	DoRenderSample(pMediaSample);
 } // OnReceiveFirstSample
 
@@ -753,8 +750,8 @@ STDMETHODIMP CVideoRenderer::Stop()
 
 	// TODO:
 	// Fill an RGB buffer with the background color and set that as the next buffer
-	m_VideoWindow.ResetBuffers();
-	m_VideoWindow.DoShowWindow(SW_HIDE);
+	//m_VideoWindow.ResetBuffers();
+	//m_VideoWindow.DoShowWindow(SW_HIDE);
 
 	return hr;
 }
@@ -780,7 +777,6 @@ STDMETHODIMP CVideoRenderer::Run(REFERENCE_TIME tStart)
   HRESULT hr;
   
   OS_Print(FUNC, "CVideoRenderer::Run\r\n");
-  m_VideoWindow.DoShowWindow(m_VideoWindow.getFullScreen() == TRUE ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
 
   hr = CBaseRendererAsync::Run(tStart);
   

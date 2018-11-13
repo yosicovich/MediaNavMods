@@ -29,9 +29,11 @@
 #ifdef TESTMODE
 #define FUNC	0 //1
 #define DBG	    1 
+#define TRACE	0 // 1
 #else
 #define FUNC	0
 #define DBG	    0 
+#define TRACE	0 
 #endif
 
 
@@ -41,7 +43,7 @@
 
 #define CHECK_SHOW_STATE_TIMER_ID 101
 
-#ifdef DEBUG
+#ifdef TESTMODE
 #define CHECK_SHOW_STATE_TIMER_INTERVAL_MS 1000
 #else
 #define CHECK_SHOW_STATE_TIMER_INTERVAL_MS 300
@@ -49,20 +51,6 @@
 
 CCritSec CVideoWindow::m_csMempool;
 
-#ifdef TESTMODE
-#define GWL_HWNDPARENT (-8)
-
-BOOL CALLBACK EnumWindowsProc(_In_ HWND   hwnd, _In_ LPARAM lParam)
-{
-    DWORD wndProc = GetWindowLong(hwnd, GWL_WNDPROC);
-    DWORD owner = GetWindowLong(hwnd, GWL_HWNDPARENT);
-    wchar_t className[256];
-    className[256] = 0;
-    int classNameSize = GetClassName(hwnd, (LPWSTR)&className, 255);
-    OS_Print(1, "Found window class=%s, wndProc=%x, owner=%x\r\n", &className, wndProc, owner);
-    return TRUE;
-}
-#endif
 //
 // Constructor
 //
@@ -84,7 +72,8 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
 	m_aspect_ratio_type(arSample),
     m_cxCrop(0),
     m_cyCrop(0),
-    m_visible(FALSE)
+    m_visible(FALSE),
+    m_pMediaSample(NULL)
 {
     SetRectEmpty(&m_rcTarget);
 
@@ -99,11 +88,11 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
 	m_ITE.SetRotation(m_pOverlay->GetRotation());
 	
 	AllocateBuffers();
-    
-#ifdef TESTMODE
-    EnumWindows(EnumWindowsProc, 0);
-    SetWindowPos(m_hwnd, HWND_TOPMOST, 0,0,0,0, SWP_NOSIZE |SWP_NOMOVE);
-#endif
+
+    if(SetTimer(m_hwnd, CHECK_SHOW_STATE_TIMER_ID, 1000, NULL) == 0)
+        OS_Print(DBG, "create show state timer failed!\r\n");
+
+    ActivateWindow();
 
 } // (Constructor)
 
@@ -113,10 +102,13 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
 //
 CVideoWindow::~CVideoWindow()
 {
-	InactivateWindow();
+    if(!KillTimer(m_hwnd, CHECK_SHOW_STATE_TIMER_ID))
+        OS_Print(DBG, "Kill show state timer failed!\r\n");
+    InactivateWindow();
     DoneWithWindow();
 	DestroyOverlay();
 	FreeBuffers();
+    releaseCachedMediaSample();
 } // (Destructor)
 
 void CVideoWindow::AllocateBuffers()
@@ -228,13 +220,13 @@ LPTSTR CVideoWindow::GetClassWindowStyles(DWORD *pClassStyles,
 
 	*pClassStyles    = CS_HREDRAW | CS_VREDRAW; // | CS_BYTEALIGNCLIENT;
 	*pWindowStyles   = WS_POPUP | WS_CLIPCHILDREN;
-	*pWindowStylesEx = WS_EX_NOANIMATION/* | WS_EX_TOPMOST*/;
+	*pWindowStylesEx = WS_EX_NOANIMATION | WS_EX_TOPMOST;
 
 	return TEXT("VideoRenderer\0");
 } // GetClassWindowStyles
 
 
-void CVideoWindow::AjustWindowSize(BOOL maximized)
+void CVideoWindow::AdjustWindowSize(BOOL maximized)
 {
 	if(maximized)
 	{
@@ -272,6 +264,9 @@ HRESULT CVideoWindow::DoShowWindow(LONG ShowCmd)
 		// similar to SW_SHOW, except the window is not activated.
 	case SW_SHOW:
 		// Activates the window and displays it in its current size and position.
+    case SW_SHOWNOACTIVATE:
+        // Displays a window in its most recent size and position. This value is
+        // similar to SW_SHOWNORMAL, except the window is not activated.
 		bShow = TRUE;
 		break;
 	case SW_RESTORE:
@@ -279,21 +274,18 @@ HRESULT CVideoWindow::DoShowWindow(LONG ShowCmd)
 		// maximized, the system restores it to its original size and position.
 		// An application should specify this flag when restoring a minimized
 		// window.
-	case SW_SHOWNOACTIVATE:
-		// Displays a window in its most recent size and position. This value is
-		// similar to SW_SHOWNORMAL, except the window is not actived.
 	case SW_SHOWNORMAL:
 		// Activates and displays a window. If the window is minimized or maximized,
 		// the system restores it to its original size and position. An application
 		// should specify this flag when displaying the window for the first time.
-		AjustWindowSize(FALSE);
+		AdjustWindowSize(FALSE);
 		bShow = TRUE;
 		break;
 	case SW_MAXIMIZE:
 		// Maximizes the specified window.
 	case SW_SHOWMAXIMIZED:
 		// Activates the window and displays it as a maximized window.
-		AjustWindowSize(TRUE);
+		AdjustWindowSize(TRUE);
 		bShow = TRUE;
 		break;
 
@@ -306,7 +298,9 @@ HRESULT CVideoWindow::DoShowWindow(LONG ShowCmd)
 
 	m_visible = bShow;
 
-    m_pOverlay->ShowOverlay(bShow && !isNoShowState());
+    OS_Print(INFO, "VideoRenderer: set window visibility to %s\r\n", bShow ? L"TRUE" : L"FALSE");
+
+    m_pOverlay->ShowOverlay(bShow);
 
 	return CBaseWindow::DoShowWindow(ShowCmd);
 }
@@ -325,8 +319,8 @@ RECT CVideoWindow::GetDefaultRect()
 	
     SIZE VideoSize = m_pRenderer->m_VideoSize;
 
-    //RECT DefaultRect = {27, 98, 27 + 278, 98 + 278};
-    RECT DefaultRect = {0, 0, OS_GetScreenWidth(), OS_GetScreenHeight() - buttonsBarHeigh};
+    RECT DefaultRect = {31, 103, 31 + 269, 103 + 269};
+    //RECT DefaultRect = {0, 0, OS_GetScreenWidth(), OS_GetScreenHeight() - buttonsBarHeigh};
 	//RECT DefaultRect = {0, 0, VideoSize.cx, VideoSize.cy};
     ASSERT(m_hwnd);
     ASSERT(m_hdc);
@@ -350,13 +344,8 @@ LRESULT CVideoWindow::OnReceiveMessage(HWND hwnd,          // Window handle
 
 	switch(uMsg)
 	{
-    case WM_CREATE:
-        if(SetTimer(hwnd, CHECK_SHOW_STATE_TIMER_ID, 1000, NULL) == 0)
-            OS_Print(DBG, "create show state timer failed!\r\n");
-        break;
-    case WM_DESTROY:
-        if(!KillTimer(hwnd, CHECK_SHOW_STATE_TIMER_ID))
-            OS_Print(DBG, "Kill show state timer failed!\r\n");
+    case WM_ACTIVATE:
+        refreshWindowState();
         break;
 	case WM_PAINT:
 		OnPaint(hwnd);
@@ -399,27 +388,14 @@ LRESULT CVideoWindow::OnReceiveMessage(HWND hwnd,          // Window handle
 	case WM_WINDOWPOSCHANGED:
 		break;
 	case WM_LBUTTONUP:
-		AjustWindowSize(!getFullScreen());
+		AdjustWindowSize(!getFullScreen());
 		break;
     case WM_TIMER:
         switch (wParam)
         {
         case CHECK_SHOW_STATE_TIMER_ID:
             {
-                if(isNoShowState())
-                {
-                    if(m_pOverlay->IsVisible())
-                    {
-                        m_pOverlay->ShowOverlay(FALSE);
-                        OS_Print(INFO, "VideoRenderer: switch to noShowState\r\n");
-                    }
-                    break;
-                }
-                if(!m_pOverlay->IsVisible() && m_visible)
-                {
-                    m_pOverlay->ShowOverlay(TRUE);
-                    OS_Print(INFO, "VideoRenderer: switch to normalState\r\n");
-                }
+                checkSetWindowVisibility();
                 break;
             }
         }
@@ -450,15 +426,26 @@ LRESULT CVideoWindow::OnEraseBackground(HDC hdc, LPARAM lParam, HWND hwnd)
 //
 void CVideoWindow::RepaintLastImage()
 {
-	IMediaSample *pMediaSample;
+    OS_Print(DBG, "CVideoWindow::RepaintLastImage()\r\n");
+	
+    IMediaSample *pMediaSample;
 
 	pMediaSample = m_pRenderer->GetCurrentSample();
 
 	if (pMediaSample)
 	{
+        OS_Print(DBG, "CVideoWindow::RepaintLastImage() call RenderSample()\r\n");
 		RenderSample(pMediaSample);
 		pMediaSample->Release();
-	}
+	}else
+    {
+        OS_Print(DBG, "CVideoWindow::RepaintLastImage() pMediaSample == NULL use cached one\r\n");
+        if(m_pMediaSample)
+        {
+            RenderSample(m_pMediaSample);
+            m_pMediaSample->Release();
+        }
+    }
 }
 
 LRESULT CVideoWindow::OnPaint(HWND hwnd)
@@ -859,7 +846,7 @@ HRESULT CVideoWindow::GetSourceRect(RECT *pSourceRect)
 //
 HRESULT CVideoWindow::GetStaticImage(long *pBufferSize,long *pDIBImage)
 {
-//    NOTE("Entering GetStaticImage");
+    OS_Print(DBG, "Entering GetStaticImage");
 
     IMediaSample *pMediaSample;
     pMediaSample = m_pRenderer->GetCurrentSample();
@@ -1037,11 +1024,18 @@ void CVideoWindow::SetMPERender(BOOL bMPE)
 ///////////////////////////////////////////////////////////////////////////////
 HRESULT CVideoWindow::RenderSample(IMediaSample *pMediaSample)
 {
-	HRESULT hr;
+    HRESULT hr;
 
-	CAutoLock lock(&m_csWindow);
+	//CAutoLock lock(&m_csWindow);
     
 	bool bAdvance = true;
+
+    // If overlay is not visible skip any rendering to save resources.
+    if(!m_pOverlay->IsVisible())
+        return NOERROR;
+    //releaseCachedMediaSample();
+    //m_pMediaSample = pMediaSample;
+    //m_pMediaSample->AddRef();
 
 	if (m_bMPE)
 	{
@@ -1051,7 +1045,7 @@ HRESULT CVideoWindow::RenderSample(IMediaSample *pMediaSample)
 
 		if (pVideoSample->flags & VS_FLAGS_EMPTY)
 		{
-			RETAILMSG(0, (TEXT("Video Decoder sent and empty buffer\r\n")));
+			OS_Print(DBG, "Video Decoder sent and empty buffer\r\n");
 			return NOERROR;
 		}
 		if (pVideoSample->flags & VS_FLAGS_SEGMENT)
@@ -1184,20 +1178,80 @@ BOOL CVideoWindow::getFullScreen()
     return Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, cSystemInfoKey, cFullScreenName, false);
 }
 
+#define PLAYER_WINDOW_WNDPROC_TAG 0xCA3C
+BOOL CALLBACK EnumWindowsProc(_In_ HWND   hwnd, _In_ LPARAM lParam)
+{
+    HWND& playerWindow = *reinterpret_cast<HWND *>(lParam);
+    DWORD wndProc = GetWindowLong(hwnd, GWL_WNDPROC);
+#ifdef TESTMODE
+    wchar_t className[256];
+    className[256] = 0;
+    int classNameSize = GetClassName(hwnd, (LPWSTR)&className, 255);
+    OS_Print(TRACE, "Found window class=%s, wndProc=%x\r\n", &className, wndProc);
+#endif
+    if((wndProc & 0xFFFF) == PLAYER_WINDOW_WNDPROC_TAG)
+    {
+        playerWindow = hwnd;
+        return FALSE;
+    }
+    return TRUE;
+}
+
 BOOL CVideoWindow::isNoShowState()
 {
+    //return FALSE;
+    // Camera window doesn't get focus until user clicks it.
+    // So we have to detect camera
     HWND rvcWnd = FindWindow(L"RVC WND", NULL);
     if(rvcWnd!= NULL && IsWindowVisible(rvcWnd))
     {
         OS_Print(DBG, "RVC Detected!!!\r\n");
         return TRUE;
     }
+
+    // OGL is used by NAVI only and it gets focus but just to be on safe side keep this check here.
     if(Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, L"\\LGE\\SystemInfo", L"OGL_ENABLE", false))
     {
         OS_Print(DBG, "OGL_ENABLE Detected!!!\r\n");
         return TRUE;
     }
+
+    BOOL playerWindowExists = FALSE;
+
+    HWND playerWindow = NULL;
+    HWND foregroundWindow = GetForegroundWindow();
+    EnumWindows(EnumWindowsProc, reinterpret_cast<LPARAM>(&playerWindow));
+    if(playerWindow == NULL || (foregroundWindow != playerWindow && foregroundWindow != m_hwnd))
+    {
+        OS_Print(DBG, "Inactive state Detected!!!\r\n");
+        return TRUE;
+    }
+
     return FALSE;
+}
+
+void CVideoWindow::checkSetWindowVisibility()
+{
+    BOOL newVisibilityState = !isNoShowState();
+    if( newVisibilityState != m_visible)
+    {
+        DoShowWindow(newVisibilityState ? SW_SHOWNOACTIVATE/*SW_SHOW*/ : SW_HIDE);
+    }
+}
+
+void CVideoWindow::refreshWindowState()
+{
+    AdjustWindowSize(getFullScreen());
+    checkSetWindowVisibility();
+}
+
+void CVideoWindow::releaseCachedMediaSample()
+{
+    if(m_pMediaSample)
+    {
+        m_pMediaSample->Release();
+        m_pMediaSample = NULL;
+    }
 }
 
 // This allows a client to set the complete window size and position in one
@@ -1208,6 +1262,7 @@ BOOL CVideoWindow::isNoShowState()
 STDMETHODIMP
 CVideoWindow::SetWindowPosition(long Left,long Top,long Width,long Height)
 {
+    OS_Print(DBG, "CVideoWindow::SetWindowPosition x=%d, y=%d, width=%d, height=%d\r\n", Left, Top, Width, Height);
 	HRESULT hr = CBaseControlWindow::SetWindowPosition(Left, Top, Width, Height);
 
     return hr;

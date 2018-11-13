@@ -67,12 +67,14 @@ protected:
     int             m_cyCrop;
 
     BOOL            m_visible;
+    IMediaSample*   m_pMediaSample;
 
 	void CreateOverlay();
 	void DestroyOverlay();
 
     void setFullScreen(BOOL bFullScreen);
     BOOL isNoShowState();
+    void releaseCachedMediaSample();
 
 public:
 	CAuOverlay		*m_pOverlay;
@@ -142,8 +144,10 @@ public:
                              LPARAM lParam);     // Other parameter
 
     void SetAspectRatio(int cx, int cy, int aspect_type, int cxCrop, int cyCrop);
-	void AjustWindowSize(BOOL maximized);
+	void AdjustWindowSize(BOOL maximized);
     BOOL getFullScreen();
+    void checkSetWindowVisibility();
+    void refreshWindowState();
 }; // CVideoWindow
 
 
@@ -234,7 +238,6 @@ public:
 	SIZE            m_VideoSize;       // Size of the current video stream
 	CAuAllocator	m_ImageAllocator;  // Our DIBSECTION allocator -- AUALLOCATOR
     CVideoWindow	m_VideoWindow;     // Does the actual video rendering -- OVERLAY
-	HANDLE			m_hPowerManagementEvent;
 	BOOL			m_bCacheEveryFrame; // If this is set we cache every rendered frame until the next rendererd frame
 	BOOL			m_bEnableCropAndAspectRatio;
 }; // CVideoRenderer
