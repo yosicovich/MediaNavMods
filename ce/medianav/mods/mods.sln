@@ -28,6 +28,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DummyVideoRenderer", "Dummy
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mp4demux", "mp4demux\mp4demux.vcproj", "{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1F71555E-8F6E-4929-B425-04E006387F07} = {1F71555E-8F6E-4929-B425-04E006387F07}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

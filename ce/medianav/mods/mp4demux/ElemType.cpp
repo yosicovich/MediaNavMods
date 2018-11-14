@@ -17,6 +17,9 @@
 #include "ElemType.h"
 #include <dvdmedia.h>
 
+// Debug stuff
+#define AAC_DEBUG 0
+
 inline WORD Swap2Bytes(USHORT x)
 {
 	return ((x & 0xff) << 8) | ((x >> 8) & 0xff);
@@ -751,11 +754,16 @@ ElementaryType::SetType(const CMediaType* pmt)
         CMediaType mtCompare;
         while (GetType(&mtCompare, idx))
         {
+#if(AAC_DEBUG > 0)
+            Utils::dumpGUID(pmt->Subtype());
+            Utils::dumpGUID(mtCompare.Subtype());
+#endif
             if (mtCompare == *pmt)
             {
                 // handler based on m_type and idx
                 if (m_type == Audio_AAC)
                 {
+                    debugPrintf(AAC_DEBUG, L"ElementaryType::SetType() mtCompare == *pmt && m_type == Audio_AAC\r\n");
                     m_pHandler = new CoreAACHandler();
                 } else 
 					// bugfix pointed out by David Hunter --
@@ -849,11 +857,7 @@ ElementaryType::GetType(CMediaType* pmt, int nType)
 		break;
 
     case Audio_AAC:
-        if (nType == 0)
-        {
-            return GetType_AAC(pmt);
-        }
-        break;
+        return GetType_AAC(pmt, nType);
     case Audio_WAVEFORMATEX:
  	case Audio_Mpeg2:
        if (nType == 0)
@@ -1073,17 +1077,24 @@ const int ElementaryType::SamplingFrequencies[] =
     0,
 };
 
-bool
-ElementaryType::GetType_AAC(CMediaType* pmt)
+
+const GUID* ElementaryType::AAC_GUIDS[] = 
 {
-    // set for Free AAC Decoder faad
+    &__uuidof(MEDIASUBTYPE_AAC_AUDIO),
+    &__uuidof(MEDIASUBTYPE_AAC),
+    &__uuidof(MEDIASUBTYPE_MP4A),
+    &__uuidof(MEDIASUBTYPE_MPEG_ADTS_AAC)
+};
 
-    const int WAVE_FORMAT_AAC = 0x00ff;
-
+bool
+ElementaryType::GetType_AAC(CMediaType* pmt, int n)
+{
+    debugPrintf(AAC_DEBUG, L"ElementaryType::GetType_AAC(..., %d)\r\n", n);
+    if(n >= sizeof(AAC_GUIDS)/sizeof(void*))
+        return false;
     pmt->InitMediaType();
     pmt->SetType(&MEDIATYPE_Audio);
-    FOURCCMap faad(WAVE_FORMAT_AAC);
-    pmt->SetSubtype(&faad);
+    pmt->SetSubtype(AAC_GUIDS[n]);
     pmt->SetFormatType(&FORMAT_WaveFormatEx);
     WAVEFORMATEX* pwfx = (WAVEFORMATEX*)pmt->AllocFormatBuffer(sizeof(WAVEFORMATEX) + m_cDecoderSpecific);
     ZeroMemory(pwfx,  sizeof(WAVEFORMATEX));
@@ -1095,9 +1106,14 @@ ElementaryType::GetType_AAC(CMediaType* pmt)
     pwfx->nSamplesPerSec = SamplingFrequencies[samplerate];
     pwfx->nBlockAlign = 1;
     pwfx->wBitsPerSample = 16;
-    pwfx->wFormatTag = WAVE_FORMAT_AAC;
+    if(n == 3)
+        pwfx->wFormatTag = 0x1600;//WAVE_FORMAT_ADTS_AAC;
+    else
+        pwfx->wFormatTag = 0x00FF;//WAVE_FORMAT_AAC;
     pwfx->nChannels = (m_pDecoderSpecific[1] & 0x78) >> 3;
     
+    debugPrintf(AAC_DEBUG, L"m_pDecoderSpecific:\r\n");
+    debugDump(AAC_DEBUG, &(*m_pDecoderSpecific), m_cDecoderSpecific);
     return true;
 }
 

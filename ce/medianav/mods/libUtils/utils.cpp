@@ -188,5 +188,30 @@ bool SystemWideUniqueInstance::isUnique()
     return isUnique_;
 }
 
+void dumpBinary(const void* buf, size_t size)
+{
+    for(size_t i = 0; i < size; ++i)
+    {
+        if(i > 0 && (i % 16) == 0)
+            NKDbgPrintfW(L"\r\n");
+        NKDbgPrintfW(L" %02X", ((const char*)buf)[i] & 0xFF);
+    }
+    NKDbgPrintfW(L"\r\n");
+}
+
+void dumpGUID(const GUID* guid)
+{
+    NKDbgPrintfW(L"%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X\r\n", guid->Data1, (unsigned int)guid->Data2, (unsigned int)guid->Data3
+        ,(unsigned int)guid->Data4[0]
+        ,(unsigned int)guid->Data4[1]
+        ,(unsigned int)guid->Data4[2]
+        ,(unsigned int)guid->Data4[3]
+        ,(unsigned int)guid->Data4[4]
+        ,(unsigned int)guid->Data4[5]
+        ,(unsigned int)guid->Data4[6]
+        ,(unsigned int)guid->Data4[7]
+    );
+}
+
 }; //namespace Utils
 

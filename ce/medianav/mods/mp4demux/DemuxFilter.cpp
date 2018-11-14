@@ -107,6 +107,7 @@ Mpeg4Demultiplexor::Mpeg4Demultiplexor(LPUNKNOWN pUnk, HRESULT* phr)
   m_dRate(1.0),
   CBaseFilter(NAME("Mpeg4Demultiplexor"), pUnk, &m_csFilter, *m_sudFilter.clsID)
 {
+    debugPrintf(DBG, L"Mpeg4Demultiplexor::Mpeg4Demultiplexor()\r\n");
     m_pInput = new DemuxInputPin(this, &m_csFilter, phr);
 }
 
@@ -331,6 +332,7 @@ DemuxInputPin::DemuxInputPin(Mpeg4Demultiplexor* pFilter, CCritSec* pLock, HRESU
 : m_pParser(pFilter), 
   CBasePin(NAME("DemuxInputPin"), pFilter, pLock, phr, L"Input", PINDIR_INPUT)
 {
+    debugPrintf(DBG, L"DemuxInputPin::DemuxInputPin()\r\n");
 }
 
 // base pin overrides
@@ -424,6 +426,7 @@ DemuxOutputPin::DemuxOutputPin(MovieTrack* pTrack, Mpeg4Demultiplexor* pDemux, C
   m_tLate(0),
   CBaseOutputPin(NAME("DemuxOutputPin"), pDemux, pLock, phr, pName)
 {
+    debugPrintf(DBG, L"DemuxOutputPin::DemuxOutputPin()\r\n");
 }
 	
 STDMETHODIMP 
@@ -869,8 +872,10 @@ DemuxOutputPin::SetPositions(
     // for media player, with the aggregation bug in DShow, it
     // is better to return success and ignore the call if we are
     // not the controlling pin
+
     if (!m_pParser->SelectSeekingPin(this))
     {
+        debugPrintf(DBG, L"DemuxOutputPin::SetPositions EXIT not control pin\r\n");
         return S_OK;
     }
 
@@ -902,6 +907,7 @@ DemuxOutputPin::SetPositions(
 
     if (dwCurrentFlags & AM_SEEKING_PositioningBitsMask)
     {
+        debugPrintf(DBG, L"DemuxOutputPin::SetPositions Seek to START=%I64d STOP=%I64d\r\n", tStart, tStop);
         return m_pParser->Seek(tStart, tStop, dRate);
     } else if (dwStopFlags & AM_SEEKING_PositioningBitsMask)
     {

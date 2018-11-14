@@ -9,6 +9,9 @@
 #define logPrintf
 #endif
 
+#define debugPrintf(cond, ...) if(cond){ logPrintf(__VA_ARGS__);}
+#define debugDump(cond, buf, size) if(cond) {Utils::dumpBinary(buf, size);}
+
 namespace Utils
 {
 
@@ -40,5 +43,8 @@ namespace Utils
     DWORD getCurrentProcessImageBase();
     DWORD getCurrentProcessCodeBase();
     void toUpper(std::wstring& str);
+
+    void dumpBinary(const void* buf, size_t size);
+    void dumpGUID(const GUID* guid);
 };
 

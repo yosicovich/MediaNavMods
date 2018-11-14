@@ -29,6 +29,17 @@ using namespace std;
 
 #pragma warning(pop)
 
+#define TESTMODE
+#include "utils.h"
+
+#ifdef TESTMODE
+#define DBG 1
+#else
+#define DBG 0
+#endif
+
+
+
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
 

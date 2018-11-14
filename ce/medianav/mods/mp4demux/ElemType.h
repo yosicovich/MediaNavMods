@@ -123,7 +123,7 @@ private:
     bool GetType_H264(CMediaType* pmt);
 	bool GetType_H264ByteStream(CMediaType* pmt);
     bool GetType_Mpeg4V(CMediaType* pmt, int n);
-    bool GetType_AAC(CMediaType* pmt);
+    bool GetType_AAC(CMediaType* pmt, int n);
     bool GetType_WAVEFORMATEX(CMediaType* pmt);
     bool ParseDescriptor(Atom* patmESD);
 	bool GetType_FOURCC(CMediaType* pmt);
@@ -137,6 +137,7 @@ private:
     long m_cx;
     long m_cy;
     static const int SamplingFrequencies[];
+    static const GUID* AAC_GUIDS[];
     REFERENCE_TIME m_tFrame;
 
 	// fourcc and bitdepth -- for uncompressed or RLE format
@@ -156,6 +157,12 @@ class DECLSPEC_UUID("31435641-0000-0010-8000-00AA00389B71") MEDIASUBTYPE_H264_MP
 // Broadcom/Cyberlink Byte-Stream H264 subtype
 // CLSID_H264
 class DECLSPEC_UUID("8D2D71CB-243F-45E3-B2D8-5FD7967EC09B") CLSID_H264;
+
+// MediaNav uses this one as AAC decoder.
+class DECLSPEC_UUID("9ECDAAE9-F0F5-4b0f-A028-634CF4031612") MEDIASUBTYPE_AAC_AUDIO;
+class DECLSPEC_UUID("000000FF-0000-0010-8000-00AA00389B71") MEDIASUBTYPE_AAC;
+class DECLSPEC_UUID("4134504D-0000-0010-8000-00AA00389B71") MEDIASUBTYPE_MP4A;
+class DECLSPEC_UUID("00001600-0000-0010-8000-00AA00389B71") MEDIASUBTYPE_MPEG_ADTS_AAC;
 
 
 
