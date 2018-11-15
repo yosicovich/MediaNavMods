@@ -227,6 +227,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Module.idl"
+				>
+			</File>
+			<File
+				RelativePath=".\Module_i.c"
+				>
+			</File>
+			<File
 				RelativePath=".\mp4demux.cpp"
 				>
 			</File>
@@ -254,6 +262,10 @@
 			</File>
 			<File
 				RelativePath=".\Index.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Module_h.h"
 				>
 			</File>
 			<File

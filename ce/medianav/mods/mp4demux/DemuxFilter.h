@@ -17,6 +17,7 @@
 #include "thread.h"
 #include "mpeg4.h"
 #include "ElemType.h"
+#include "Module_h.h"
 
 //
 // Partially derived from GDCL sample MPEG-1 parser filter
@@ -83,7 +84,8 @@ private:
 class DemuxOutputPin
 : public CBaseOutputPin,
   public IMediaSeeking,
-  public thread
+  public thread,
+  public IDemuxOutputPin
 {
 public:
     DemuxOutputPin(MovieTrack* pTrack, Mpeg4Demultiplexor* pDemux, CCritSec* pLock, HRESULT* phr, LPCWSTR pName);
@@ -122,6 +124,9 @@ public:
     HRESULT Inactive();
     DWORD ThreadProc();
 
+	BOOL GetMajorMediaType(GUID& MajorType) const;
+	HRESULT SeekBackToKeyFrame(REFERENCE_TIME& tStart) const;
+
 // IMediaSeeking
 public:
     STDMETHODIMP GetCapabilities(DWORD * pCapabilities );
@@ -144,6 +149,9 @@ public:
     STDMETHODIMP SetRate(double dRate);
     STDMETHODIMP GetRate(double * pdRate);
     STDMETHODIMP GetPreroll(LONGLONG * pllPreroll);
+
+// IDemuxOutputPin
+    STDMETHODIMP GetMediaSampleTimes(ULONG* pnCount, LONGLONG** ppnStartTimes, LONGLONG** ppnStopTimes, ULONG** ppnFlags, ULONG** ppnDataSizes);
 
 private:
     MovieTrack* m_pTrack;
@@ -183,7 +191,7 @@ public:
     void DeselectSeekingPin(DemuxOutputPin* pPin);
     REFERENCE_TIME GetDuration();
     void GetSeekingParams(REFERENCE_TIME* ptStart, REFERENCE_TIME* ptStop, double* pdRate);
-    HRESULT Seek(REFERENCE_TIME tStart, REFERENCE_TIME tStop, double dRate);
+    HRESULT Seek(REFERENCE_TIME& tStart, BOOL bSeekToKeyFrame, REFERENCE_TIME tStop, double dRate);
     HRESULT SetRate(double dRate);
     HRESULT SetStopTime(REFERENCE_TIME tStop);
 

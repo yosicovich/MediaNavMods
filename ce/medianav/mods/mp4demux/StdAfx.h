@@ -28,6 +28,7 @@ _COM_SMARTPTR_TYPEDEF(IPin, IID_IPin);
 using namespace std;
 
 #pragma warning(pop)
+#define FOURCC(p)   (DWORD(p[3] | (p[2] << 8) | (p[1] << 16) | (p[0] << 24)))
 
 #define TESTMODE
 #include "utils.h"
