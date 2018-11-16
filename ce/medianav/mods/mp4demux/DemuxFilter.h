@@ -191,9 +191,9 @@ public:
     void DeselectSeekingPin(DemuxOutputPin* pPin);
     REFERENCE_TIME GetDuration();
     void GetSeekingParams(REFERENCE_TIME* ptStart, REFERENCE_TIME* ptStop, double* pdRate);
-    HRESULT Seek(REFERENCE_TIME& tStart, BOOL bSeekToKeyFrame, REFERENCE_TIME tStop, double dRate);
+    HRESULT Seek(REFERENCE_TIME& tStart, BOOL bSeekToKeyFrame, const REFERENCE_TIME& tStop, double dRate);
     HRESULT SetRate(double dRate);
-    HRESULT SetStopTime(REFERENCE_TIME tStop);
+    HRESULT SetStopTime(const REFERENCE_TIME& tStop);
 
 private:
     // construct only via class factory

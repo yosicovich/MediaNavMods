@@ -182,7 +182,7 @@ Mpeg4Demultiplexor::SetRate(double dRate)
 }
 
 HRESULT 
-Mpeg4Demultiplexor::SetStopTime(REFERENCE_TIME tStop)
+Mpeg4Demultiplexor::SetStopTime(const REFERENCE_TIME& tStop)
 {
     CAutoLock lock(&m_csSeeking);
     // this does not guarantee that a stop change only, while running,
@@ -199,18 +199,18 @@ Mpeg4Demultiplexor::GetDuration()
 }
 
 HRESULT 
-Mpeg4Demultiplexor::Seek(REFERENCE_TIME& tStart, BOOL bSeekToKeyFrame, REFERENCE_TIME tStop, double dRate)
+Mpeg4Demultiplexor::Seek(REFERENCE_TIME& tStart, BOOL bSeekToKeyFrame, const REFERENCE_TIME& tStop, double dRate)
 {
 	#pragma region Flush, Stop Thread
     if (IsActive())
     {
         for(SIZE_T nIndex = 0; nIndex < m_Outputs.size(); nIndex++)
-            {
+        {
             DemuxOutputPin* pPin = Output((INT) nIndex);
             if(!pPin->IsConnected())
 				continue;
 			pPin->DeliverBeginFlush();
-            }
+        }
         for(SIZE_T nIndex = 0; nIndex < m_Outputs.size(); nIndex++)
         {
             DemuxOutputPin* pPin = Output((INT) nIndex);
@@ -223,19 +223,19 @@ Mpeg4Demultiplexor::Seek(REFERENCE_TIME& tStart, BOOL bSeekToKeyFrame, REFERENCE
 			#endif
         }
         for(SIZE_T nIndex = 0; nIndex < m_Outputs.size(); nIndex++)
-            {
+        {
             DemuxOutputPin* pPin = Output((INT) nIndex);
             if(!pPin->IsConnected())
 				continue;
             pPin->DeliverEndFlush();
-            }
         }
+    }
 	#pragma endregion
 	#pragma region Start Time Adjustment
 	if(bSeekToKeyFrame)
-        {
+    {
 		DemuxOutputPin* pSeekingPin = m_pSeekingPin;
-            {
+        {
 			CAutoLock lock(&m_csSeeking);
 			if(!m_pSeekingPin)
 			{
@@ -255,12 +255,12 @@ Mpeg4Demultiplexor::Seek(REFERENCE_TIME& tStart, BOOL bSeekToKeyFrame, REFERENCE
 						{
 							pSeekingPin = pPin;
 							break;
-            }
-        }
+                        }
+                    }
 					// Or, take just connected pin
 					if(!pSeekingPin)
 						pSeekingPin = pConnectedPin;
-    }
+                }
 			} else
 				pSeekingPin = m_pSeekingPin;
 		}
