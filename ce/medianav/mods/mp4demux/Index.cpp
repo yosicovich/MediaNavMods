@@ -11,14 +11,12 @@
 
 
 #include "stdafx.h"
-#include "Mpeg4.h"
 #include "Index.h"
 
 // sample count and sizes ------------------------------------------------
 
-SampleSizes::SampleSizes()
-: m_nSamples(0),
-  m_nMaxSize(0),
+Mpeg4SampleSizes::Mpeg4SampleSizes()
+: SampleSizes(),
   m_nFixedSize(0),
   m_patmSTSZ(NULL),
   m_patmSTSC(NULL),
@@ -26,7 +24,7 @@ SampleSizes::SampleSizes()
 {}
      
 bool 
-SampleSizes::Parse(Atom* patmSTBL)
+Mpeg4SampleSizes::Parse(Atom* patmSTBL)
 {
     // need to locate three inter-related tables
     // stsz, stsc and stco/co64
@@ -85,7 +83,7 @@ SampleSizes::Parse(Atom* patmSTBL)
 }
 
 long 
-SampleSizes::Size(long nSample)
+Mpeg4SampleSizes::Size(long nSample)
 {
     long cThis = m_nFixedSize;
     if ((cThis == 0) && (nSample < m_nSamples))
@@ -96,7 +94,7 @@ SampleSizes::Size(long nSample)
 }
                  
 LONGLONG 
-SampleSizes::Offset(long nSample)
+Mpeg4SampleSizes::Offset(long nSample)
 {
     // !! consider caching prev entry and length of chunk
     // and just adding on sample size until chunk count reached
@@ -158,7 +156,7 @@ SampleSizes::Offset(long nSample)
 }
 
 void 
-SampleSizes::AdjustFixedSize(long nBytes)
+Mpeg4SampleSizes::AdjustFixedSize(long nBytes)
 {
 	m_nFixedSize = nBytes;
 
@@ -176,14 +174,15 @@ SampleSizes::AdjustFixedSize(long nBytes)
 
 // --- sync sample map --------------------------------
 
-KeyMap::KeyMap()
-: m_patmSTSS(NULL),
+Mpeg4KeyMap::Mpeg4KeyMap()
+: KeyMap(),
+  m_patmSTSS(NULL),
   m_pSTSS(NULL),
   m_nEntries(0)
 {
 }
 
-KeyMap::~KeyMap()
+Mpeg4KeyMap::~Mpeg4KeyMap()
 {
     if (m_patmSTSS)
     {
@@ -192,7 +191,7 @@ KeyMap::~KeyMap()
 }
 
 bool 
-KeyMap::Parse(Atom* patmSTBL)
+Mpeg4KeyMap::Parse(Atom* patmSTBL)
 {
     m_patmSTSS = patmSTBL->FindChild(FOURCC("stss"));
     if (!m_patmSTSS)
@@ -212,7 +211,7 @@ KeyMap::Parse(Atom* patmSTBL)
 }
 
 long 
-KeyMap::SyncFor(long nSample)
+Mpeg4KeyMap::SyncFor(long nSample)
 {
     if (!m_patmSTSS || (m_nEntries == 0))
     {
@@ -235,7 +234,7 @@ KeyMap::SyncFor(long nSample)
 }
 
 long 
-KeyMap::Next(long nSample)
+Mpeg4KeyMap::Next(long nSample)
 {
     if (!m_patmSTSS || (m_nEntries == 0))
     {
@@ -255,7 +254,7 @@ KeyMap::Next(long nSample)
     return 0;
 }
 
-SIZE_T KeyMap::Get(SIZE_T*& pnIndexes) const
+SIZE_T Mpeg4KeyMap::Get(SIZE_T*& pnIndexes) const
 {
 	ASSERT(!pnIndexes);
 	if(m_nEntries)
@@ -273,13 +272,14 @@ SIZE_T KeyMap::Get(SIZE_T*& pnIndexes) const
 
 // ----- times index ----------------------------------
 
-SampleTimes::SampleTimes()
-: m_patmCTTS(NULL),
+Mpeg4SampleTimes::Mpeg4SampleTimes()
+: SampleTimes(),
+  m_patmCTTS(NULL),
   m_patmSTTS(NULL)
 {
 }
 bool 
-SampleTimes::Parse(long scale, LONGLONG CTOffset, Atom* patmSTBL)
+Mpeg4SampleTimes::Parse(long scale, LONGLONG CTOffset, Atom* patmSTBL)
 {
     m_scale = scale;            // track timescale units/sec
     m_CTOffset = CTOffset;      // offset to start of first sample in 100ns
@@ -321,54 +321,8 @@ SampleTimes::Parse(long scale, LONGLONG CTOffset, Atom* patmSTBL)
     return true;
 }
 
-long SampleTimes::CTSToSample(LONGLONG tStart)
-{
-	if (!m_nCTTS)
-	{
-		return DTSToSample(tStart);
-	}
-
-	// we have a RLE list of durations and a RLE list of CTS offsets.
-	// maybe start from a DTS time a little earlier, and step forward?
-	LONGLONG pos = tStart;
-	if (tStart > 0)
-	{
-		if (tStart < (UNITS/2))
-		{
-			pos = 0;
-		}
-		else
-		{
-			pos = tStart - (UNITS/2);
-		}
-	}
-	long n = DTSToSample(pos); 
-	for (;;)
-	{
-		LONGLONG cts = SampleToCTS(n);
-		if (cts < 0)
-		{
-			return -1;
-		}
-		LONGLONG dur = Duration(n);
-		if (cts > tStart)
-		{
-			return n;
-		}
-		if ((cts <= tStart) && ((cts + dur) > tStart))
-		{
-			return n;
-		}
-		if (dur == 0)
-		{
-			return -1;
-		}
-		n++;
-	}
-}
-
 long 
-SampleTimes::DTSToSample(LONGLONG tStart)
+Mpeg4SampleTimes::DTSToSample(LONGLONG tStart)
 {
     // find the sample containing this composition time
     // by adding up the durations of individual samples
@@ -407,7 +361,7 @@ SampleTimes::DTSToSample(LONGLONG tStart)
     return 0;
 }
 
-SIZE_T SampleTimes::Get(REFERENCE_TIME*& pnTimes) const
+SIZE_T Mpeg4SampleTimes::Get(REFERENCE_TIME*& pnTimes) const
 {
 	ASSERT(!pnTimes);
 	SIZE_T nEntryCount = 0; 
@@ -443,7 +397,7 @@ SIZE_T SampleTimes::Get(REFERENCE_TIME*& pnTimes) const
 }
 
 LONGLONG 
-SampleTimes::SampleToCTS(long nSample)
+Mpeg4SampleTimes::SampleToCTS(long nSample)
 {
     // calculate CTS for this sample by adding durations
 
@@ -477,7 +431,7 @@ SampleTimes::SampleToCTS(long nSample)
 
 // offset from decode to composition time for this sample
 LONGLONG 
-SampleTimes::CTSOffset(long nSample) const
+Mpeg4SampleTimes::CTSOffset(long nSample) const
 {
     if (!m_nCTTS)
     {
@@ -499,7 +453,7 @@ SampleTimes::CTSOffset(long nSample) const
 }
 
 LONGLONG 
-SampleTimes::Duration(long nSample)
+Mpeg4SampleTimes::Duration(long nSample)
 {
     // the entries in stts give the duration of each sample
     // as a series of pairs
@@ -530,16 +484,3 @@ SampleTimes::Duration(long nSample)
     // ? should not get here, since all samples should be covered
     return 0;
 }
-
-LONGLONG 
-SampleTimes::TrackToReftime(LONGLONG nTrack) const
-{
-    // convert times in the track timescale (m_scale units/sec) to 100ns
-    return REFERENCE_TIME(nTrack) * UNITS / LONGLONG(m_scale);
-}
-
-LONGLONG SampleTimes::ReftimeToTrack(LONGLONG reftime)
-{
-	return ((reftime * m_scale) + (UNITS/2)) / UNITS;
-}
-

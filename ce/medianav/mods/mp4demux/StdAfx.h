@@ -30,6 +30,23 @@ using namespace std;
 #pragma warning(pop)
 #define FOURCC(p)   (DWORD(p[3] | (p[2] << 8) | (p[1] << 16) | (p[0] << 24)))
 
+// byte re-ordering
+inline long SwapLong(const BYTE* pByte)
+{
+    return (pByte[0] << 24) |
+        (pByte[1] << 16) |
+        (pByte[2] << 8)  |
+        pByte[3];
+}
+
+inline LONGLONG SwapI64(const BYTE* pByte)
+{
+    return ((LONGLONG)SwapLong(pByte))<< 32 |
+        (unsigned long)(SwapLong(pByte + 4));
+}
+
+#define GetTypedPtr(typ, ptr) reinterpret_cast<typ*>(ptr.get())
+
 #define TESTMODE
 #include "utils.h"
 

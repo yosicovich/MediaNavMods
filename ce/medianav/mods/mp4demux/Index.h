@@ -11,27 +11,21 @@
 
 #pragma once
 
+#include "demuxtypes.h"
+
 // currently all index tables are kept in memory. This is
 // typically a few hundred kilobytes. For very large files a
 // more sophisticated scheme might be worth considering?
 
 // index giving count of samples and size of each sample
 // and file location of sample
-class SampleSizes
+class Mpeg4SampleSizes: public SampleSizes
 {
 public:
-    SampleSizes();
+    Mpeg4SampleSizes();
 
     bool Parse(Atom* patmSTBL);
     long Size(long nSample);
-    long SampleCount()
-    {
-        return m_nSamples;
-    }
-    long MaxSize()
-    {
-        return m_nMaxSize;
-    }
     LONGLONG Offset(long nSample);
 
 	// support for old-style uncompressed audio, where fixedsize =1 means 1 sample
@@ -39,8 +33,6 @@ public:
 private:
     Atom* m_patmSTSZ;
 	AtomCache m_pBuffer;
-    long m_nSamples;
-    long m_nMaxSize;
     long m_nFixedSize;
     
     long m_nEntriesSTSC;
@@ -53,11 +45,11 @@ private:
 };
 
 // map of key samples
-class KeyMap
+class Mpeg4KeyMap: public KeyMap
 {
 public:
-    KeyMap();
-    ~KeyMap();
+    Mpeg4KeyMap();
+    ~Mpeg4KeyMap();
 
     bool Parse(Atom* patmSTBL);
     long SyncFor(long nSample);
@@ -72,10 +64,10 @@ private:
 
 // time and duration of samples
 // -- all times in 100ns units
-class SampleTimes
+class Mpeg4SampleTimes: public SampleTimes
 {
 public:
-    SampleTimes();
+    Mpeg4SampleTimes();
 
 	bool Parse(long scale, LONGLONG CTOffset, Atom* patmSTBL);
 
@@ -84,15 +76,10 @@ public:
     LONGLONG SampleToCTS(long nSample);
     LONGLONG Duration(long nSample);
     LONGLONG CTSOffset(long nSample) const;
-    long CTSToSample(LONGLONG tStart);
-    LONGLONG TotalDuration()					{ return m_total; }
 
-    LONGLONG TrackToReftime(LONGLONG nTrack) const;
-    bool HasCTSTable()  { return m_nCTTS > 0; }
-	LONGLONG ReftimeToTrack(LONGLONG reftime);
+    bool HasCTSTable() const { return m_nCTTS > 0; }
 
 private:
-    long m_scale;               // track scale units
     LONGLONG m_CTOffset;        // CT offset of first sample
 
     Atom* m_patmSTTS;
@@ -109,7 +96,6 @@ private:
     long m_nBaseSample;     // sample number at m_idx
     long m_idx;             // table index corresponding to m_nBaseSample
 
-    LONGLONG m_total;       // sum of durations, in reftime
     LONGLONG m_tAtBase;     // total of durations at m_nBaseSample
 };
 

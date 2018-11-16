@@ -13,7 +13,6 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
-#include "Mpeg4.h"
 #include "ElemType.h"
 #include <dvdmedia.h>
 
@@ -339,22 +338,16 @@ H264ByteStreamHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGL
 
 // -----------------------------------------------------
 
-ElementaryType::ElementaryType()
-: m_cDecoderSpecific(0),
-  m_tFrame(0),
-  m_pHandler(NULL),
+Mpeg4ElementaryType::Mpeg4ElementaryType()
+: ElementaryType(),
+  m_cDecoderSpecific(0),
   m_depth(0)
 {
 }
 
-ElementaryType::~ElementaryType()
-{
-    delete m_pHandler;
-}
-
 
 bool 
-ElementaryType::ParseDescriptor(Atom* patmESD)
+Mpeg4ElementaryType::ParseDescriptor(Atom* patmESD)
 {
     AtomCache pESD(patmESD);
     if (pESD[0] != 0)
@@ -436,7 +429,7 @@ struct QTVideo
 
 
 bool 
-ElementaryType::Parse(REFERENCE_TIME tFrame, Atom* patm)
+Mpeg4ElementaryType::Parse(REFERENCE_TIME tFrame, Atom* patm)
 {
 	m_shortname = "Unknown";
     m_tFrame = tFrame;
@@ -780,18 +773,17 @@ ElementaryType::Parse(REFERENCE_TIME tFrame, Atom* patm)
 }
 
 bool 
-ElementaryType::IsVideo()
+Mpeg4ElementaryType::IsVideo() const
 {
     return (m_type > First_Video) && (m_type < First_Audio);
 }
     
 bool 
-ElementaryType::SetType(const CMediaType* pmt)
+Mpeg4ElementaryType::SetType(const CMediaType* pmt)
 {
     if (m_mtChosen != *pmt)
     {
-        delete m_pHandler;
-        m_pHandler = NULL;
+        m_pHandler.reset();
         m_mtChosen = *pmt;
     
         int idx = 0;
@@ -808,7 +800,7 @@ ElementaryType::SetType(const CMediaType* pmt)
                 if (m_type == Audio_AAC)
                 {
                     debugPrintf(AAC_DEBUG, L"ElementaryType::SetType() mtCompare == *pmt && m_type == Audio_AAC\r\n");
-                    m_pHandler = new CoreAACHandler();
+                    m_pHandler.reset(new CoreAACHandler());
                 } else 
 					// bugfix pointed out by David Hunter --
 					// Use the divxhandler to prepend VOL header for divx and xvid types.
@@ -816,19 +808,19 @@ ElementaryType::SetType(const CMediaType* pmt)
 					// (should really compare subtypes here I think)
 					if ((m_type == Video_Mpeg4) && (idx > 0))
                 {
-                    m_pHandler = new DivxHandler(m_pDecoderSpecific, m_cDecoderSpecific);
+                    m_pHandler.reset(new DivxHandler(m_pDecoderSpecific, m_cDecoderSpecific));
 				} 
 				else if ((m_type == Video_H264) && (*pmt->FormatType() != FORMAT_MPEG2Video))
 				{
-					m_pHandler = new H264ByteStreamHandler(m_pDecoderSpecific, m_cDecoderSpecific);
+					m_pHandler.reset(new H264ByteStreamHandler(m_pDecoderSpecific, m_cDecoderSpecific));
 				}
 				else if ((m_type == Audio_WAVEFORMATEX) &&
 						(m_fourcc == FOURCC("twos"))
 						)
 				{
-					m_pHandler = new BigEndianAudioHandler();
+					m_pHandler.reset(new BigEndianAudioHandler());
                 } else {
-                    m_pHandler = new NoChangeHandler();
+                    m_pHandler.reset(new NoChangeHandler());
                 }
                 return true;
             }
@@ -842,7 +834,7 @@ ElementaryType::SetType(const CMediaType* pmt)
 }
 
 bool 
-ElementaryType::GetType(CMediaType* pmt, int nType)
+Mpeg4ElementaryType::GetType(CMediaType* pmt, int nType) const
 {
     // !! enable more type choices (eg dicas instead of divx for mpeg4)
 
@@ -923,7 +915,7 @@ ElementaryType::GetType(CMediaType* pmt, int nType)
 }
 
 bool
-ElementaryType::GetType_H264(CMediaType* pmt)
+Mpeg4ElementaryType::GetType_H264(CMediaType* pmt) const
 {
     pmt->InitMediaType();
     pmt->SetType(&MEDIATYPE_Video);
@@ -995,7 +987,7 @@ ElementaryType::GetType_H264(CMediaType* pmt)
 	
 FOURCCMap H264(FOURCC("462H"));
 bool 
-ElementaryType::GetType_H264ByteStream(CMediaType* pmt)
+Mpeg4ElementaryType::GetType_H264ByteStream(CMediaType* pmt) const
 {
     pmt->InitMediaType();
     pmt->SetType(&MEDIATYPE_Video);
@@ -1021,7 +1013,7 @@ ElementaryType::GetType_H264ByteStream(CMediaType* pmt)
 }
 
 bool
-ElementaryType::GetType_Mpeg4V(CMediaType* pmt, int n)
+Mpeg4ElementaryType::GetType_Mpeg4V(CMediaType* pmt, int n) const
 {
 	DWORD fourcc;
 	if (n == 0)
@@ -1067,7 +1059,7 @@ ElementaryType::GetType_Mpeg4V(CMediaType* pmt, int n)
 }
 
 bool 
-ElementaryType::GetType_FOURCC(CMediaType* pmt)
+Mpeg4ElementaryType::GetType_FOURCC(CMediaType* pmt) const
 {
 	pmt->InitMediaType();
 	pmt->SetType(&MEDIATYPE_Video);
@@ -1119,7 +1111,7 @@ ElementaryType::GetType_FOURCC(CMediaType* pmt)
 }
 
 // static
-const int ElementaryType::SamplingFrequencies[] = 
+const int Mpeg4ElementaryType::SamplingFrequencies[] = 
 {
     96000,
     88200,
@@ -1140,7 +1132,7 @@ const int ElementaryType::SamplingFrequencies[] =
 };
 
 
-const GUID* ElementaryType::AAC_GUIDS[] = 
+const GUID* Mpeg4ElementaryType::AAC_GUIDS[] = 
 {
     &__uuidof(MEDIASUBTYPE_AAC_AUDIO),
     &__uuidof(MEDIASUBTYPE_AAC),
@@ -1149,7 +1141,7 @@ const GUID* ElementaryType::AAC_GUIDS[] =
 };
 
 bool
-ElementaryType::GetType_AAC(CMediaType* pmt, int n)
+Mpeg4ElementaryType::GetType_AAC(CMediaType* pmt, int n) const
 {
     debugPrintf(AAC_DEBUG, L"ElementaryType::GetType_AAC(..., %d)\r\n", n);
     if(n >= sizeof(AAC_GUIDS)/sizeof(void*))
@@ -1180,7 +1172,7 @@ ElementaryType::GetType_AAC(CMediaType* pmt, int n)
 }
 
 bool
-ElementaryType::GetType_WAVEFORMATEX(CMediaType* pmt)
+Mpeg4ElementaryType::GetType_WAVEFORMATEX(CMediaType* pmt) const
 {
     // common to standard audio types that have known atoms
     // in the mpeg-4 file format
