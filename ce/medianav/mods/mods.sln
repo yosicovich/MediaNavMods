@@ -32,6 +32,17 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mp4demux", "mp4demux\mp4dem
 		{1F71555E-8F6E-4929-B425-04E006387F07} = {1F71555E-8F6E-4929-B425-04E006387F07}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "avidmx", "avidmx\avidmx.vcproj", "{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1F71555E-8F6E-4929-B425-04E006387F07} = {1F71555E-8F6E-4929-B425-04E006387F07}
+		{24E97CA5-D04C-49DF-A608-70A4217575DA} = {24E97CA5-D04C-49DF-A608-70A4217575DA}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libDemux", "libDemux\libDemux.vcproj", "{24E97CA5-D04C-49DF-A608-70A4217575DA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1F71555E-8F6E-4929-B425-04E006387F07} = {1F71555E-8F6E-4929-B425-04E006387F07}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -140,6 +151,34 @@ Global
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
