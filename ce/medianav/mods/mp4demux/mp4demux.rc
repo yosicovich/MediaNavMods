@@ -70,7 +70,7 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "www.medianav.ru"
-            VALUE "FileDescription", "GDCL based Mpeg-4 Demux"
+            VALUE "FileDescription", "Medianav Mpeg-4 Demux"
             VALUE "FileVersion", "1.0.0.15"
             VALUE "InternalName", "mp4demux"
             VALUE "LegalCopyright", "Copyright © 2017-2018 www.medianav.ru. All rights reserved."
