@@ -47,7 +47,7 @@
 #ifdef TESTMODE
 #define CHECK_SHOW_STATE_TIMER_INTERVAL_MS 1000
 #else
-#define CHECK_SHOW_STATE_TIMER_INTERVAL_MS 300
+#define CHECK_SHOW_STATE_TIMER_INTERVAL_MS 100
 #endif
 
 CCritSec CVideoWindow::m_csMempool;
@@ -1222,7 +1222,7 @@ BOOL CALLBACK EnumWindowsProc(_In_ HWND   hwnd, _In_ LPARAM lParam)
     int classNameSize = GetClassName(hwnd, (LPWSTR)&className, 255);
     OS_Print(TRACE, "Found window class=%s, wndProc=%x\r\n", &className, wndProc);
 #endif
-    if((wndProc & 0xFFFF) == PLAYER_WINDOW_WNDPROC_TAG)
+    if((wndProc & 0xFFFF) == PLAYER_WINDOW_WNDPROC_TAG && (GetWindowLong(hwnd, GWL_STYLE) & WS_VISIBLE))
     {
         playerWindow = hwnd;
         return FALSE;
@@ -1249,18 +1249,29 @@ BOOL CVideoWindow::isNoShowState()
         return TRUE;
     }
 
-    BOOL playerWindowExists = FALSE;
-
+    BOOL NoShowState = FALSE;
     HWND playerWindow = NULL;
-    HWND foregroundWindow = GetForegroundWindow();
     EnumWindows(EnumWindowsProc, reinterpret_cast<LPARAM>(&playerWindow));
-    if(playerWindow == NULL || (foregroundWindow != playerWindow && foregroundWindow != m_hwnd))
+    if(playerWindow != NULL)
     {
-        OS_Print(DBG, "Inactive state Detected!!!\r\n");
-        return TRUE;
+        HWND foregroundWindow = GetForegroundWindow();
+        if(foregroundWindow != playerWindow && foregroundWindow != m_hwnd)
+        {
+            POINT p = {OS_GetScreenWidth() / 2, OS_GetScreenHeight() / 2};
+            if(WindowFromPoint(p) != playerWindow)
+                NoShowState = TRUE;
+        }
+    }else
+    {
+        NoShowState = TRUE;
     }
 
-    return FALSE;
+    if(NoShowState)
+    {
+        OS_Print(DBG, "Inactive state Detected!!!\r\n");
+    }
+
+    return NoShowState;
 }
 
 void CVideoWindow::checkSetWindowVisibility()
