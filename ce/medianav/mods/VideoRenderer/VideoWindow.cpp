@@ -23,6 +23,7 @@
 #include "VideoRenderer.h"
 #include "dshow\AuMedia.h"
 #include <utils.h>
+#include <AuUtils.h>
 
 #define ERR		1
 #define INFO    1
@@ -73,7 +74,8 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
     m_cxCrop(0),
     m_cyCrop(0),
     m_visible(FALSE),
-    m_pMediaSample(NULL)
+    m_pMediaSample(NULL),
+    m_osdInfo(OSDInfo_ChipInfo)
 {
     SetRectEmpty(&m_rcTarget);
 
@@ -108,7 +110,6 @@ CVideoWindow::~CVideoWindow()
     DoneWithWindow();
 	DestroyOverlay();
 	FreeBuffers();
-    releaseCachedMediaSample();
 } // (Destructor)
 
 void CVideoWindow::AllocateBuffers()
@@ -388,8 +389,15 @@ LRESULT CVideoWindow::OnReceiveMessage(HWND hwnd,          // Window handle
 	case WM_WINDOWPOSCHANGED:
 		break;
 	case WM_LBUTTONUP:
-		AdjustWindowSize(!getFullScreen());
-		break;
+        {
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
+            if(x > 20 && y > 20)
+                AdjustWindowSize(!getFullScreen());
+            else
+                toggleOnScreenInfo();
+            break;
+        }
     case WM_TIMER:
         switch (wParam)
         {
@@ -480,7 +488,10 @@ LRESULT CVideoWindow::OnPaint(HWND hwnd)
 	EXECUTE_ASSERT(FillRect(hdc,&ClientRect,hBrush));
 	EXECUTE_ASSERT(DeleteObject(hBrush));
 
-	EndPaint(hwnd, &ps);
+    if(m_OSD_enabled)
+        OnScreenDisplay(NULL);
+
+    EndPaint(hwnd, &ps);
 
 	return NOERROR;
 }
@@ -968,32 +979,54 @@ ULONG CVideoWindow::GetRegistryValues(void)
 // there isn't enough room in the window for the times we don't show them
 //
 ///////////////////////////////////////////////////////////////////////////////
+#define MAXOSDINFOSIZE 256
 void CVideoWindow::OnScreenDisplay(IMediaSample *pSample)
 {
-    TCHAR szTimes[TIMELENGTH];      // Time stamp strings
-    ASSERT(pSample);                // Quick sanity check
+    TCHAR szOSDInfo[MAXOSDINFOSIZE];  // Info Buffer
     RECT ClientRect;                // Client window size
     SIZE Size;                      // Size of text output
 
 	OS_Print(FUNC, "CVideoWindow::OnScreenDisplay\r\n");
 
-    // Get the time stamps and window size
+    switch(m_osdInfo)
+    {
+    case OSDInfo_ChipInfo:
+        {
+            OTP otp;
+            if(!Utils::AU::getAUOTP(otp))
+                return;
+            wsprintf(szOSDInfo, TEXT("ChipID:%08X-%08X  Features: Video: %s, AES:%d, GPU:%d, MGP:%d, SDR:%d"), otp.ChipIDHi, otp.ChipIDLo,
+                (otp.config0 & OTP_CONFIG0_HDR) ? L"720x576" : L"1280x720",
+                (otp.config0 & OTP_CONFIG0_AES) ? 0 : 1,
+                (otp.config0 & OTP_CONFIG0_GPE) ? 0 : 1,
+                (otp.config0 & OTP_CONFIG0_MGP) ? 0 : 1,
+                (otp.config0 & OTP_CONFIG0_SDR) ? 0 : 1);
+            break;
+        }
+    case OSDInfo_VideoTimestamps:
+        {
+            if(!pSample)
+                return;
+            // Get the time stamps and window size
+            pSample->GetTime((REFERENCE_TIME*)&m_StartSample, (REFERENCE_TIME*)&m_EndSample);
 
-    pSample->GetTime((REFERENCE_TIME*)&m_StartSample, (REFERENCE_TIME*)&m_EndSample);
+            // Format the sample time stamps
+
+            wsprintf(szOSDInfo,TEXT("%08d : %08d"),
+                m_StartSample.Millisecs(),
+                m_EndSample.Millisecs());
+            break;
+        }
+    default:
+        return;
+    }
+    ASSERT(lstrlen(szOSDInfo) < MAXOSDINFOSIZE);
+
     HWND hwnd = m_hwnd;
     EXECUTE_ASSERT(GetClientRect(hwnd,&ClientRect));
-
-    // Format the sample time stamps
-
-    wsprintf(szTimes,TEXT("%08d : %08d"),
-             m_StartSample.Millisecs(),
-             m_EndSample.Millisecs());
-
-    ASSERT(lstrlen(szTimes) < TIMELENGTH);
-
     // Put the times in the middle at the bottom of the window
 
-    GetTextExtentPoint32(m_hdc,szTimes,lstrlen(szTimes),&Size);
+    GetTextExtentPoint32(m_hdc,szOSDInfo,lstrlen(szOSDInfo),&Size);
     INT XPos = ((ClientRect.right - ClientRect.left) - Size.cx) / 2;
     INT YPos = ((ClientRect.bottom - ClientRect.top) - Size.cy) * 4 / 5;
 
@@ -1002,7 +1035,7 @@ void CVideoWindow::OnScreenDisplay(IMediaSample *pSample)
     if ((XPos > 0) && (YPos > 0)) {
         ExtTextOut(m_hdc,XPos, YPos,
                    ETO_CLIPPED | ETO_OPAQUE, // useless since no rect specified
-                   NULL, szTimes, lstrlen(szTimes), NULL);
+                   NULL, szOSDInfo, lstrlen(szOSDInfo), NULL);
     }
 }
 
@@ -1078,7 +1111,7 @@ HRESULT CVideoWindow::RenderSample(IMediaSample *pMediaSample)
 //	m_pOverlay->SetNextBuffer(m_OverlayBuffers[m_CurOverlayBuffer]);
 	m_pOverlay->SetCurrentBuffer((unsigned int)m_pOverlayBuffers[m_CurOverlayBuffer]->pPhysical);
 
-	if (m_OSD_enabled)
+	if (m_OSD_enabled && m_osdInfo == OSDInfo_VideoTimestamps)
 	{
 		OnScreenDisplay(pMediaSample);
 	}
@@ -1245,15 +1278,12 @@ void CVideoWindow::refreshWindowState()
     checkSetWindowVisibility();
 }
 
-void CVideoWindow::releaseCachedMediaSample()
+void CVideoWindow::toggleOnScreenInfo()
 {
-    if(m_pMediaSample)
-    {
-        m_pMediaSample->Release();
-        m_pMediaSample = NULL;
-    }
+    m_OSD_enabled = !m_OSD_enabled;
+    // Force window to repaint. It will erase OSD if it was disabled.
+    PaintWindow(TRUE);
 }
-
 // This allows a client to set the complete window size and position in one
 // atomic operation. The same affect can be had by changing each dimension
 // in turn through their individual properties although some flashing will

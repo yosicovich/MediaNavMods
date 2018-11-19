@@ -37,6 +37,13 @@ class CVideoWindow;
 
 #define VIDEO_RENDERER_REGKEY (TEXT("Software\\Microsoft\\DirectX\\DirectShow\\Video Renderer"))
 
+enum OSDInfo
+{
+    OSDInfo_VideoTimestamps = 0,
+    OSDInfo_ChipInfo = 1
+
+};
+
 class CVideoWindow : public CBaseControlWindow, public CBaseControlVideo
 {
 protected:
@@ -68,13 +75,16 @@ protected:
 
     BOOL            m_visible;
     IMediaSample*   m_pMediaSample;
+    
+    OSDInfo         m_osdInfo;
+
 
 	void CreateOverlay();
 	void DestroyOverlay();
 
     void setFullScreen(BOOL bFullScreen);
     BOOL isNoShowState();
-    void releaseCachedMediaSample();
+    void toggleOnScreenInfo();
 
 public:
 	CAuOverlay		*m_pOverlay;

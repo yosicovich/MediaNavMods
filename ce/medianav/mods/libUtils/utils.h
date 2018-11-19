@@ -46,5 +46,7 @@ namespace Utils
 
     void dumpBinary(const void* buf, size_t size);
     void dumpGUID(const GUID* guid);
+
+    
 };
 
