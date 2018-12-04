@@ -45,9 +45,7 @@ inline LONGLONG SwapI64(const BYTE* pByte)
         (unsigned long)(SwapLong(pByte + 4));
 }
 
-#define GetTypedPtr(typ, ptr) reinterpret_cast<typ*>(ptr.get())
-
-#define TESTMODE
+//#define TESTMODE
 #include "utils.h"
 
 #ifdef TESTMODE

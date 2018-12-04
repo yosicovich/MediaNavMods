@@ -54,4 +54,6 @@
 
 #include <altcecrt.h>
 
+#define GetTypedPtr(typ, ptr) reinterpret_cast<typ*>(ptr.get())
+
 // TODO: reference additional headers your program requires here
