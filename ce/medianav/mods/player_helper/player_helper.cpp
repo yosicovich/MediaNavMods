@@ -94,6 +94,7 @@ PLAYER_HELPER_API bool fixCodecsPath()
     
     RegistryMap registryPathMap;
 
+    //registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{1F3F5741-A9EE-4bd9-B64E-99C5534B3817}\\InprocServer32", L"", cCodecsBase + L"ac3decfilter.dll"));
     registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{313F1007-5458-4275-8143-E760A1D73D0F}\\InprocServer32", L"", cCodecsBase + L"aacdecfilter.dll"));
     registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{3E4DCA25-347E-4678-B22A-6F4CC68FF2A8}\\InprocServer32", L"", cCodecsBase + L"audiocorefilter.dll"));
     registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D24C840C-C469-4368-A363-0913B44AEF5C}\\InprocServer32", L"", cCodecsBase + L"avidmx.dll"));
@@ -146,9 +147,23 @@ void mempool_test()
 	HANDLE devHandle = ActivateDeviceEx(di.szDeviceKey,NULL,0,NULL);	
 	//HANDLE devHandle = ActivateDeviceEx(L"\\Drivers\\BuiltIn\\MSD",NULL,0,NULL);
 }
+#define GWL_HWNDPARENT (-8)
+
+BOOL CALLBACK EnumWindowsProc(_In_ HWND   hwnd, _In_ LPARAM lParam)
+{
+    DWORD wndProc = GetWindowLong(hwnd, GWL_WNDPROC);
+    DWORD owner = GetWindowLong(hwnd, GWL_HWNDPARENT);
+    wchar_t className[256];
+    className[256] = 0;
+    int classNameSize = GetClassName(hwnd, (LPWSTR)&className, 255);
+    return TRUE;
+}
 
 PLAYER_HELPER_API void test()
 {
+    EnumWindows(EnumWindowsProc, 0);
+
+
     SYSTEMID    SysID;
     ULONG        ResultSize;
     OTP            *pOtp;
@@ -205,7 +220,12 @@ PLAYER_HELPER_API void test()
 
 PLAYER_HELPER_API int extCheckMediaFilesExtList(const LPWSTR extValue)
 {
-    logPrintf(L"CALL: %s\r\n", extValue);
+    if(!extValue)
+    {
+        debugPrintf(1, L"extCheckMediaFilesExtList: extValue == NULL\r\n");
+        return 1;
+    }
+    debugPrintf(1, L"extCheckMediaFilesExtList: extValue = %s\r\n", extValue);
     std::wstring str = extValue;
     Utils::toUpper(str);
     return g_mediaExts.find(str) != g_mediaExts.end() ? 0 : 1;
@@ -213,7 +233,12 @@ PLAYER_HELPER_API int extCheckMediaFilesExtList(const LPWSTR extValue)
 
 PLAYER_HELPER_API int extCheckMediaFileMatch(const LPWSTR fileName)
 {
-    logPrintf(L"extCheckMediaFileMatch('%s')\r\n", fileName);
+    if(!fileName)
+    {
+        debugPrintf(1, L"extCheckMediaFileMatch: fileName == NULL\r\n");
+        return 1;
+    }
+    debugPrintf(1, L"extCheckMediaFileMatch('%s')\r\n", fileName);
     std::wstring str = fileName;
     size_t pos = str.find_last_of('.');
     if(pos == std::wstring::npos)
