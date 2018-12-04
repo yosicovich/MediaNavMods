@@ -13,32 +13,19 @@
 
 #pragma once
 
-// descriptors have a tag byte, then a length
-// encoded with a "next byte" bit and 7 bit length
-//
-// This class refers to a buffer held elsewhere
-
 #include "demuxtypes.h"
 #include <aviriff.h>
 
-// conversion from elementary stream descriptors to
-// DirectShow media type
-//
-// We can offer multiple type definitions for a given stream,
-// and support a format handler object specific to the type chosen
-// to create the output stream.
 class AviElementaryType: public ElementaryType
 {
 public:
     AviElementaryType();
 
-    bool Parse(const AVISTREAMHEADER& streamHeader, Atom* pFormat); // atom should be stsd descriptor mp4v, jvt1, mp4a
+    bool Parse(const AVISTREAMHEADER& streamHeader, Atom* pFormat); 
 	bool IsVideo() const;
     bool GetType(CMediaType* pmt, int nType) const;
     virtual void setHandler(const CMediaType* pmt, int idx);
 private:
-    bool GetType_Audio(CMediaType* pmt) const;
-    bool GetType_Video(CMediaType* pmt) const;
     bool static FindFourCC(DWORD handlerFourCC, GUID& guid, bool& extendedFormat);
 private:
     AtomCache m_format;

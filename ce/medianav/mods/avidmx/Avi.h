@@ -17,15 +17,6 @@
 #include "ElemType.h"
 #include <aviriff.h>
 
-// MPEG-4 files (based on QuickTime) are comprised of file elements
-// with a length and 4-byte FOURCC type code. This basic header can
-// be extended with an 8-byte length and a 16-byte type GUID. 
-// 
-// The payload can contain other atoms recursively.
-//
-// Some atoms begin with a 1-byte version number and 3-byte flags field,
-// but as this is type-specific, we regard it as part of the payload.
-//
 // This Atom implementation accesses data
 // via the AtomReader abstraction. The data source may be
 // a containing atom or access to the file (perhaps via an input pin).
@@ -47,6 +38,13 @@ class AviMovieTrack: public MovieTrack
 public:
     AviMovieTrack(Atom* pAtom, Movie* pMovie, long idx, const AtomCache& pIndex, unsigned int offsetOfOffset);
     virtual REFERENCE_TIME Duration() const;
+    bool isDisabled() const
+    {
+        return m_disabled;
+    }
+
+private:
+    bool m_disabled;
 };
 
 class AviMovie: public Movie

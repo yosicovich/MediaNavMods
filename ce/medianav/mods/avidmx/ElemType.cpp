@@ -74,11 +74,18 @@ AviElementaryType::Parse(const AVISTREAMHEADER& streamHeader, Atom* pFormat)
             CopyMemory(&(pVI->bmiHeader), *m_format,  static_cast<size_t>(m_format.getDataSize()));
             pVI->AvgTimePerFrame = (REFERENCE_TIME(m_streamHeader.dwScale) * UNITS) / m_streamHeader.dwRate;
         }
-        
-        if(m_streamHeader.fccHandler == FCC('xvid') || m_streamHeader.fccHandler == FCC('divx'))
+        std::string handlerFourCCStr(reinterpret_cast<const char*>(&m_streamHeader.fccHandler), sizeof(m_streamHeader.fccHandler));
+        if(    _stricmp(handlerFourCCStr.c_str(), "xvid") == 0
+            || _stricmp(handlerFourCCStr.c_str(), "divx") == 0
+            || _stricmp(handlerFourCCStr.c_str(), "div3") == 0
+            || _stricmp(handlerFourCCStr.c_str(), "div4") == 0
+            || _stricmp(handlerFourCCStr.c_str(), "DX30") == 0
+            || _stricmp(handlerFourCCStr.c_str(), "DX40") == 0
+            || _stricmp(handlerFourCCStr.c_str(), "DX50") == 0
+            )
         {
             m_pHandler.reset(new DivxHandler(reinterpret_cast<BYTE*>(reinterpret_cast<DWORD>(*m_format) + sizeof(BITMAPINFOHEADER)),additionalSize));
-        }else if(m_streamHeader.fccHandler == FCC('avc1'))
+        }else if(_stricmp(handlerFourCCStr.c_str(), "avc1") == 0)
         {
             m_pHandler.reset(new H264ByteStreamHandler(reinterpret_cast<BYTE*>(reinterpret_cast<DWORD>(*m_format) + sizeof(BITMAPINFOHEADER)),additionalSize));
         } 
@@ -139,42 +146,6 @@ AviElementaryType::GetType(CMediaType* pmt, int nType) const
     if(nType != 0)
         return false;
     *pmt = m_mediaType;
-    return true;
-}
-
-bool AviElementaryType::GetType_Audio(CMediaType* pmt) const
-{
-    debugPrintf(DBG, L"AviElementaryType::GetType_Audio: enter\r\n");
-    pmt->InitMediaType();
-    pmt->SetType(&MEDIATYPE_Audio);
-    FOURCCMap aud(m_streamHeader.fccHandler);
-    pmt->SetSubtype(&aud);
-    pmt->SetFormatType(&FORMAT_WaveFormatEx);
-    assert(m_format.getDataSize() >= sizeof(WAVEFORMATEX));
-    WAVEFORMATEX* pwfx = (WAVEFORMATEX*)pmt->AllocFormatBuffer(static_cast<ULONG>(m_format.getDataSize()));
-    ZeroMemory(pwfx,  sizeof(WAVEFORMATEX));
-    CopyMemory(pwfx, *m_format,  static_cast<size_t>(m_format.getDataSize()));
-
-    debugPrintf(DBG, L"AviElementaryType::GetType_Audio: exit\r\n");
-    return true;
-}
-
-bool AviElementaryType::GetType_Video(CMediaType* pmt) const
-{
-    debugPrintf(DBG, L"AviElementaryType::GetType_Video: enter\r\n");
-    pmt->InitMediaType();
-    pmt->SetType(&MEDIATYPE_Video);
-    FOURCCMap vid(m_streamHeader.fccHandler);
-    pmt->SetSubtype(&vid);
-    pmt->SetFormatType(&FORMAT_VideoInfo);
-    debugPrintf(DBG, L"AviElementaryType::GetType_Video: AllocFormatBuffer(%d), m_format.getDataSize() = %I64d\r\n", sizeof(VIDEOINFOHEADER) - sizeof(BITMAPINFOHEADER) + static_cast<ULONG>(m_format.getDataSize()), m_format.getDataSize());
-    assert(m_format.getDataSize() >= sizeof(BITMAPINFOHEADER));
-    VIDEOINFOHEADER* pVI = (VIDEOINFOHEADER*)pmt->AllocFormatBuffer(sizeof(VIDEOINFOHEADER) - sizeof(BITMAPINFOHEADER) + static_cast<ULONG>(m_format.getDataSize()));
-    ZeroMemory(pVI, sizeof(VIDEOINFOHEADER));
-    CopyMemory(&(pVI->bmiHeader), *m_format,  static_cast<size_t>(m_format.getDataSize()));
-    pVI->AvgTimePerFrame = (REFERENCE_TIME(m_streamHeader.dwScale) * UNITS) / m_streamHeader.dwRate;
-
-    debugPrintf(DBG, L"AviElementaryType::GetType_Video: exit\r\n");
     return true;
 }
 

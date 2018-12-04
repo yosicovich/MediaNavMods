@@ -130,16 +130,21 @@ AviMovie::AviMovie(Atom* pRoot)
     debugPrintf(DBG, L"AviMovie::AviMovie: offsetOfOffset=%d, pMovi->Offset() = %I64d, pMovi->HeaderSize() = %u, pIndexArray->aIndex[0].dwOffset = %u\r\n", offsetOfOffset, pMovi->Offset(), pMovi->HeaderSize(), pIndexArray->aIndex[0].dwOffset);
     Atom* pStrl = NULL;
     // Read streams
+    vector<MovieTrackPtr> disabledTracks;
     long idxTrack = 0;
     while((pStrl = pHdrl->FindNextChild(pStrl, ckidSTREAMLIST)))
     {
         debugPrintf(DBG, L"AviMovie::AviMovie: enumirating tracks, idxTrack=%d\r\n", idxTrack);
         MovieTrackPtr pTrack = new AviMovieTrack(pStrl, this, idxTrack++, pIndex, offsetOfOffset);
-        if (pTrack->Valid())
-        {
+        if (!pTrack->Valid())
+            continue;
+        if(GetTypedPtr(AviMovieTrack, pTrack)->isDisabled())
+            disabledTracks.push_back(pTrack);
+        else
             m_Tracks.push_back(pTrack);
-        }
     }
+    // Put disabled tracks to the end. So they will not be enabled by default.
+    m_Tracks.insert(m_Tracks.end(), disabledTracks.begin(), disabledTracks.end());
     debugPrintf(DBG, L"AviMovie::AviMovie: Finished\r\n");
 }
 
@@ -147,7 +152,8 @@ AviMovie::AviMovie(Atom* pRoot)
 
 
 AviMovieTrack::AviMovieTrack(Atom* pAtom, Movie* pMovie, long idx, const AtomCache& pIndex, unsigned int offsetOfOffset)
-: MovieTrack(NULL, pMovie, idx)
+: MovieTrack(NULL, pMovie, idx),
+  m_disabled(false)
 {
     Atom* pStrh = pAtom->FindChild(ckidSTREAMHEADER);
     if(pStrh == NULL)
@@ -157,6 +163,8 @@ AviMovieTrack::AviMovieTrack(Atom* pAtom, Movie* pMovie, long idx, const AtomCac
     AVISTREAMHEADER streamHeader;
     if(pStrh->Read(0,sizeof(AVISTREAMHEADER), &streamHeader) != S_OK)
         return;
+    
+    m_disabled = (streamHeader.dwFlags & AVISF_DISABLED) != 0;
 
     Atom* pStrf = pAtom->FindChild(ckidSTREAMFORMAT);
     if(pStrf == NULL)
