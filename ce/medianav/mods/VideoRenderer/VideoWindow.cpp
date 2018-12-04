@@ -50,6 +50,10 @@
 #define CHECK_SHOW_STATE_TIMER_INTERVAL_MS 100
 #endif
 
+static const DWORD cLongTapTimeMS = 2000;
+
+
+
 CCritSec CVideoWindow::m_csMempool;
 
 //
@@ -75,7 +79,9 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
     m_cyCrop(0),
     m_visible(FALSE),
     m_pMediaSample(NULL),
-    m_osdInfo(OSDInfo_ChipInfo)
+    m_osdInfo(OSDInfo_MemUsage),
+    m_longTapDetect(false),
+    m_tapStartTime(0)
 {
     SetRectEmpty(&m_rcTarget);
 
@@ -388,16 +394,26 @@ LRESULT CVideoWindow::OnReceiveMessage(HWND hwnd,          // Window handle
 
 	case WM_WINDOWPOSCHANGED:
 		break;
+    case WM_LBUTTONDOWN:
+        m_longTapDetect = true;
+        m_tapStartTime = GetTickCount();
+        break;
 	case WM_LBUTTONUP:
+        if(m_OSD_enabled && GET_X_LPARAM(lParam) <= 50 && GET_Y_LPARAM(lParam) <= 50)
         {
-            int x = GET_X_LPARAM(lParam);
-            int y = GET_Y_LPARAM(lParam);
-            if(x > 20 && y > 20)
-                AdjustWindowSize(!getFullScreen());
-            else
+            switchOSDInfo();
+        }else
+        {
+            if(m_longTapDetect && (GetTickCount() - m_tapStartTime) >= cLongTapTimeMS)
+            {
                 toggleOnScreenInfo();
-            break;
+            }else
+            {
+                AdjustWindowSize(!getFullScreen());
+            }
         }
+        m_longTapDetect = false;
+        break;
     case WM_TIMER:
         switch (wParam)
         {
@@ -980,6 +996,7 @@ ULONG CVideoWindow::GetRegistryValues(void)
 //
 ///////////////////////////////////////////////////////////////////////////////
 #define MAXOSDINFOSIZE 256
+static const int cOneMegabyte=1024*1024;
 void CVideoWindow::OnScreenDisplay(IMediaSample *pSample)
 {
     TCHAR szOSDInfo[MAXOSDINFOSIZE];  // Info Buffer
@@ -990,6 +1007,15 @@ void CVideoWindow::OnScreenDisplay(IMediaSample *pSample)
 
     switch(m_osdInfo)
     {
+    case OSDInfo_MemUsage:
+        {
+            MEMORYSTATUS memStatus;
+            GlobalMemoryStatus(&memStatus);
+            wsprintf(szOSDInfo, TEXT("Memory status: Load:%d%%, Available: %dMB, Total: %dMB"), memStatus.dwMemoryLoad, 
+                memStatus.dwAvailPhys / cOneMegabyte,
+                memStatus.dwTotalPhys / cOneMegabyte);
+            break;
+        }
     case OSDInfo_ChipInfo:
         {
             OTP otp;
@@ -1292,6 +1318,16 @@ void CVideoWindow::refreshWindowState()
 void CVideoWindow::toggleOnScreenInfo()
 {
     m_OSD_enabled = !m_OSD_enabled;
+    // Force window to repaint. It will erase OSD if it was disabled.
+    PaintWindow(TRUE);
+}
+
+void CVideoWindow::switchOSDInfo()
+{
+    if(m_osdInfo == OSDInfo_Last)
+        m_osdInfo = OSDInfo_First;
+    else
+        m_osdInfo=static_cast<OSDInfo>(m_osdInfo + 1);
     // Force window to repaint. It will erase OSD if it was disabled.
     PaintWindow(TRUE);
 }

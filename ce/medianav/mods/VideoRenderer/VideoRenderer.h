@@ -39,8 +39,11 @@ class CVideoWindow;
 
 enum OSDInfo
 {
-    OSDInfo_VideoTimestamps = 0,
-    OSDInfo_ChipInfo = 1
+    OSDInfo_First = 0,
+    OSDInfo_VideoTimestamps = OSDInfo_First,
+    OSDInfo_ChipInfo = 1,
+    OSDInfo_MemUsage = 2,
+    OSDInfo_Last = OSDInfo_MemUsage
 
 };
 
@@ -77,6 +80,8 @@ protected:
     IMediaSample*   m_pMediaSample;
     
     OSDInfo         m_osdInfo;
+    bool            m_longTapDetect;
+    DWORD           m_tapStartTime;
 
 
 	void CreateOverlay();
@@ -85,6 +90,7 @@ protected:
     void setFullScreen(BOOL bFullScreen);
     BOOL isNoShowState();
     void toggleOnScreenInfo();
+    void switchOSDInfo();
 
 public:
 	CAuOverlay		*m_pOverlay;
