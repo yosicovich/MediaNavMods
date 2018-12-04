@@ -170,9 +170,6 @@ AviMovieTrack::AviMovieTrack(Atom* pAtom, Movie* pMovie, long idx, const AtomCac
     }
     debugPrintf(DBG, L"AviMovieTrack::AviMovieTrack: AviElementaryType created\r\n");
     
-    m_pTimes = new AviSampleTimes(streamHeader);
-
-    debugPrintf(DBG, L"AviMovieTrack::AviMovieTrack: AviSampleTimes created\r\n");
     const AVIOLDINDEX* pIndexArray = reinterpret_cast<const AVIOLDINDEX*>(pIndex.getRawBuffer());
 
     m_pSizes = new AviSampleSizes;
@@ -183,6 +180,9 @@ AviMovieTrack::AviMovieTrack(Atom* pAtom, Movie* pMovie, long idx, const AtomCac
     m_pKeyMap = new AviKeyMap(m_pSizes);
     debugPrintf(DBG, L"AviMovieTrack::AviMovieTrack: AviSampleSizes and AviKeyMap are created\r\n");
 
+    m_pTimes = new AviSampleTimes(streamHeader, m_pSizes);
+
+    debugPrintf(DBG, L"AviMovieTrack::AviMovieTrack: AviSampleTimes created\r\n");
     Atom* pStrn = pAtom->FindChild(ckidSTREAMNAME);
     if(pStrn)
     {

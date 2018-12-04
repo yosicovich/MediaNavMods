@@ -29,22 +29,27 @@ public:
     long Size(long nSample) const;
     LONGLONG Offset(long nSample) const;
     bool isKeyFrame(long nSample) const;
+    long GetSampleFrames(long nSample) const;
+    LONGLONG TotalFrames() const 
+    {
+        return m_totalFrames;
+    }
 private:
     struct SampleRec
     {
-        SampleRec(long offset, long size, bool keyFrame)
-            :offset(offset), size(size), keyFrame(keyFrame)
+        SampleRec(long offset, long size, long framesPerSample, bool keyFrame)
+            :offset(offset), size(size), framesPerSample(framesPerSample), keyFrame(keyFrame)
         {
         }
         long offset;
         long size;
+        long framesPerSample;
         bool keyFrame;
     };
     typedef std::vector<SampleRec> SamplesArray;
 
     SamplesArray m_samplesArray;
-
-    long m_nFixedSize;
+    long m_totalFrames;
 };
 
 // map of key samples
@@ -66,7 +71,7 @@ private:
 class AviSampleTimes: public SampleTimes
 {
 public:
-    AviSampleTimes(const AVISTREAMHEADER& streamHeader);
+    AviSampleTimes(const AVISTREAMHEADER& streamHeader, const smart_ptr<SampleSizes>& sampleSizes);
 
     long DTSToSample(LONGLONG tStart);
 	SIZE_T Get(REFERENCE_TIME*& pnTimes) const;
@@ -78,6 +83,8 @@ public:
 
 private:
     long m_start;        // Offset of first sample
+    smart_ptr<AviSampleSizes> m_sampleSizes;
+    bool m_oneFramePerSample;
 };
 
 

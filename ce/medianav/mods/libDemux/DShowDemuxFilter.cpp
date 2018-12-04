@@ -13,11 +13,8 @@
 
 #include "stdafx.h"
 #include "DShowDemuxFilter.h"
-
-#define TESTMODE
-#include "utils.h"
-
 #include <math.h>
+#include "utils.h"
 
 
 // --- registration tables ----------------
