@@ -16,6 +16,7 @@
 #include "ElemType.h"
 #include <dvdmedia.h>
 #include <handlers.h>
+#include <audshow.h>
 
 // Debug stuff
 #define AAC_DEBUG 0
@@ -837,7 +838,7 @@ const int Mpeg4ElementaryType::SamplingFrequencies[] =
 
 const GUID* Mpeg4ElementaryType::AAC_GUIDS[] = 
 {
-    &__uuidof(MEDIASUBTYPE_AAC_AUDIO),
+    &MEDIASUBTYPE_AAC_AUDIO,
     &__uuidof(MEDIASUBTYPE_AAC),
     &__uuidof(MEDIASUBTYPE_MP4A),
     &__uuidof(MEDIASUBTYPE_MPEG_ADTS_AAC)

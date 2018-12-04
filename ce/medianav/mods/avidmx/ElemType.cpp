@@ -12,16 +12,12 @@
 // http://www.gdcl.co.uk
 //////////////////////////////////////////////////////////////////////
 
-#define INITGUID
-#include <ObjBase.h>
-#include <audshow.h>
-#undef INITGUID
-
 #include "stdafx.h"
 #include "ElemType.h"
 #include <dvdmedia.h>
 #include <handlers.h>
 #include <cassert>
+#include <audshow.h>
 
 // -----------------------------------------------------
 

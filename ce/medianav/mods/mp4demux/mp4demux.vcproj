@@ -21,6 +21,7 @@
 			OutputDirectory="$(SolutionDir)\$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\mediasdk.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -43,7 +44,7 @@
 				ExecutionBucket="7"
 				AdditionalOptions="-DMAE2"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\libUtils;..\libDemux"
+				AdditionalIncludeDirectories="..\libUtils;..\libDemux;$(MEDIA_SDK)\include"
 				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;_DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_WINDOWS;_USRDLL;MP4DEMUX_EXPORTS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
@@ -115,6 +116,7 @@
 			OutputDirectory="$(SolutionDir)\$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\mediasdk.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -137,7 +139,7 @@
 				ExecutionBucket="7"
 				AdditionalOptions="-DMAE2"
 				Optimization="2"
-				AdditionalIncludeDirectories="..\libUtils;..\libDemux"
+				AdditionalIncludeDirectories="..\libUtils;..\libDemux;$(MEDIA_SDK)\include"
 				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_WINDOWS;_USRDLL;MP4DEMUX_EXPORTS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
 				RuntimeLibrary="0"
 				TreatWChar_tAsBuiltInType="false"

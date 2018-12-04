@@ -23,12 +23,6 @@
 #include <windows.h>
 #include <commctrl.h>
 
-
-
-// Windows Header Files:
-#include <windows.h>
-
-
 #if defined(WIN32_PLATFORM_PSPC) || defined(WIN32_PLATFORM_WFSP)
 #ifndef _DEVICE_RESOLUTION_AWARE
 #define _DEVICE_RESOLUTION_AWARE
