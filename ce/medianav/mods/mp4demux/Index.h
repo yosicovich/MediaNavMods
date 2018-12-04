@@ -25,8 +25,8 @@ public:
     Mpeg4SampleSizes();
 
     bool Parse(Atom* patmSTBL);
-    long Size(long nSample);
-    LONGLONG Offset(long nSample);
+    long Size(long nSample) const;
+    LONGLONG Offset(long nSample) const;
 
 	// support for old-style uncompressed audio, where fixedsize =1 means 1 sample
 	void AdjustFixedSize(long nBytes);
@@ -52,8 +52,8 @@ public:
     ~Mpeg4KeyMap();
 
     bool Parse(Atom* patmSTBL);
-    long SyncFor(long nSample);
-	long Next(long nSample);
+    long SyncFor(long nSample) const;
+	long Next(long nSample) const;
 	SIZE_T Get(SIZE_T*& pnIndexes) const;
 
 private:

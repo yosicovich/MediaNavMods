@@ -30,10 +30,13 @@ using namespace std;
 #pragma warning(pop)
 #define FOURCC(p)   (DWORD(p[3] | (p[2] << 8) | (p[1] << 16) | (p[0] << 24)))
 
+#define TESTMODE
 #ifdef TESTMODE
 #define DEMUX_DBG 1
+#define DEMUX_TRACE 0
 #else
 #define DEMUX_DBG 0
+#define DEMUX_TRACE 0
 #endif
 
 

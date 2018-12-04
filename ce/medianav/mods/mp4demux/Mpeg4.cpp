@@ -106,7 +106,7 @@ Mpeg4Movie::Mpeg4Movie(Atom* pRoot)
 // ------------------------------------------------------------------
 
 
-Mpeg4MovieTrack::Mpeg4MovieTrack(Atom* pAtom, Movie* pMovie, long idx)
+Mpeg4MovieTrack::Mpeg4MovieTrack(Atom* pAtom, Mpeg4Movie* pMovie, long idx)
 : MovieTrack(NULL, pMovie, idx),
   m_patmSTBL(NULL)
 {
@@ -125,7 +125,7 @@ Mpeg4MovieTrack::Mpeg4MovieTrack(Atom* pAtom, Movie* pMovie, long idx)
             {
                 LONGLONG first = ParseEDTS(patmEDTS);
                 // convert from movie scale to 100ns
-                tFirst = first * UNITS / m_pMovie->Scale();
+                tFirst = first * UNITS / pMovie->Scale();
             }
 
             Atom* patmMDIA = pAtom->FindChild(FOURCC("mdia"));
@@ -146,7 +146,7 @@ Mpeg4MovieTrack::Mpeg4MovieTrack(Atom* pAtom, Movie* pMovie, long idx)
                     for (vector<EditEntry>::iterator it = m_Edits.begin(); it != m_Edits.end(); it++)
                     {
                         // duration is in movie scale; offset is in track scale. 
-                        it->duration = it->duration * UNITS / m_pMovie->Scale();
+                        it->duration = it->duration * UNITS / pMovie->Scale();
                         if (it->offset > 0)
                         {
                             it->offset = TimesIndex()->TrackToReftime(it->offset);
@@ -167,6 +167,10 @@ Mpeg4MovieTrack::Mpeg4MovieTrack(Atom* pAtom, Movie* pMovie, long idx)
             }
         }
     }
+}
+REFERENCE_TIME Mpeg4MovieTrack::Duration() const
+{
+    return reinterpret_cast<const Mpeg4Movie*>(GetMovie())->Duration();
 }
 
 LONGLONG 
@@ -209,11 +213,12 @@ Mpeg4MovieTrack::ParseMDIA(Atom* patm, REFERENCE_TIME tFirst)
         return false;
     }
     AtomCache pMDHD(patmMDHD);
+    long scale;
     if (pMDHD[0] == 1)  // version 0 or 1
     {
-        m_scale = SwapLong(pMDHD + 20);
+        scale = SwapLong(pMDHD + 20);
     } else {
-        m_scale = SwapLong(pMDHD + 12);
+        scale = SwapLong(pMDHD + 12);
     }
 
 
@@ -245,14 +250,14 @@ Mpeg4MovieTrack::ParseMDIA(Atom* patm, REFERENCE_TIME tFirst)
     }
 
     m_pTimes = new Mpeg4SampleTimes;
-    if (!GetTypedPtr(Mpeg4SampleTimes, m_pTimes)->Parse(m_scale, tFirst, m_patmSTBL))
+    if (!GetTypedPtr(Mpeg4SampleTimes, m_pTimes)->Parse(scale, tFirst, m_patmSTBL))
     {
         return false;
     }
 
     // now index is ready, we can calculate average frame duration
     // for the media type
-    REFERENCE_TIME tFrame = m_pMovie->Duration() / m_pSizes->SampleCount();
+    REFERENCE_TIME tFrame = Duration() / m_pSizes->SampleCount();
 
     Atom* pSTSD = m_patmSTBL->FindChild(FOURCC("stsd"));
     if (!pSTSD || !ParseSTSD(tFrame, pSTSD))
@@ -326,7 +331,7 @@ Mpeg4MovieTrack::ParseMDIA(Atom* patm, REFERENCE_TIME tFirst)
 				}
 			}
 			tFrame = (UNITS * 1000 / fpsk);
-			m_pType->SetRate(tFrame);
+			GetTypedPtr(Mpeg4ElementaryType, m_pType)->SetRate(tFrame);
 		}
 
 	}

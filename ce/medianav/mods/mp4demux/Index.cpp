@@ -83,7 +83,7 @@ Mpeg4SampleSizes::Parse(Atom* patmSTBL)
 }
 
 long 
-Mpeg4SampleSizes::Size(long nSample)
+Mpeg4SampleSizes::Size(long nSample) const
 {
     long cThis = m_nFixedSize;
     if ((cThis == 0) && (nSample < m_nSamples))
@@ -94,7 +94,7 @@ Mpeg4SampleSizes::Size(long nSample)
 }
                  
 LONGLONG 
-Mpeg4SampleSizes::Offset(long nSample)
+Mpeg4SampleSizes::Offset(long nSample) const
 {
     // !! consider caching prev entry and length of chunk
     // and just adding on sample size until chunk count reached
@@ -211,7 +211,7 @@ Mpeg4KeyMap::Parse(Atom* patmSTBL)
 }
 
 long 
-Mpeg4KeyMap::SyncFor(long nSample)
+Mpeg4KeyMap::SyncFor(long nSample) const
 {
     if (!m_patmSTSS || (m_nEntries == 0))
     {
@@ -234,7 +234,7 @@ Mpeg4KeyMap::SyncFor(long nSample)
 }
 
 long 
-Mpeg4KeyMap::Next(long nSample)
+Mpeg4KeyMap::Next(long nSample) const
 {
     if (!m_patmSTSS || (m_nEntries == 0))
     {
@@ -281,7 +281,10 @@ Mpeg4SampleTimes::Mpeg4SampleTimes()
 bool 
 Mpeg4SampleTimes::Parse(long scale, LONGLONG CTOffset, Atom* patmSTBL)
 {
-    m_scale = scale;            // track timescale units/sec
+    // scale - track timescale units/sec
+    m_rate = scale;            
+    m_scale = 1;
+
     m_CTOffset = CTOffset;      // offset to start of first sample in 100ns
 
     // basic duration table

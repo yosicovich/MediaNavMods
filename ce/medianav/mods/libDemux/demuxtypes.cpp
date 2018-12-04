@@ -14,18 +14,19 @@
 #include "demuxtypes.h"
 #include <sstream>
 
-Atom::Atom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader)
+Atom::Atom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader, bool canHaveChildren/* = true*/)
 : m_pSource(pReader),
   m_llOffset(llOffset),
   m_cBufferRefCount(0),
   m_cHeader(cHeader),
   m_llLength(llLength),
-  m_type(type)
+  m_type(type),
+  m_bChildrenScaned(!canHaveChildren)
 {
 }
 
 HRESULT 
-Atom::Read(LONGLONG llOffset, long cBytes, BYTE* pBuffer)
+Atom::Read(LONGLONG llOffset, long cBytes, void* pBuffer)
 {
     HRESULT hr = S_OK;
     if (IsBuffered())
@@ -43,9 +44,10 @@ Atom::Read(LONGLONG llOffset, long cBytes, BYTE* pBuffer)
 long 
 Atom::ChildCount()
 {
-    if (m_Children.size() == 0)
+    if (m_Children.size() == 0 && !m_bChildrenScaned)
     {
         ScanChildrenAt(0);
+        m_bChildrenScaned = true;
     }
     return (long)m_Children.size();
 }
@@ -78,6 +80,39 @@ Atom::FindChild(DWORD fourcc)
     }
 
     list<AtomPtr>::iterator it = m_Children.begin();
+    while (it != m_Children.end())
+    {
+        Atom* pChild = *it;
+        if (pChild->Type() == fourcc)
+        {
+            return pChild;
+        }
+        it++;
+    }
+    return NULL;
+}
+
+Atom* Atom::FindNextChild(Atom* after, DWORD fourcc)
+{
+    if (ChildCount() == 0) // force enum of children
+    {
+        return NULL;
+    }
+
+    if(!after)
+        return FindChild(fourcc);
+
+    list<AtomPtr>::iterator it = m_Children.begin();
+    while (it != m_Children.end())
+    {
+        if((*it) == after)
+        {
+            ++it;
+            break;
+        }
+        ++it;
+    }
+
     while (it != m_Children.end())
     {
         Atom* pChild = *it;
@@ -141,7 +176,8 @@ SampleSizes::SampleSizes()
 // ----- times index ----------------------------------
 
 SampleTimes::SampleTimes()
-: m_scale(0),
+: m_scale(1),
+  m_rate(1),
   m_total(0)
 {
 }
@@ -194,20 +230,42 @@ long SampleTimes::CTSToSample(LONGLONG tStart)
 LONGLONG 
 SampleTimes::TrackToReftime(LONGLONG nTrack) const
 {
-    // convert times in the track timescale (m_scale units/sec) to 100ns
-    return REFERENCE_TIME(nTrack) * UNITS / LONGLONG(m_scale);
+    // convert times in the track timescale to 100ns
+    return (REFERENCE_TIME(nTrack) * m_scale * UNITS) / m_rate;
 }
 
-LONGLONG SampleTimes::ReftimeToTrack(LONGLONG reftime)
+LONGLONG SampleTimes::ReftimeToTrack(LONGLONG reftime) const
 {
-    return ((reftime * m_scale) + (UNITS/2)) / UNITS;
+    return ((reftime * m_rate) + (UNITS/2)) / (UNITS * m_scale);
 }
 
 ElementaryType::ElementaryType()
-: m_tFrame(0)
+
 {
 }
 
+bool ElementaryType::SetType(const CMediaType* pmt)
+{
+    debugPrintf(DEMUX_DBG, L"ElementaryType::SetType: enter\r\n");
+    if (m_mtChosen != *pmt)
+    {
+        int idx = 0;
+        CMediaType mtCompare;
+        while (GetType(&mtCompare, idx))
+        {
+            if (mtCompare == *pmt)
+            {
+                m_mtChosen = *pmt;
+                setHandler(pmt, idx);
+                return true;
+            }
+
+            idx++;
+        }
+        return false;
+    }
+    return true;
+}
 // -- main movie header, contains list of tracks ---------------
 
 Movie::Movie(Atom* pRoot)

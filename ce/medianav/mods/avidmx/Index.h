@@ -12,6 +12,7 @@
 #pragma once
 
 #include "demuxtypes.h"
+#include <aviriff.h>
 
 // currently all index tables are kept in memory. This is
 // typically a few hundred kilobytes. For very large files a
@@ -19,57 +20,53 @@
 
 // index giving count of samples and size of each sample
 // and file location of sample
-class Mpeg4SampleSizes: public SampleSizes
+class AviSampleSizes: public SampleSizes
 {
 public:
-    Mpeg4SampleSizes();
+    AviSampleSizes();
 
-    bool Parse(Atom* patmSTBL);
-    long Size(long nSample);
-    LONGLONG Offset(long nSample);
-
-	// support for old-style uncompressed audio, where fixedsize =1 means 1 sample
-	void AdjustFixedSize(long nBytes);
+    bool Parse(const AVISTREAMHEADER& streamHeader, unsigned int streamIdx, const AVIOLDINDEX* pIndexArray, unsigned int offsetOfOffset);
+    long Size(long nSample) const;
+    LONGLONG Offset(long nSample) const;
+    bool isKeyFrame(long nSample) const;
 private:
-    Atom* m_patmSTSZ;
-	AtomCache m_pBuffer;
+    struct SampleRec
+    {
+        SampleRec(long offset, long size, bool keyFrame)
+            :offset(offset), size(size), keyFrame(keyFrame)
+        {
+        }
+        long offset;
+        long size;
+        bool keyFrame;
+    };
+    typedef std::vector<SampleRec> SamplesArray;
+
+    SamplesArray m_samplesArray;
+
     long m_nFixedSize;
-    
-    long m_nEntriesSTSC;
-    long m_nChunks;
-    bool m_bCO64;
-    Atom* m_patmSTSC;
-	AtomCache m_pSTSC;
-    Atom* m_patmSTCO;
-	AtomCache m_pSTCO;
 };
 
 // map of key samples
-class Mpeg4KeyMap: public KeyMap
+class AviKeyMap: public KeyMap
 {
 public:
-    Mpeg4KeyMap();
-    ~Mpeg4KeyMap();
+    AviKeyMap(const smart_ptr<SampleSizes>& sampleSizes);
 
-    bool Parse(Atom* patmSTBL);
-    long SyncFor(long nSample);
-	long Next(long nSample);
+    long SyncFor(long nSample) const;
+	long Next(long nSample) const;
 	SIZE_T Get(SIZE_T*& pnIndexes) const;
 
 private:
-    Atom* m_patmSTSS;
-    const BYTE* m_pSTSS;
-    long m_nEntries;
+    smart_ptr<AviSampleSizes> m_sampleSizes;
 };
 
 // time and duration of samples
 // -- all times in 100ns units
-class Mpeg4SampleTimes: public SampleTimes
+class AviSampleTimes: public SampleTimes
 {
 public:
-    Mpeg4SampleTimes();
-
-	bool Parse(long scale, LONGLONG CTOffset, Atom* patmSTBL);
+    AviSampleTimes(const AVISTREAMHEADER& streamHeader);
 
     long DTSToSample(LONGLONG tStart);
 	SIZE_T Get(REFERENCE_TIME*& pnTimes) const;
@@ -77,26 +74,10 @@ public:
     LONGLONG Duration(long nSample);
     LONGLONG CTSOffset(long nSample) const;
 
-    bool HasCTSTable() const { return m_nCTTS > 0; }
+    bool HasCTSTable() const { return false; }
 
 private:
-    LONGLONG m_CTOffset;        // CT offset of first sample
-
-    Atom* m_patmSTTS;
-    Atom* m_patmCTTS;
-    AtomCache m_pSTTS;
-    AtomCache m_pCTTS;
-
-    long m_nSTTS;
-    long m_nCTTS;
-
-    // Duration, DTSToSample and SampleToCTS need to
-    // add up durations from the start of the table. We
-    // cache the current position to reduce effort
-    long m_nBaseSample;     // sample number at m_idx
-    long m_idx;             // table index corresponding to m_nBaseSample
-
-    LONGLONG m_tAtBase;     // total of durations at m_nBaseSample
+    long m_start;        // Offset of first sample
 };
 
 

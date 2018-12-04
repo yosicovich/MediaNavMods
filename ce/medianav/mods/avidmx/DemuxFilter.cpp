@@ -18,10 +18,10 @@
 
 // filter registration information. 
 const AMOVIESETUP_FILTER 
-Mpeg4Demultiplexor::m_sudFilter = 
+AviDemultiplexor::m_sudFilter = 
 {
-    &__uuidof(Mpeg4Demultiplexor),  // filter clsid
-    L"GDCL Mpeg-4 Demultiplexor",   // filter name
+    &__uuidof(AviDemultiplexor),  // filter clsid
+    L"AVI Demultiplexor",   // filter name
     MERIT_NORMAL,                   // ie default for auto graph building
     3,                              // count of registered pins
     DShowDemultiplexor::m_sudPin    // list of pins to register
@@ -32,23 +32,23 @@ Mpeg4Demultiplexor::m_sudFilter =
 // the class factory calls this to create the filter
 //static 
 CUnknown* WINAPI 
-Mpeg4Demultiplexor::CreateInstance(LPUNKNOWN pUnk, HRESULT* phr)
+AviDemultiplexor::CreateInstance(LPUNKNOWN pUnk, HRESULT* phr)
 {
-    return new Mpeg4Demultiplexor(pUnk, phr);
+    return new AviDemultiplexor(pUnk, phr);
 }
 
-Mpeg4Demultiplexor::Mpeg4Demultiplexor(LPUNKNOWN pUnk, HRESULT* phr)
+AviDemultiplexor::AviDemultiplexor(LPUNKNOWN pUnk, HRESULT* phr)
 :DShowDemultiplexor(pUnk, phr, *m_sudFilter.clsID)
 {
-
+    setAlwaysSeekToKeyFrame(Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, TEXT("\\SOFTWARE\\Microsoft\\DirectX\\DirectShow\\AVIDemux"), TEXT("KeyFrameSeeking"), true));
 }
 
-Atom* Mpeg4Demultiplexor::createAtom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader)
+Atom* AviDemultiplexor::createAtom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader)
 {
-    return new Mpeg4Atom(pReader, llOffset, llLength, type, cHeader);
+    return new AviAtom(pReader, llOffset, llLength, type, cHeader);
 }
 
-Movie* Mpeg4Demultiplexor::createMovie(Atom* pRoot)
+Movie* AviDemultiplexor::createMovie(Atom* pRoot)
 {
-    return new Mpeg4Movie(pRoot);
+    return new AviMovie(pRoot);
 }

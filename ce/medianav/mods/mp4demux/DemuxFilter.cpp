@@ -21,7 +21,7 @@ const AMOVIESETUP_FILTER
 Mpeg4Demultiplexor::m_sudFilter = 
 {
     &__uuidof(Mpeg4Demultiplexor),  // filter clsid
-    L"GDCL Mpeg-4 Demultiplexor",   // filter name
+    L"Mpeg-4 Demultiplexor",        // filter name
     MERIT_NORMAL,                   // ie default for auto graph building
     3,                              // count of registered pins
     DShowDemultiplexor::m_sudPin    // list of pins to register
@@ -40,7 +40,7 @@ Mpeg4Demultiplexor::CreateInstance(LPUNKNOWN pUnk, HRESULT* phr)
 Mpeg4Demultiplexor::Mpeg4Demultiplexor(LPUNKNOWN pUnk, HRESULT* phr)
 :DShowDemultiplexor(pUnk, phr, *m_sudFilter.clsID)
 {
-
+    setAlwaysSeekToKeyFrame(Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, TEXT("\\SOFTWARE\\Microsoft\\DirectX\\DirectShow\\MP4Demux"), TEXT("KeyFrameSeeking"), true));
 }
 
 Atom* Mpeg4Demultiplexor::createAtom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader)

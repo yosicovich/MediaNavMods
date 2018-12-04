@@ -54,8 +54,8 @@ public:
     HRESULT BreakConnect();
 
     // AtomReader abstraction:
-    // access to the file from the Mpeg-4 parsing classes
-    HRESULT Read(LONGLONG llOffset, long cBytes, BYTE* pBuffer);
+    // access to the file from container parsing classes
+    HRESULT Read(LONGLONG llOffset, long cBytes, void* pBuffer);
     LONGLONG Length();
 
     // ...but we don't support the caching interface for the whole file
@@ -182,7 +182,6 @@ public:
     // called from output pins for seeking support
     bool SelectSeekingPin(DemuxOutputPin* pPin);
     void DeselectSeekingPin(DemuxOutputPin* pPin);
-    REFERENCE_TIME GetDuration();
     void GetSeekingParams(REFERENCE_TIME* ptStart, REFERENCE_TIME* ptStop, double* pdRate);
     HRESULT Seek(REFERENCE_TIME& tStart, BOOL bSeekToKeyFrame, const REFERENCE_TIME& tStop, double dRate);
     HRESULT SetRate(double dRate);
@@ -191,6 +190,10 @@ public:
 protected:
     virtual Atom* createAtom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader) = 0;
     virtual Movie* createMovie(Atom* pRoot) = 0;
+    void setAlwaysSeekToKeyFrame(bool bVal)
+    {
+        m_alwaysSeekToKeyFrame = bVal;
+    }
 
     DemuxOutputPin* Output(int n)
     {
@@ -209,6 +212,7 @@ private:
     REFERENCE_TIME m_tStop;
     double m_dRate;
     DemuxOutputPin* m_pSeekingPin;
+    bool m_alwaysSeekToKeyFrame;
 
     // file headers
     smart_ptr<Movie> m_pMovie;

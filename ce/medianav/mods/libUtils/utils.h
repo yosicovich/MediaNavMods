@@ -27,6 +27,8 @@ namespace Utils
         static std::wstring getString(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, const std::wstring& defaultValue);
         static DWORD getInt(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, DWORD defaultValue);
         static bool getBool(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, bool defaultValue);
+
+        static std::vector<std::wstring> getSubKeys(HKEY hRootKey, const std::wstring& subKey);
     };
 
     class SystemWideUniqueInstance
@@ -47,6 +49,7 @@ namespace Utils
     void dumpBinary(const void* buf, size_t size);
     void dumpGUID(const GUID* guid);
 
+    std::wstring convertToWString(const std::string& str);
     
 };
 

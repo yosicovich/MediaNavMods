@@ -100,6 +100,48 @@ bool RegistryAccessor::getBool(HKEY hRootKey, const std::wstring& subKey, const 
     return getInt(hRootKey, subKey, valueName, value) == 1 ? true : false;
 }
 
+static const int MAX_KEY_LENGTH = 255;
+std::vector<std::wstring> RegistryAccessor::getSubKeys(HKEY hRootKey, const std::wstring& subKey)
+{
+    std::vector<std::wstring> resultData;
+    HKEY hKey;
+    if(RegCreateKeyEx(hRootKey, subKey.c_str(), 0, NULL, 0, NULL, NULL, &hKey, NULL) != ERROR_SUCCESS)
+        return resultData;
+
+    DWORD    cSubKeys=0;               // number of subkeys 
+    // Get the class name and the value count. 
+    DWORD retCode = RegQueryInfoKey(
+        hKey,                    // key handle 
+        NULL,                    // buffer for class name 
+        NULL,                    // size of class string 
+        NULL,                    // reserved 
+        &cSubKeys,               // number of subkeys 
+        NULL,                    // longest subkey size 
+        NULL,                    // longest class string 
+        NULL,                    // number of values for this key 
+        NULL,                    // longest value name 
+        NULL,                    // longest value data 
+        NULL,                    // security descriptor 
+        NULL);                   // last write time 
+
+    // Enumerate the subkeys, until RegEnumKeyEx fails.
+
+    if (retCode == ERROR_SUCCESS && cSubKeys)
+    {
+        TCHAR    achKey[MAX_KEY_LENGTH];   // buffer for subkey name
+        DWORD    cbName;                   // size of name string 
+        for (DWORD i=0; i<cSubKeys; ++i) 
+        { 
+            cbName = MAX_KEY_LENGTH;
+            if(RegEnumKeyEx(hKey, i, achKey, &cbName, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
+                continue;
+            resultData.push_back(achKey);
+        }
+    } 
+    RegCloseKey(hKey);
+    return resultData;
+}
+
     
 DWORD getCurrentProcessImageBase()
 {
@@ -211,6 +253,28 @@ void dumpGUID(const GUID* guid)
         ,(unsigned int)guid->Data4[6]
         ,(unsigned int)guid->Data4[7]
     );
+}
+
+std::wstring convertToWString(const std::string& str)
+{
+    if(!str.size()) 
+        return std::wstring();
+
+    DWORD cwch;
+
+    std::vector<wchar_t> resultWStr;
+
+    if(cwch = ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.size(), NULL, 0))//get buffer required in characters
+    {
+        resultWStr.resize(cwch);
+        if(!::MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.size(), reinterpret_cast<wchar_t *>(&resultWStr[0]), resultWStr.size()))
+        {
+            if(ERROR_INSUFFICIENT_BUFFER == ::GetLastError())
+                return std::wstring();
+        }
+    };
+
+    return std::wstring(reinterpret_cast<wchar_t *>(&resultWStr[0]), resultWStr.size());
 }
 
 }; //namespace Utils

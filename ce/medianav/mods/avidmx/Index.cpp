@@ -14,473 +14,164 @@
 #include "Index.h"
 
 // sample count and sizes ------------------------------------------------
+/* Macro to make a numeric part of ckid for a chunk out of a stream number
+** from 0-255.
+*/
+#define ToHex(n)	((BYTE) (((n) > 9) ? ((n) - 10 + 'A') : ((n) + '0')))
+#define MAKEAVICKIDSTREAM(stream) MAKEWORD(ToHex(((stream) & 0xf0) >> 4), ToHex((stream) & 0x0f))
 
-Mpeg4SampleSizes::Mpeg4SampleSizes()
+AviSampleSizes::AviSampleSizes()
 : SampleSizes(),
-  m_nFixedSize(0),
-  m_patmSTSZ(NULL),
-  m_patmSTSC(NULL),
-  m_patmSTCO(NULL)
+  m_nFixedSize(0)
 {}
      
 bool 
-Mpeg4SampleSizes::Parse(Atom* patmSTBL)
+AviSampleSizes::Parse(const AVISTREAMHEADER& streamHeader, unsigned int streamIdx, const AVIOLDINDEX* pIndexArray, unsigned int offsetOfOffset)
 {
-    // need to locate three inter-related tables
-    // stsz, stsc and stco/co64
-
-    m_patmSTSZ = patmSTBL->FindChild(FOURCC("stsz"));
-    if (!m_patmSTSZ)
-    {
-        return false;
-    }
-    m_pBuffer = m_patmSTSZ;
-    if (m_pBuffer[0] != 0)  // check version 0
-    {
-        return false;
-    }
-
-    m_nFixedSize = SwapLong(m_pBuffer+4);
-    m_nSamples = SwapLong(m_pBuffer+8);
-
+    unsigned int indexLength = pIndexArray->cb / sizeof(struct AVIOLDINDEX::_avioldindex_entry);
+    m_nFixedSize = streamHeader.dwSampleSize;
     m_nMaxSize = m_nFixedSize;
-    if (m_nFixedSize == 0)
+    m_samplesArray.reserve(streamHeader.dwLength);
+
+    WORD indexWord = MAKEAVICKIDSTREAM(streamIdx);
+    debugPrintf(DBG, L"AviSampleSizes::Parse: indexLength = %u, indexWord = %hu\r\n", indexLength, indexWord);
+    long keyFramesCount = 0;
+    for(unsigned int i = 0; i < indexLength; ++i)
     {
-        // variable size -- need to scan whole table to find largest
-        for (long  i = 0; i < m_nSamples; i++)
+        if(static_cast<WORD>(pIndexArray->aIndex[i].dwChunkId) != indexWord)
+            continue;
+        long offset = pIndexArray->aIndex[i].dwOffset + sizeof(RIFFCHUNK) + offsetOfOffset;
+        long size = pIndexArray->aIndex[i].dwSize;
+        bool keyFrame = (pIndexArray->aIndex[i].dwFlags & AVIIF_KEYFRAME) != 0;
+        if(keyFrame)
+            ++keyFramesCount;
+        if(m_nFixedSize == 0)
         {
-            long cThis = SwapLong(m_pBuffer + 12 + (i * 4));
-            if (cThis > m_nMaxSize)
+            if(m_nMaxSize < size)
+                m_nMaxSize = size;
+            m_samplesArray.push_back(SampleRec(offset, size, keyFrame));
+        }else
+        {
+            // Split chunk into samples
+            while(size >= m_nFixedSize)
             {
-                m_nMaxSize = cThis;
+                m_samplesArray.push_back(SampleRec(offset, m_nFixedSize, keyFrame));
+                keyFrame = false;
+                offset += m_nFixedSize;
+                size -= m_nFixedSize;
             }
         }
     }
 
-    m_patmSTSC = patmSTBL->FindChild(FOURCC("stsc"));
-    if (!m_patmSTSC)
-    {
-        return false;
-    }
-    m_pSTSC = m_patmSTSC;
-    m_nEntriesSTSC = SwapLong(m_pSTSC+4);
-
-    m_patmSTCO = patmSTBL->FindChild(FOURCC("stco"));
-    if (m_patmSTCO)
-    {
-        m_bCO64 = false;
-    } else {
-        m_patmSTCO = patmSTBL->FindChild(FOURCC("co64"));
-        if (!m_patmSTCO)
-        {
-            return false;
-        }
-        m_bCO64 = true;
-    }
-    m_pSTCO = m_patmSTCO;
-    m_nChunks = SwapLong(m_pSTCO + 4);
+    m_nSamples = static_cast<long>(m_samplesArray.size());
+    debugPrintf(DBG, L"AviSampleSizes::Parse: m_nSamples = %u, keyFramesCount=%u \r\n", m_nSamples, keyFramesCount);
     return true;
 }
 
 long 
-Mpeg4SampleSizes::Size(long nSample)
+AviSampleSizes::Size(long nSample) const
 {
-    long cThis = m_nFixedSize;
-    if ((cThis == 0) && (nSample < m_nSamples))
-    {
-        cThis = SwapLong(m_pBuffer + 12 + (nSample * 4));
-    }
-    return cThis;
+    if(m_nFixedSize != 0)
+        return m_nFixedSize;
+    
+    if(nSample >= m_nSamples)
+        nSample = m_nSamples - 1;
+
+    return m_samplesArray[nSample].size;
 }
                  
 LONGLONG 
-Mpeg4SampleSizes::Offset(long nSample)
+AviSampleSizes::Offset(long nSample) const
 {
-    // !! consider caching prev entry and length of chunk
-    // and just adding on sample size until chunk count reached
+    if(nSample >= m_nSamples)
+        nSample = m_nSamples - 1;
 
-    // each entry in this table describes a
-    // run of chunks with the same number of samples.
-    // find which entry covers this sample, and
-    // the total samples covered by previous entries
-    long nSampleBase = 0;
-    long nChunkThis = 0, nSamplesPerChunk = 1;
-
-    for (long i = 0; i < m_nEntriesSTSC; i++)
-    {
-        // remember that chunk numbers are 1-based
-
-        nChunkThis = SwapLong(m_pSTSC + 8 + (12 * i)) - 1;
-        nSamplesPerChunk = SwapLong(m_pSTSC + 8 + (12 * i) + 4);
-        
-        long nChunkNext = SwapLong(m_pSTSC + 8 + (12 * i) + 12) - 1;
-        long nSampleBaseNext = nSampleBase + (nChunkNext - nChunkThis)*nSamplesPerChunk;
-        if ((i == m_nEntriesSTSC-1) || (nSample < nSampleBaseNext))
-        {
-            break;
-        } else {
-            nSampleBase = nSampleBaseNext;
-        }
-    }
-
-    // found correct entry -- work out chunk number and sample number within chunk
-    long nChunkOffset = (nSample - nSampleBase) / nSamplesPerChunk; // whole chunks 
-    long nSampleOffset = (nSample - nSampleBase) - (nChunkOffset * nSamplesPerChunk);
-    nChunkThis += nChunkOffset;
-
-    // add up sizes of previous samples to get offset into this chunk
-    LONGLONG nByteOffset = 0;
-    if (m_nFixedSize != 0)
-    {
-        nByteOffset = nSampleOffset * m_nFixedSize;
-    } else {
-        for (long i = nSample - nSampleOffset; i < nSample; i++)
-        {
-            nByteOffset += Size(i);
-        }
-    }
-
-    // start location of this chunk
-    if (nChunkThis >= m_nChunks)
-    {
-        return 0;
-    }
-    LONGLONG ChunkStart;
-    if (m_bCO64)
-    {
-        ChunkStart = SwapI64(m_pSTCO + 8 + (nChunkThis * 8));
-    } else {
-        ChunkStart = (DWORD)SwapLong(m_pSTCO + 8 + (nChunkThis * 4));
-    }
-    return ChunkStart + nByteOffset;
+    return m_samplesArray[nSample].offset;
 }
 
-void 
-Mpeg4SampleSizes::AdjustFixedSize(long nBytes)
+bool AviSampleSizes::isKeyFrame(long nSample) const
 {
-	m_nFixedSize = nBytes;
+    if(nSample >= m_nSamples)
+        nSample = m_nSamples - 1;
 
-	// set max buffer size based on contig samples
-	for (long i = 0; i < m_nEntriesSTSC; i++)
-	{
-		long nSamplesPerChunk = SwapLong(m_pSTSC + 8 + (12 * i) + 4);
-		long cThis = nSamplesPerChunk * m_nFixedSize;
-		if (cThis > m_nMaxSize)
-		{
-			m_nMaxSize = cThis;
-		}
-	}
+    return m_samplesArray[nSample].keyFrame;
 }
 
 // --- sync sample map --------------------------------
 
-Mpeg4KeyMap::Mpeg4KeyMap()
+AviKeyMap::AviKeyMap(const smart_ptr<SampleSizes>& sampleSizes)
 : KeyMap(),
-  m_patmSTSS(NULL),
-  m_pSTSS(NULL),
-  m_nEntries(0)
+  m_sampleSizes(reinterpret_cast<const smart_ptr<AviSampleSizes>& >(sampleSizes))
 {
-}
-
-Mpeg4KeyMap::~Mpeg4KeyMap()
-{
-    if (m_patmSTSS)
-    {
-        m_patmSTSS->BufferRelease();
-    }
-}
-
-bool 
-Mpeg4KeyMap::Parse(Atom* patmSTBL)
-{
-    m_patmSTSS = patmSTBL->FindChild(FOURCC("stss"));
-    if (!m_patmSTSS)
-    {
-		// no key map -- so all samples are key
-        return true;
-    }
-    m_pSTSS = m_patmSTSS->Buffer() + m_patmSTSS->HeaderSize();
-    if (m_pSTSS[0] != 0)  // check version 0
-    {
-        return false;
-    }
-
-    m_nEntries = SwapLong(m_pSTSS+4);
-
-    return true;
 }
 
 long 
-Mpeg4KeyMap::SyncFor(long nSample)
+AviKeyMap::SyncFor(long nSample) const
 {
-    if (!m_patmSTSS || (m_nEntries == 0))
+    for(;nSample >= 0; --nSample)
     {
-        // no table -- all samples are key samples
-        return nSample;
-    }
-
-    // find preceding key
-    long nPrev = 0;
-    for (long i = 0; i < m_nEntries; i++)
-    {
-        long nThis = SwapLong(m_pSTSS + 8 + (i * 4))-1;
-        if (nThis > nSample)
-        {
-            break;
-        }
-        nPrev = nThis;
-    }
-    return nPrev;
-}
-
-long 
-Mpeg4KeyMap::Next(long nSample)
-{
-    if (!m_patmSTSS || (m_nEntries == 0))
-    {
-        // no table -- all samples are key samples
-        return nSample + 1;
-    }
-
-    // find next key after nSample
-    for (long i = 0; i < m_nEntries; i++)
-    {
-        long nThis = SwapLong(m_pSTSS + 8 + (i * 4))-1;
-        if (nThis > nSample)
-        {
-			return nThis;
-        }
+        if(m_sampleSizes->isKeyFrame(nSample))
+            return nSample;
     }
     return 0;
 }
 
-SIZE_T Mpeg4KeyMap::Get(SIZE_T*& pnIndexes) const
+long 
+AviKeyMap::Next(long nSample) const
 {
-	ASSERT(!pnIndexes);
-	if(m_nEntries)
-	{
-		pnIndexes = (SIZE_T*) CoTaskMemAlloc(m_nEntries * sizeof *pnIndexes);
-		ASSERT(pnIndexes);
-	    for(SIZE_T nEntryIndex = 0; nEntryIndex < (SIZE_T) m_nEntries; nEntryIndex++)
-		{
-	        const SIZE_T nIndex = SwapLong(m_pSTSS + 8 + (nEntryIndex * 4))-1;
-			pnIndexes[nEntryIndex] = nIndex;
-		}
-	}
-	return (SIZE_T) m_nEntries;
+    for(;nSample < m_sampleSizes->SampleCount(); ++nSample)
+    {
+        if(m_sampleSizes->isKeyFrame(nSample))
+            return nSample;
+    }
+    return m_sampleSizes->SampleCount() - 1; // Or 0?
+}
+
+SIZE_T AviKeyMap::Get(SIZE_T*& pnIndexes) const
+{
+	return 0;
 }
 
 // ----- times index ----------------------------------
 
-Mpeg4SampleTimes::Mpeg4SampleTimes()
-: SampleTimes(),
-  m_patmCTTS(NULL),
-  m_patmSTTS(NULL)
-{
-}
-bool 
-Mpeg4SampleTimes::Parse(long scale, LONGLONG CTOffset, Atom* patmSTBL)
-{
-    m_scale = scale;            // track timescale units/sec
-    m_CTOffset = CTOffset;      // offset to start of first sample in 100ns
-
-    // basic duration table
-    m_patmSTTS = patmSTBL->FindChild(FOURCC("stts"));
-    if (!m_patmSTTS)
-    {
-        return false;
-    }
-    m_pSTTS = m_patmSTTS;
-    m_nSTTS = SwapLong(m_pSTTS + 4);
-
-	m_total = 0;
-	for (int i = 0; i < m_nSTTS; i++)
-	{
-        long nEntries = SwapLong(m_pSTTS + 8 + (i * 8));
-        long nDuration = SwapLong(m_pSTTS + 8 + 4 + (i * 8));
-		m_total += (nEntries * nDuration);
-	}
-	m_total = TrackToReftime(m_total);
-
-    // optional decode-to-composition offset table
-    m_patmCTTS = patmSTBL->FindChild(FOURCC("ctts"));
-    if (m_patmCTTS)
-    {
-        m_pCTTS = m_patmCTTS;
-        m_nCTTS = SwapLong(m_pCTTS + 4);
-    } else {
-        m_pCTTS = NULL;
-        m_nCTTS = 0;
-    }
-
-    // reset cache data
-    m_idx = 0;
-    m_nBaseSample = 0;
-    m_tAtBase = m_CTOffset;
-
-    return true;
+AviSampleTimes::AviSampleTimes(const AVISTREAMHEADER& streamHeader)
+: SampleTimes()
+{  
+    m_scale = streamHeader.dwScale;
+    m_rate = streamHeader.dwRate;
+    m_start = streamHeader.dwStart;
+    m_total = TrackToReftime(streamHeader.dwLength);
+    debugPrintf(DBG, L"AviSampleTimes::AviSampleTimes: m_scale =%u, m_rate=%u, m_start=%u, m_total=%I64u\r\n", m_scale, m_rate, m_start, m_total);
 }
 
 long 
-Mpeg4SampleTimes::DTSToSample(LONGLONG tStart)
+AviSampleTimes::DTSToSample(LONGLONG tStart)
 {
-    // find the sample containing this composition time
-    // by adding up the durations of individual samples
-    // until we reach it
-
-    // start at cache position unless we need a time before it
-    if (tStart < m_tAtBase)
-    {
-        m_idx = 0;
-        m_nBaseSample = 0;
-        m_tAtBase = m_CTOffset;
-        if (tStart < m_tAtBase)
-        {
-            return 0;
-        }
-    }
-    for (; m_idx < m_nSTTS; m_idx++)
-    {
-        long nEntries = SwapLong(m_pSTTS + 8 + (m_idx * 8));
-        long nDuration = SwapLong(m_pSTTS + 8 + 4 + (m_idx * 8));
-		if (nDuration == 0)
-		{
-			nDuration = 1;
-		}
-        LONGLONG tLimit = m_tAtBase + TrackToReftime(nEntries * nDuration) + CTSOffset(m_nBaseSample + nEntries);
-        if (tStart < tLimit || m_idx + 1 == m_nSTTS)
-        {
-			LONGLONG trackoffset = ReftimeToTrack(tStart - m_tAtBase);
-            return m_nBaseSample + long(trackoffset / nDuration);
-        }
-        m_tAtBase += TrackToReftime(nEntries * nDuration);
-        m_nBaseSample += nEntries;
-    }
-
-    // should not get here?
-    return 0;
+    return static_cast<long>(ReftimeToTrack(tStart) - m_start);
 }
 
-SIZE_T Mpeg4SampleTimes::Get(REFERENCE_TIME*& pnTimes) const
+SIZE_T AviSampleTimes::Get(REFERENCE_TIME*& pnTimes) const
 {
-	ASSERT(!pnTimes);
-	SIZE_T nEntryCount = 0; 
-    for(SIZE_T nIndex = 0; nIndex < (SIZE_T) m_nSTTS; nIndex++)
-	{
-        SIZE_T nCurrentEntryCount = (SIZE_T) SwapLong(m_pSTTS + 8 + (nIndex * 8));
-		nEntryCount += nCurrentEntryCount;
-	}
-	if(nEntryCount)
-	{
-		pnTimes = (REFERENCE_TIME*) CoTaskMemAlloc(nEntryCount * sizeof *pnTimes);
-		ASSERT(pnTimes);
-		SIZE_T nEntryIndex = 0;
-		REFERENCE_TIME nBaseTime = 0;
-		for(SIZE_T nIndex = 0; nIndex < (SIZE_T) m_nSTTS; nIndex++)
-		{
-			const BYTE* pSttsEntry = m_pSTTS + 8 + (nIndex * 8);
-			const SIZE_T nCurrentEntryCount = (SIZE_T) SwapLong(pSttsEntry + 0);
-			const SIZE_T nCurrentDuration = (SIZE_T) SwapLong(pSttsEntry + 4);
-			for(SIZE_T nCurrentEntryIndex = 0; nCurrentEntryIndex < nCurrentEntryCount; nCurrentEntryIndex++)
-			{
-				const SIZE_T nSampleIndex = nEntryIndex + nCurrentEntryIndex;
-				const REFERENCE_TIME nSampleTime = nBaseTime + TrackToReftime(nCurrentEntryIndex * nCurrentDuration) + CTSOffset((long) nSampleIndex);
-				pnTimes[nSampleIndex] = nSampleTime;
-			}
-			nEntryIndex += nCurrentEntryCount;
-			nBaseTime += TrackToReftime(nCurrentEntryCount * nCurrentDuration);
-		}
-		ASSERT(nEntryIndex == nEntryCount);
-	} else
-		pnTimes = 0;
-	return nEntryCount;
+	return 0;
 }
 
 LONGLONG 
-Mpeg4SampleTimes::SampleToCTS(long nSample)
+AviSampleTimes::SampleToCTS(long nSample)
 {
-    // calculate CTS for this sample by adding durations
-
-    // start at cache position unless it is too late
-    if (nSample < m_nBaseSample)
-    {
-        m_idx = 0;
-        m_nBaseSample = 0;
-        m_tAtBase = m_CTOffset;
-    }
-    for (; m_idx < m_nSTTS; m_idx++)
-    {
-        long nEntries = SwapLong(m_pSTTS + 8 + (m_idx * 8));
-        long nDuration = SwapLong(m_pSTTS + 8 + 4 + (m_idx * 8));
-        if (nSample < (m_nBaseSample + nEntries))
-        {
-            LONGLONG tThis = m_tAtBase + TrackToReftime((nSample - m_nBaseSample) * nDuration);
-
-            // allow for CTS Offset
-            tThis += CTSOffset(nSample);
-
-            return tThis;
-        }
-        m_tAtBase += TrackToReftime(nEntries * nDuration);
-        m_nBaseSample += nEntries;
-    }
-
-    // should not get here
-    return 0;
+    return TrackToReftime(m_start + nSample);
 }
 
 // offset from decode to composition time for this sample
 LONGLONG 
-Mpeg4SampleTimes::CTSOffset(long nSample) const
+AviSampleTimes::CTSOffset(long nSample) const
 {
-    if (!m_nCTTS)
-    {
-        return 0;
-    }
-    long nBase = 0;
-    for (long i = 0; i < m_nCTTS; i++)
-    {
-        long nEntries = SwapLong(m_pCTTS + 8 + (i * 8));
-        if (nSample < (nBase + nEntries))
-        {
-			LONGLONG tOffset = TrackToReftime(SwapLong(m_pCTTS + 8 + 4 + (i * 8)));
-            return tOffset;
-        }
-        nBase += nEntries;
-    }
-    // should not get here
+    // Always 0 for AVI
     return 0;
 }
 
 LONGLONG 
-Mpeg4SampleTimes::Duration(long nSample)
+AviSampleTimes::Duration(long nSample)
 {
-    // the entries in stts give the duration of each sample
-    // as a series of pairs
-    //      < count of samples, duration of these samples>
-
-    // start at cache position unless too far along
-    // -- nb, we need to sum the durations so that
-    // the updated cache position is shared by SampleToCTS
-    if (nSample < m_nBaseSample)
-    {
-        m_idx = 0;
-        m_nBaseSample = 0;
-        m_tAtBase = m_CTOffset;
-    }
-    for (; m_idx < m_nSTTS; m_idx++)
-    {
-        long nEntries = SwapLong(m_pSTTS + 8 + (m_idx * 8));
-        long nDuration = SwapLong(m_pSTTS + 8 + 4 + (m_idx * 8));
-        LONGLONG tDur = TrackToReftime(nDuration);
-        if (nSample < (m_nBaseSample + nEntries))
-        {
-            // requested sample is within this range
-            return TrackToReftime(nDuration);
-        }
-        m_tAtBase += (nEntries * tDur);
-        m_nBaseSample += nEntries;
-    }
-    // ? should not get here, since all samples should be covered
-    return 0;
+    //AVI has fixed frame duration always.
+    return TrackToReftime(1);
 }

@@ -205,6 +205,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\handlers.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\handlers.h"
+				>
+			</File>
+			<File
 				RelativePath=".\smartptr.h"
 				>
 			</File>

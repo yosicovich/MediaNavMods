@@ -91,7 +91,12 @@ public:
     bool Parse(REFERENCE_TIME tFrame, Atom* patm); // atom should be stsd descriptor mp4v, jvt1, mp4a
 	bool IsVideo() const;
     bool GetType(CMediaType* pmt, int nType) const;
-    bool SetType(const CMediaType* pmt);
+    virtual void setHandler(const CMediaType* pmt, int idx);
+
+    void SetRate(REFERENCE_TIME tFrame)
+    {
+        m_tFrame = tFrame;
+    }
 
 	eESType StreamType()
 	{
@@ -108,6 +113,7 @@ private:
 	bool GetType_JPEG(CMediaType* pmt) const;
 
 private:
+    REFERENCE_TIME m_tFrame;
     eESType m_type;
     smart_array<BYTE> m_pDecoderSpecific;
     long m_cDecoderSpecific;
@@ -121,7 +127,6 @@ private:
 	DWORD m_fourcc;
 	int m_depth;
 
-    CMediaType m_mtChosen;
 };
 
 // --- directshow type info

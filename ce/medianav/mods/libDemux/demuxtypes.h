@@ -9,7 +9,9 @@
 
 #pragma once
 
+#include "stdafx.h"
 #include <memory>
+#include <utils.h>
 
 class Atom;
 typedef smart_ptr<Atom> AtomPtr;
@@ -21,7 +23,7 @@ class AtomReader
 public:
     virtual ~AtomReader() {}
 
-    virtual HRESULT Read(LONGLONG llOffset, long cBytes, BYTE* pBuffer) = 0;
+    virtual HRESULT Read(LONGLONG llOffset, long cBytes, void* pBuffer) = 0;
     virtual LONGLONG Length() = 0;
 
     // support for caching in memory. 
@@ -51,10 +53,10 @@ public:
     // all the header params are parsed in the "Child" method and passed
     // to the constructor. This means we can use the same class for the outer file
     // container (which does not have a header).
-    Atom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader);
-    virtual ~Atom() {}
+    Atom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader, bool canHaveChildren = true);
+    virtual ~Atom() {debugPrintf(DEMUX_DBG, L"Atom::~Atom(): %08X\r\n", Type());}
 
-    virtual HRESULT Read(LONGLONG llOffset, long cBytes, BYTE* pBuffer);
+    virtual HRESULT Read(LONGLONG llOffset, long cBytes, void* pBuffer);
     virtual LONGLONG Length()
     {
         return m_llLength;
@@ -70,12 +72,18 @@ public:
         return m_cHeader;
     }
 
+    virtual LONGLONG Offset() const
+    {
+        return m_llOffset;
+    }
+
     virtual long ChildCount();
 
     // these methods return a pointer to an Atom object that is contained within
     // this Atom -- so do not delete.
     virtual Atom* Child(long nChild);
     virtual Atom* FindChild(DWORD fourcc);
+    virtual Atom* FindNextChild(Atom* after, DWORD fourcc);
 
     virtual bool IsBuffered();
     // calls to Buffer and BufferRelease are refcounted and should correspond.
@@ -100,6 +108,7 @@ private:
     // caching
     smart_array<BYTE> m_Buffer;
     long m_cBufferRefCount;
+    bool m_bChildrenScaned;
 };
 
 // this class is a simple way to manage the Buffer/BufferRelease
@@ -145,11 +154,26 @@ public:
     {
         return m_pBuffer[idx];
     }
+
     operator const BYTE*() const
     {
         return m_pBuffer;
     }
 	
+    const BYTE* operator *() const
+    {
+        return m_pBuffer;
+    }
+
+    const BYTE* getRawBuffer() const
+    {
+        return m_pBuffer - m_pAtom->HeaderSize();
+    }
+
+    const LONGLONG getDataSize() const
+    {
+        return m_pAtom->Length() - m_pAtom->HeaderSize();
+    }
 private:
     Atom* m_pAtom;
     const BYTE* m_pBuffer;
@@ -162,16 +186,16 @@ class SampleSizes
 public:
     SampleSizes();
     
-    virtual long Size(long nSample) = 0;
-    long SampleCount()
+    virtual long Size(long nSample) const = 0;
+    long SampleCount()  const
     {
         return m_nSamples;
     }
-    long MaxSize()
+    long MaxSize() const
     {
         return m_nMaxSize;
     }
-    virtual LONGLONG Offset(long nSample) = 0;
+    virtual LONGLONG Offset(long nSample) const = 0;
 protected:
     long m_nSamples;
     long m_nMaxSize;
@@ -181,8 +205,8 @@ protected:
 class KeyMap
 {
 public:
-    virtual long SyncFor(long nSample) = 0;
-    virtual long Next(long nSample) = 0;
+    virtual long SyncFor(long nSample) const = 0;
+    virtual long Next(long nSample) const = 0;
     virtual SIZE_T Get(SIZE_T*& pnIndexes) const = 0;
 };
 
@@ -203,10 +227,11 @@ public:
 
     LONGLONG TrackToReftime(LONGLONG nTrack) const;
     virtual bool HasCTSTable() const = 0;
-    LONGLONG ReftimeToTrack(LONGLONG reftime);
+    LONGLONG ReftimeToTrack(LONGLONG reftime) const;
 
 protected:
-    long m_scale;               // track scale units
+    long m_scale;
+    long m_rate;
     LONGLONG m_total;       // sum of durations, in reftime
 };
 
@@ -250,20 +275,17 @@ public:
         return m_shortname;
     }
     virtual bool GetType(CMediaType* pmt, int nType) const = 0;
-    virtual bool SetType(const CMediaType* pmt) = 0;
+    virtual void setHandler(const CMediaType* pmt, int idx) = 0;
+    bool SetType(const CMediaType* pmt);
     FormatHandler* Handler() 
     {
         return m_pHandler.get();
     }
 
-    void SetRate(REFERENCE_TIME tFrame)
-    {
-        m_tFrame = tFrame;
-    }
 protected:
     std::auto_ptr<FormatHandler> m_pHandler;
     string m_shortname;
-    REFERENCE_TIME m_tFrame;
+    CMediaType m_mtChosen;
 };
 
 class MovieTrack
@@ -295,10 +317,11 @@ public:
     {
         return m_pTimes;
     }
-    Movie* GetMovie()
+    Movie* GetMovie() const
     {
         return m_pMovie;
     }
+    virtual REFERENCE_TIME Duration() const = 0;
     HRESULT ReadSample(long nSample, BYTE* pBuffer, long cBytes);
 	bool IsOldAudioFormat()		{ return m_bOldFixedAudio; }
 	bool CheckInSegment(REFERENCE_TIME tNext, bool bSyncBefore, size_t* pnSegment, long* pnSample);
@@ -318,9 +341,6 @@ protected:
     smart_ptr<SampleTimes> m_pTimes;
     bool m_bOldFixedAudio;
 
-    long m_scale;
-
-    REFERENCE_TIME m_tNext;
     vector<EditEntry> m_Edits;
 };
 typedef smart_ptr<MovieTrack> MovieTrackPtr;
@@ -333,27 +353,16 @@ public:
     {
         return (long)m_Tracks.size();
     }
-    MovieTrack* Track(long nTrack)
+    MovieTrack* Track(long nTrack) const
     {
         return m_Tracks[nTrack];
     }
         
-    REFERENCE_TIME Duration()
-    {
-        return m_tDuration;
-    }
-    LONGLONG Scale()
-    {
-        return m_scale;
-    }
     HRESULT ReadAbsolute(LONGLONG llPos, BYTE* pBuffer, long cBytes);
 
 protected:
     smart_ptr<Atom> m_pRoot;
     vector<MovieTrackPtr> m_Tracks;
-    long m_scale;
-    LONGLONG m_duration;
-    REFERENCE_TIME m_tDuration;
 };
 
 

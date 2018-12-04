@@ -40,11 +40,13 @@ public:
     virtual void ScanChildrenAt(LONGLONG llOffset);
 };
 // --- movie and track headers ---------------------------
+class Mpeg4Movie;
 
 class Mpeg4MovieTrack: public MovieTrack
 {
 public:
-    Mpeg4MovieTrack(Atom* pAtom, Movie* pMovie, long idx);
+    Mpeg4MovieTrack(Atom* pAtom, Mpeg4Movie* pMovie, long idx);
+    virtual REFERENCE_TIME Duration() const;
 
 private:
     bool ParseMDIA(Atom* patm, REFERENCE_TIME tFirst);
@@ -59,6 +61,18 @@ class Mpeg4Movie: public Movie
 {
 public:
     Mpeg4Movie(Atom* pRoot);
+    LONGLONG Scale() const
+    {
+        return m_scale;
+    }
+    REFERENCE_TIME Duration() const
+    {
+        return m_tDuration;
+    }
+private:
+    long m_scale;
+    LONGLONG m_duration;
+    REFERENCE_TIME m_tDuration;
 };
 
 

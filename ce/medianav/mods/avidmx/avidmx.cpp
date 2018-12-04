@@ -15,11 +15,11 @@
 CFactoryTemplate g_Templates[] = {
     // one entry for each CoCreate-able object
     {
-        Mpeg4Demultiplexor::m_sudFilter.strName,
-        Mpeg4Demultiplexor::m_sudFilter.clsID,
-        Mpeg4Demultiplexor::CreateInstance,
+        AviDemultiplexor::m_sudFilter.strName,
+        AviDemultiplexor::m_sudFilter.clsID,
+        AviDemultiplexor::CreateInstance,
         NULL,
-        &Mpeg4Demultiplexor::m_sudFilter
+        &AviDemultiplexor::m_sudFilter
     },
 };
 

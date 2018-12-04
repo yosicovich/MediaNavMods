@@ -15,6 +15,7 @@
 #include "StdAfx.h"
 #include "Index.h"
 #include "ElemType.h"
+#include <aviriff.h>
 
 // MPEG-4 files (based on QuickTime) are comprised of file elements
 // with a length and 4-byte FOURCC type code. This basic header can
@@ -28,37 +29,30 @@
 // This Atom implementation accesses data
 // via the AtomReader abstraction. The data source may be
 // a containing atom or access to the file (perhaps via an input pin).
-class Mpeg4Atom : public Atom
+class AviAtom : public Atom
 {
 public:
     // all the header params are parsed in the "Child" method and passed
     // to the constructor. This means we can use the same class for the outer file
     // container (which does not have a header).
-    Mpeg4Atom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader);
+    AviAtom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader, bool canHaveChildren = true);
     // call this if the child items do not start immediately after the header
     // -- llOffset is an offset from HeaderSize
     virtual void ScanChildrenAt(LONGLONG llOffset);
 };
 // --- movie and track headers ---------------------------
 
-class Mpeg4MovieTrack: public MovieTrack
+class AviMovieTrack: public MovieTrack
 {
 public:
-    Mpeg4MovieTrack(Atom* pAtom, Movie* pMovie, long idx);
-
-private:
-    bool ParseMDIA(Atom* patm, REFERENCE_TIME tFirst);
-    bool ParseSTSD(REFERENCE_TIME tFrame, Atom* pSTSD);
-    LONGLONG ParseEDTS(Atom* patm);
-
-private:
-    Atom* m_patmSTBL;
+    AviMovieTrack(Atom* pAtom, Movie* pMovie, long idx, const AtomCache& pIndex, unsigned int offsetOfOffset);
+    virtual REFERENCE_TIME Duration() const;
 };
 
-class Mpeg4Movie: public Movie
+class AviMovie: public Movie
 {
 public:
-    Mpeg4Movie(Atom* pRoot);
+    AviMovie(Atom* pRoot);
 };
 
 

@@ -14,22 +14,21 @@
 #pragma once
 
 
-#include "mpeg4.h"
+#include "Avi.h"
 #include "ElemType.h"
 #include "DShowDemuxFilter.h"
 //
-// Partially derived from GDCL sample MPEG-1 parser filter
+// Partially derived from GDCL sample MPEG-4 parser filter
 // available in source form at http://www.gdcl.co.uk/articles
 //
 
-// Declaration of Mpeg-4 Demultiplexor Filter
+// Declaration of AVI Demultiplexor Filter
 //
 // The filter has an IAsyncReader input pin and creates an output pin
 // for each valid stream in the input pin.
 
-//class DECLSPEC_UUID("025BE2E4-1787-4da4-A585-C5B2B9EEB57C") // mp4demux
 class DECLSPEC_UUID("D24C840C-C469-4368-A363-0913B44AEF5C") // avidmx
-Mpeg4Demultiplexor: public DShowDemultiplexor
+AviDemultiplexor: public DShowDemultiplexor
 {
 public:
     // constructor method used by class factory
@@ -44,7 +43,7 @@ protected:
 
 private:
     // construct only via class factory
-    Mpeg4Demultiplexor(LPUNKNOWN pUnk, HRESULT* phr);
+    AviDemultiplexor(LPUNKNOWN pUnk, HRESULT* phr);
 };
 
 

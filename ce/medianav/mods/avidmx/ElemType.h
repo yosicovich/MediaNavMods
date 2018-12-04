@@ -19,63 +19,7 @@
 // This class refers to a buffer held elsewhere
 
 #include "demuxtypes.h"
-
-class Descriptor
-{
-public:
-    Descriptor()
-    : m_pBuffer(NULL),
-      m_cBytes(0),
-      m_cHdr(0),
-      m_type(InvalidTag)
-    {
-    }
-
-    bool Parse(const BYTE* pBuffer, long cBytes);
-    
-    enum eType
-    {
-        InvalidTag = 0,
-        ES_DescrTag = 3,
-        DecoderConfigDescrTag = 4,
-        DecSpecificInfoTag = 5,
-    };
-    eType Type() {
-        return m_type;
-    }
-    const BYTE* Start() {
-        return m_pBuffer + Header();
-    }
-    long Header() {
-        return m_cHdr;
-    }
-    long Length() {
-        return m_cBytes;
-    }
-    bool DescriptorAt(long cOffset, Descriptor& desc);
-
-private:
-    eType m_type;
-    long m_cHdr;
-    long m_cBytes;
-    const BYTE* m_pBuffer;
-};
-
-// these are the types we currently understand
-enum eESType {
-	First_Video = 0,
-    Video_Mpeg4,
-    Video_H264,
-	Video_H263,
-	Video_FOURCC,
-	Video_Mpeg2,
-	First_Audio,
-    Audio_AAC = First_Audio,
-    Audio_WAVEFORMATEX,
-	Audio_Mpeg2,
-	First_Data,
-	Text_CC608,
-};
+#include <aviriff.h>
 
 // conversion from elementary stream descriptors to
 // DirectShow media type
@@ -83,61 +27,23 @@ enum eESType {
 // We can offer multiple type definitions for a given stream,
 // and support a format handler object specific to the type chosen
 // to create the output stream.
-class Mpeg4ElementaryType: public ElementaryType
+class AviElementaryType: public ElementaryType
 {
 public:
-    Mpeg4ElementaryType();
+    AviElementaryType();
 
-    bool Parse(REFERENCE_TIME tFrame, Atom* patm); // atom should be stsd descriptor mp4v, jvt1, mp4a
+    bool Parse(const AVISTREAMHEADER& streamHeader, Atom* pFormat); // atom should be stsd descriptor mp4v, jvt1, mp4a
 	bool IsVideo() const;
     bool GetType(CMediaType* pmt, int nType) const;
-    bool SetType(const CMediaType* pmt);
-
-	eESType StreamType()
-	{
-		return m_type;
-	}
+    virtual void setHandler(const CMediaType* pmt, int idx);
 private:
-    bool ParseDescriptor(Atom* patmESD);
-    bool GetType_H264(CMediaType* pmt) const;
-	bool GetType_H264ByteStream(CMediaType* pmt) const;
-    bool GetType_Mpeg4V(CMediaType* pmt, int n) const;
-    bool GetType_AAC(CMediaType* pmt, int n) const;
-    bool GetType_WAVEFORMATEX(CMediaType* pmt) const;
-	bool GetType_FOURCC(CMediaType* pmt) const;
-	bool GetType_JPEG(CMediaType* pmt) const;
-
+    bool GetType_Audio(CMediaType* pmt) const;
+    bool GetType_Video(CMediaType* pmt) const;
+    bool static FindFourCC(DWORD handlerFourCC, GUID& guid, bool& extendedFormat);
 private:
-    eESType m_type;
-    smart_array<BYTE> m_pDecoderSpecific;
-    long m_cDecoderSpecific;
-
-    long m_cx;
-    long m_cy;
-    static const int SamplingFrequencies[];
-    static const GUID* AAC_GUIDS[];
-
-	// fourcc and bitdepth -- for uncompressed or RLE format
-	DWORD m_fourcc;
-	int m_depth;
-
-    CMediaType m_mtChosen;
+    AtomCache m_format;
+    AtomPtr m_pFormatAtom;
+    AVISTREAMHEADER m_streamHeader;
+    CMediaType m_mediaType;
+    
 };
-
-// --- directshow type info
-
-// de-facto standard for H.264 elementary stream : FOURCC('AVC1')
-class DECLSPEC_UUID("31435641-0000-0010-8000-00AA00389B71") MEDIASUBTYPE_H264_MP4_Stream;
-
-// Broadcom/Cyberlink Byte-Stream H264 subtype
-// CLSID_H264
-class DECLSPEC_UUID("8D2D71CB-243F-45E3-B2D8-5FD7967EC09B") CLSID_H264;
-
-// MediaNav uses this one as AAC decoder.
-class DECLSPEC_UUID("9ECDAAE9-F0F5-4b0f-A028-634CF4031612") MEDIASUBTYPE_AAC_AUDIO;
-class DECLSPEC_UUID("000000FF-0000-0010-8000-00AA00389B71") MEDIASUBTYPE_AAC;
-class DECLSPEC_UUID("4134504D-0000-0010-8000-00AA00389B71") MEDIASUBTYPE_MP4A;
-class DECLSPEC_UUID("00001600-0000-0010-8000-00AA00389B71") MEDIASUBTYPE_MPEG_ADTS_AAC;
-
-
-

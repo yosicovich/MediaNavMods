@@ -8,16 +8,18 @@
 #ifndef _thread_h_
 #define _thread_h_
 
+#include <dsthread.h>
 class thread
 {
 public:
-    thread() : 
+    thread(DWORD dwPriority = THREAD_PRIORITY_NORMAL) : 
 		m_hThread(NULL),
-      m_idThread(0),
+        m_idThread(0),
 		m_evExit(true),    // manual reset
 		m_evStartPermit(true),
 		m_evStart(true),
-		m_evRestartRequest(true)
+		m_evRestartRequest(true),
+        m_dwPriority(dwPriority)
     {
 	}
 
@@ -26,7 +28,9 @@ public:
         if (m_hThread == NULL) {
             m_evExit.Reset();
 			m_evStartPermit.Set();
-            m_hThread = CreateThread(NULL, 0, DispatchThread, this, 0, &m_idThread);
+            m_hThread = _internal_CreateThread(NULL, 0, DispatchThread, this, 0, &m_idThread);
+            if(m_dwPriority != THREAD_PRIORITY_NORMAL && m_hThread != NULL)
+                _internal_SetThreadPriority(m_hThread, m_dwPriority);
         }
     }
 
@@ -86,6 +90,7 @@ private:
 private:
     HANDLE m_hThread;
     DWORD m_idThread;
+    DWORD m_dwPriority;
     CAMEvent m_evExit;
 	CAMEvent m_evStartPermit;
 	CAMEvent m_evStart;

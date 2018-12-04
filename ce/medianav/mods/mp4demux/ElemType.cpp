@@ -15,6 +15,7 @@
 #include "stdafx.h"
 #include "ElemType.h"
 #include <dvdmedia.h>
+#include <handlers.h>
 
 // Debug stuff
 #define AAC_DEBUG 0
@@ -31,42 +32,6 @@ inline DWORD Swap4Bytes(DWORD x)
 		   ((x >> 24) & 0xff);
 }
 
-// ----- format-specific handlers -------------------
-
-// default no-translation
-
-class NoChangeHandler : public FormatHandler
-{
-public:
-    long BufferSize(long MaxSize);
-    void StartStream();
-    long PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, long cBytes);
-};
-
-long 
-NoChangeHandler::BufferSize(long MaxSize)
-{
-    return MaxSize;
-}
-
-void 
-NoChangeHandler::StartStream()
-{
-}
-
-long 
-NoChangeHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, long cBytes)
-{
-    BYTE* pBuffer;
-    pSample->GetPointer(&pBuffer);
-
-    if (pMovie->ReadAbsolute(llPos, pBuffer, cBytes) == S_OK)
-    {
-        return cBytes;
-    }
-    return 0;
-}
-
 class BigEndianAudioHandler : public NoChangeHandler
 {
 public:
@@ -76,270 +41,32 @@ public:
 long 
 BigEndianAudioHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, long cBytes)
 {
-	cBytes = __super::PrepareOutput(pSample, pMovie, llPos, cBytes);
-	if (cBytes > 0)
-	{
-		BYTE* pBuffer;
-		pSample->GetPointer(&pBuffer);
-		if (cBytes%2) 
-		{
-			cBytes--;
-		}
-		BYTE* pEnd = pBuffer + cBytes;
-		while (pBuffer < pEnd)
-		{
-			WORD w = *(WORD*)pBuffer;
-			w = Swap2Bytes(w);
-			*(WORD*)pBuffer = w;
-			pBuffer += 2;
-		}
-	}
-	return cBytes;
-}
-
-// for CoreAAC, minimum buffer size is 8192 bytes.
-class CoreAACHandler : public NoChangeHandler
-{
-public:
-    long BufferSize(long MaxSize)
+    cBytes = __super::PrepareOutput(pSample, pMovie, llPos, cBytes);
+    if (cBytes > 0)
     {
-        if (MaxSize < 8192)
-        {
-            MaxSize = 8192;
-        }
-        return MaxSize;
-    }
-};
-
-// for DivX, need to prepend data to the first buffer
-// from the media type
-class DivxHandler : public NoChangeHandler
-{
-public:
-    DivxHandler(const BYTE* pDSI, long cDSI);
-    long BufferSize(long MaxSize);
-    void StartStream();
-    long PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, long cBytes);
-private:
-    smart_array<BYTE> m_pPrepend;
-    long m_cBytes;
-    bool m_bFirst;
-};
-
-DivxHandler::DivxHandler(const BYTE* pDSI, long cDSI)
-: m_cBytes(0)
-{
-    // The divx codec requires the stream to start with a VOL
-    // header from the DecSpecificInfo. We search for
-    // a VOL start code in the form 0x0000012x.
-    while (cDSI > 4)
-    {
-        if ((pDSI[0] == 0) &&
-            (pDSI[1] == 0) &&
-            (pDSI[2] == 1) &&
-            ((pDSI[3] & 0xF0) == 0x20))
-        {
-            m_cBytes = cDSI;
-            m_pPrepend = new BYTE[m_cBytes];
-            CopyMemory(m_pPrepend, pDSI,  m_cBytes);
-            break;
-        }
-        pDSI++;
-        cDSI--;
-    }
-}
-
-long 
-DivxHandler::BufferSize(long MaxSize)
-{
-    // we need to prepend the media type data
-    // to the first sample, and with seeking, we don't know which
-    // that will be.
-    return MaxSize + m_cBytes; 
-}
-
-void 
-DivxHandler::StartStream()
-{
-    m_bFirst = true;
-}
-
-long 
-DivxHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, long cBytes)
-{
-    if (m_bFirst)
-    {
-        m_bFirst = false;
-
-        if (pSample->GetSize() < (cBytes + m_cBytes))
-        {
-            return 0;
-        }
-
         BYTE* pBuffer;
         pSample->GetPointer(&pBuffer);
-
-        // stuff the VOL header at the start of the stream
-        CopyMemory(pBuffer,  m_pPrepend,  m_cBytes);
-        pBuffer += m_cBytes;
-        if (pMovie->ReadAbsolute(llPos, pBuffer, cBytes) != S_OK)
+        if (cBytes%2) 
         {
-            return 0;
+            cBytes--;
         }
-        return m_cBytes + cBytes;
-            
-    } else {
-        return NoChangeHandler::PrepareOutput(pSample, pMovie, llPos, cBytes);
+        BYTE* pEnd = pBuffer + cBytes;
+        while (pBuffer < pEnd)
+        {
+            WORD w = *(WORD*)pBuffer;
+            w = Swap2Bytes(w);
+            *(WORD*)pBuffer = w;
+            pBuffer += 2;
+        }
     }
-}
-
-// for H624 byte stream, need to re-insert the 00 00 01 start codes
-
-class H264ByteStreamHandler : public NoChangeHandler
-{
-public:
-	H264ByteStreamHandler(const BYTE* pDSI, long cDSI);
-	void StartStream()
-	{
-		m_bFirst = true;
-	}
-    long BufferSize(long MaxSize)
-	{
-		// we need to add 00 00 00 01 for each NALU. There
-		// could potentially be several NALUs for each frame. Assume a max of 12.
-		if (m_cLength < 4)
-		{		
-			MaxSize += (12 * (4 - m_cLength));
-		}
-		return MaxSize + m_cPrepend;
-	}
-    long PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, long cBytes);
-
-private:
-	long m_cLength;
-	smart_array<BYTE> m_pPrepend;
-	int m_cPrepend;
-	bool m_bFirst;
-};
-
-
-H264ByteStreamHandler::H264ByteStreamHandler(const BYTE* pDSI, long cDSI)
-: m_cLength(0),
-  m_cPrepend(cDSI)
-{
-	m_pPrepend = new BYTE[m_cPrepend];
-	CopyMemory(m_pPrepend, pDSI, m_cPrepend);
-	if (cDSI > 4)
-	{
-		m_cLength = (pDSI[4] & 3) + 1;
-	}
-}
-
-int ReadMSW(const BYTE* p)
-{
-	return (p[0] << 8) + (p[1]);
-}
-
-// convert length-preceded format to start code format
-long
-H264ByteStreamHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, long cBytes)
-{
-	// check that length field is in valid range
-	if ((m_cLength == 0) || (m_cLength > 5))
-	{
-		return 0;
-	}
-
-	BYTE* pDest;
-	pSample->GetPointer(&pDest);
-	long cRemain = pSample->GetSize();
-
-	if (m_bFirst)
-	{
-		m_bFirst = false;
-
-		const BYTE* pSrc = m_pPrepend + 6;
-		int cSPS = m_pPrepend[5] & 0x1f;
-		while (cSPS--)
-		{
-			int c = ReadMSW(pSrc);
-			pSrc += 2;
-			pDest[0] = 0;
-			pDest[1] = 0;
-			pDest[2] = 0;
-			pDest[3] = 1;
-			pDest += 4;
-			cRemain -= 4;
-			
-			CopyMemory(pDest, pSrc, c);
-			pDest += c;
-			cRemain -= c;
-			pSrc += c;
-		}
-		int cPPS = *pSrc++;
-		while (cPPS--)
-		{
-			int c = ReadMSW(pSrc);
-			pSrc += 2;
-			pDest[0] = 0;
-			pDest[1] = 0;
-			pDest[2] = 0;
-			pDest[3] = 1;
-			pDest += 4;
-			cRemain -= 4;
-			
-			CopyMemory(pDest, pSrc, c);
-			pDest += c;
-			cRemain -= c;
-			pSrc += c;
-		}
-	}
-
-	while (cBytes > m_cLength)
-	{
-		// read length field
-		BYTE abLength[5];
-		if (pMovie->ReadAbsolute(llPos, abLength, m_cLength) != S_OK)
-		{
-			return 0;
-		}
-		llPos += m_cLength;
-		cBytes -= m_cLength;
-		long cThis = 0;
-		for (int i = 0; i < m_cLength; i++)
-		{
-			cThis <<= 8;
-			cThis += abLength[i];
-		}
-		if ((cThis > cBytes) || ((cThis + 4) > cRemain))
-		{
-			return 0;
-		}
-		// output start code and then cThis bytes
-		pDest[0] = 0;
-		pDest[1] = 0;
-		pDest[2] = 0;
-		pDest[3] = 1;
-		pDest += 4;
-		cRemain -= 4;
-		if (pMovie->ReadAbsolute(llPos, pDest, cThis) != S_OK)
-		{
-			return 0;
-		}
-		pDest += cThis;
-		cRemain -= cThis;
-		llPos += cThis;
-		cBytes -= cThis;
-	}
-	BYTE* pStart;
-	pSample->GetPointer(&pStart);
-	return long(pDest - pStart);		// 32-bit consumption per packet is safe
+    return cBytes;
 }
 
 // -----------------------------------------------------
 
 Mpeg4ElementaryType::Mpeg4ElementaryType()
 : ElementaryType(),
+  m_tFrame(0),
   m_cDecoderSpecific(0),
   m_depth(0)
 {
@@ -778,59 +505,35 @@ Mpeg4ElementaryType::IsVideo() const
     return (m_type > First_Video) && (m_type < First_Audio);
 }
     
-bool 
-Mpeg4ElementaryType::SetType(const CMediaType* pmt)
+void 
+Mpeg4ElementaryType::setHandler(const CMediaType* pmt, int idx)
 {
-    if (m_mtChosen != *pmt)
+    // handler based on m_type and idx
+    if (m_type == Audio_AAC)
     {
-        m_pHandler.reset();
-        m_mtChosen = *pmt;
-    
-        int idx = 0;
-        CMediaType mtCompare;
-        while (GetType(&mtCompare, idx))
+        debugPrintf(AAC_DEBUG, L"ElementaryType::SetType() mtCompare == *pmt && m_type == Audio_AAC\r\n");
+        m_pHandler.reset(new CoreAACHandler());
+    } else 
+        // bugfix pointed out by David Hunter --
+        // Use the divxhandler to prepend VOL header for divx and xvid types.
+        // index must match index values in GetType_Mpeg4V
+        // (should really compare subtypes here I think)
+        if ((m_type == Video_Mpeg4) && (idx > 0))
         {
-#if(AAC_DEBUG > 0)
-            Utils::dumpGUID(pmt->Subtype());
-            Utils::dumpGUID(mtCompare.Subtype());
-#endif
-            if (mtCompare == *pmt)
-            {
-                // handler based on m_type and idx
-                if (m_type == Audio_AAC)
-                {
-                    debugPrintf(AAC_DEBUG, L"ElementaryType::SetType() mtCompare == *pmt && m_type == Audio_AAC\r\n");
-                    m_pHandler.reset(new CoreAACHandler());
-                } else 
-					// bugfix pointed out by David Hunter --
-					// Use the divxhandler to prepend VOL header for divx and xvid types.
-					// index must match index values in GetType_Mpeg4V
-					// (should really compare subtypes here I think)
-					if ((m_type == Video_Mpeg4) && (idx > 0))
-                {
-                    m_pHandler.reset(new DivxHandler(m_pDecoderSpecific, m_cDecoderSpecific));
-				} 
-				else if ((m_type == Video_H264) && (*pmt->FormatType() != FORMAT_MPEG2Video))
-				{
-					m_pHandler.reset(new H264ByteStreamHandler(m_pDecoderSpecific, m_cDecoderSpecific));
-				}
-				else if ((m_type == Audio_WAVEFORMATEX) &&
-						(m_fourcc == FOURCC("twos"))
-						)
-				{
-					m_pHandler.reset(new BigEndianAudioHandler());
-                } else {
-                    m_pHandler.reset(new NoChangeHandler());
-                }
-                return true;
-            }
-    
-            idx++;
+            m_pHandler.reset(new DivxHandler(m_pDecoderSpecific, m_cDecoderSpecific));
+        } 
+        else if ((m_type == Video_H264) && (*pmt->FormatType() != FORMAT_MPEG2Video))
+        {
+            m_pHandler.reset(new H264ByteStreamHandler(m_pDecoderSpecific, m_cDecoderSpecific));
         }
-        return false;
-    }
-
-    return true;
+        else if ((m_type == Audio_WAVEFORMATEX) &&
+            (m_fourcc == FOURCC("twos"))
+            )
+        {
+            m_pHandler.reset(new BigEndianAudioHandler());
+        } else {
+            m_pHandler.reset(new NoChangeHandler());
+        }
 }
 
 bool 
