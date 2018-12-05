@@ -51,6 +51,11 @@ class AviMovie: public Movie
 {
 public:
     AviMovie(Atom* pRoot);
+
+private:
+    bool m_hasVideo;
+    bool m_hasAudio;
+    bool setTracks(const MovieTracks& sourceTracks);
 };
 
 

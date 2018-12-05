@@ -72,7 +72,9 @@ AviAtom::ScanChildrenAt(LONGLONG llOffset)
 // -- main movie header, contains list of tracks ---------------
 
 AviMovie::AviMovie(Atom* pRoot)
-: Movie(pRoot)
+: Movie(pRoot),
+  m_hasVideo(false),
+  m_hasAudio(false)
 {
     debugPrintf(DBG, L"AviMovie::AviMovie\r\n");
 /*    Atom* pMovie = m_pRoot->FindChild(ckidRIFF);
@@ -130,6 +132,7 @@ AviMovie::AviMovie(Atom* pRoot)
     debugPrintf(DBG, L"AviMovie::AviMovie: offsetOfOffset=%d, pMovi->Offset() = %I64d, pMovi->HeaderSize() = %u, pIndexArray->aIndex[0].dwOffset = %u\r\n", offsetOfOffset, pMovi->Offset(), pMovi->HeaderSize(), pIndexArray->aIndex[0].dwOffset);
     Atom* pStrl = NULL;
     // Read streams
+    vector<MovieTrackPtr> tracks;
     vector<MovieTrackPtr> disabledTracks;
     long idxTrack = 0;
     while((pStrl = pHdrl->FindNextChild(pStrl, ckidSTREAMLIST)))
@@ -141,11 +144,43 @@ AviMovie::AviMovie(Atom* pRoot)
         if(GetTypedPtr(AviMovieTrack, pTrack)->isDisabled())
             disabledTracks.push_back(pTrack);
         else
-            m_Tracks.push_back(pTrack);
+            tracks.push_back(pTrack);
     }
-    // Put disabled tracks to the end. So they will not be enabled by default.
-    m_Tracks.insert(m_Tracks.end(), disabledTracks.begin(), disabledTracks.end());
+
+    if(!setTracks(tracks))
+    {
+        // Try disabled tracks
+        setTracks(disabledTracks);
+    }
     debugPrintf(DBG, L"AviMovie::AviMovie: Finished\r\n");
+}
+
+bool AviMovie::setTracks(const Movie::MovieTracks& sourceTracks)
+{
+    if(m_hasVideo && m_hasAudio)
+        return true;
+
+    for(vector<MovieTrackPtr>::const_iterator it = sourceTracks.begin(); it != sourceTracks.end(); ++it)
+    {
+        if((*it)->IsVideo())
+        {
+            if(m_hasVideo)
+                continue;
+            m_Tracks.push_back(*it);
+            m_hasVideo = true;
+        }else // Not video means audio
+        {
+            if(m_hasAudio)
+                continue;
+            m_Tracks.push_back(*it);
+            m_hasAudio = true;
+        }
+
+        if(m_hasVideo && m_hasAudio)
+            break;
+    }
+
+    return m_hasVideo && m_hasAudio;
 }
 
 // ------------------------------------------------------------------

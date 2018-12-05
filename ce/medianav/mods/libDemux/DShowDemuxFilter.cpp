@@ -822,6 +822,12 @@ DemuxOutputPin::ThreadProc()
                     }
 
                     Deliver(pSample);
+                }else
+                {
+                    // Most likely media has been removed
+                    debugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: Media removal detected!\r\n");
+                    m_pParser->NotifyEvent(EC_STREAM_ERROR_STOPPED, VFW_S_STREAM_OFF, 0);
+                    break;
                 }
             }
 #pragma endregion

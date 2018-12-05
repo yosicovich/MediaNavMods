@@ -361,8 +361,9 @@ public:
     HRESULT ReadAbsolute(LONGLONG llPos, BYTE* pBuffer, long cBytes);
 
 protected:
+    typedef std::vector<MovieTrackPtr> MovieTracks;
     smart_ptr<Atom> m_pRoot;
-    vector<MovieTrackPtr> m_Tracks;
+    MovieTracks m_Tracks;
 };
 
 
