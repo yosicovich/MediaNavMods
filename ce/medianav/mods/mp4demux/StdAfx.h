@@ -46,6 +46,7 @@ inline LONGLONG SwapI64(const BYTE* pByte)
 }
 
 //#define TESTMODE
+//#define LOGTOFILE
 #include "utils.h"
 
 #ifdef TESTMODE
@@ -53,8 +54,6 @@ inline LONGLONG SwapI64(const BYTE* pByte)
 #else
 #define DBG 0
 #endif
-
-
 
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.

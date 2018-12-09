@@ -3,6 +3,7 @@
 #include <cctype>
 #include <algorithm>
 #include <cassert>
+#include <stdarg.h>
 
 
 namespace Utils {
@@ -91,7 +92,7 @@ DWORD RegistryAccessor::getInt(HKEY hRootKey, const std::wstring& subKey, const 
         return defaultValue;
     
     assert(pureData.size() == sizeof(DWORD));
-    return *(reinterpret_cast<DWORD *>(&pureData[0]));;
+    return *(reinterpret_cast<DWORD *>(&pureData[0]));
 }
 
 bool RegistryAccessor::getBool(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, bool defaultValue)
@@ -228,6 +229,34 @@ SystemWideUniqueInstance::~SystemWideUniqueInstance()
 bool SystemWideUniqueInstance::isUnique()
 {
     return isUnique_;
+}
+
+void FileLogger::writeLog(const wchar_t* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    writeLog(fmt, args);
+    va_end(args);
+}
+
+void FileLogger::writeLog(const wchar_t* fmt, va_list args)
+{
+    SYSTEMTIME lt;
+    GetLocalTime(&lt);
+
+    CLockHolder lock(m_lock);
+    if(!m_file)
+    {
+        m_file = _wfopen(m_fileName.c_str(), L"ab");
+        if(!m_file)
+            return;
+        fwprintf_s(m_file, L"\r\n\r\n--------------------- NEW LOG SESSION STARTED AT %04hu-%02hu-%02hu  %02hu:%02hu:%02hu.%03hu ---------------------\r\n", lt.wYear, lt.wMonth, lt.wDay, lt.wHour, lt.wMinute, lt.wSecond, lt.wMilliseconds);
+    }
+    
+    fwprintf_s(m_file, L"%04hu-%02hu-%02hu at %02hu:%02hu:%02hu.%03hu --- ", lt.wYear, lt.wMonth, lt.wDay, lt.wHour, lt.wMinute, lt.wSecond, lt.wMilliseconds);
+
+    vfwprintf_s(m_file, fmt, args);
+    fflush(m_file);
 }
 
 void dumpBinary(const void* buf, size_t size)

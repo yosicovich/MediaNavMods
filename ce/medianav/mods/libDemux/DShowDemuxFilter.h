@@ -122,7 +122,7 @@ public:
     DWORD ThreadProc();
 
 	BOOL GetMajorMediaType(GUID& MajorType) const;
-	HRESULT SeekBackToKeyFrame(REFERENCE_TIME& tStart) const;
+	HRESULT SeekBackToKeyFrame(REFERENCE_TIME& tStart);
 
 // IMediaSeeking
 public:
@@ -218,5 +218,5 @@ private:
     smart_ptr<Movie> m_pMovie;
 };
 
-
+#define pinDebugPrintf(lev, format, ...) debugPrintf(lev, L"PIN(%s) --- " format, Name(), __VA_ARGS__)
 

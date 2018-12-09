@@ -85,10 +85,7 @@ AviElementaryType::Parse(const AVISTREAMHEADER& streamHeader, Atom* pFormat)
             )
         {
             m_pHandler.reset(new DivxHandler(reinterpret_cast<BYTE*>(reinterpret_cast<DWORD>(*m_format) + sizeof(BITMAPINFOHEADER)),additionalSize));
-        }else if(_stricmp(handlerFourCCStr.c_str(), "avc1") == 0)
-        {
-            m_pHandler.reset(new H264ByteStreamHandler(reinterpret_cast<BYTE*>(reinterpret_cast<DWORD>(*m_format) + sizeof(BITMAPINFOHEADER)),additionalSize));
-        } 
+        }
     }else if(m_streamHeader.fccType == streamtypeAUDIO)
     {
         debugPrintf(DBG, L"AviElementaryType::Parse: auds\r\n");

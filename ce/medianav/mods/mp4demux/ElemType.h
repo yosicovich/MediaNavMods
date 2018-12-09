@@ -104,6 +104,7 @@ public:
 	}
 private:
     bool ParseDescriptor(Atom* patmESD);
+    bool GetType_AVCC(CMediaType* pmt) const;
     bool GetType_H264(CMediaType* pmt) const;
 	bool GetType_H264ByteStream(CMediaType* pmt) const;
     bool GetType_Mpeg4V(CMediaType* pmt, int n) const;
@@ -130,13 +131,6 @@ private:
 };
 
 // --- directshow type info
-
-// de-facto standard for H.264 elementary stream : FOURCC('AVC1')
-class DECLSPEC_UUID("31435641-0000-0010-8000-00AA00389B71") MEDIASUBTYPE_H264_MP4_Stream;
-
-// Broadcom/Cyberlink Byte-Stream H264 subtype
-// CLSID_H264
-class DECLSPEC_UUID("8D2D71CB-243F-45E3-B2D8-5FD7967EC09B") CLSID_H264;
 
 class DECLSPEC_UUID("000000FF-0000-0010-8000-00AA00389B71") MEDIASUBTYPE_AAC;
 class DECLSPEC_UUID("4134504D-0000-0010-8000-00AA00389B71") MEDIASUBTYPE_MP4A;

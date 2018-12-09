@@ -113,7 +113,7 @@ AviKeyMap::AviKeyMap(const smart_ptr<SampleSizes>& sampleSizes)
 long 
 AviKeyMap::SyncFor(long nSample) const
 {
-    for(;nSample >= 0; --nSample)
+    for(;nSample > 0; --nSample)
     {
         if(m_sampleSizes->isKeyFrame(nSample))
             return nSample;

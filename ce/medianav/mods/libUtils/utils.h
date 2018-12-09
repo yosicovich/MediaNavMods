@@ -42,6 +42,80 @@ namespace Utils
         bool isUnique_;
     };
 
+    class CLock
+    {
+    public:
+        CLock() 
+        {
+            InitializeCriticalSection(&m_CritSec);
+        };
+
+        ~CLock() 
+        {
+            DeleteCriticalSection(&m_CritSec);
+        };
+
+        void Lock() 
+        {
+            EnterCriticalSection(&m_CritSec);
+        };
+
+        void Unlock() 
+        {
+            LeaveCriticalSection(&m_CritSec);
+        };
+    private:
+        CLock(const CLock &refLock);
+        CLock &operator=(const CLock &refLock);
+
+        CRITICAL_SECTION m_CritSec;
+    };
+
+    class CLockHolder
+    {
+    public:
+        CLockHolder(CLock& lock)
+            :m_lock(lock)
+        {
+            m_lock.Lock();
+        };
+
+        ~CLockHolder() 
+        {
+            m_lock.Unlock();
+        };
+
+    private:
+        CLockHolder(const CLockHolder &refLockHolder);
+        CLockHolder &operator=(const CLockHolder &refLockHolder);
+
+        CLock& m_lock;
+    };
+
+    class FileLogger
+    {
+    public:
+        FileLogger(const std::wstring& fileName)
+            :m_file(NULL),
+             m_fileName(fileName)
+        {
+        }
+
+        ~FileLogger()
+        {
+            if(m_file)
+                fclose(m_file);
+        }
+
+        void writeLog(const wchar_t* fmt, ...);
+        void writeLog(const wchar_t* fmt, va_list args);
+
+    private:
+        CLock m_lock;
+        std::wstring m_fileName;
+        FILE* m_file;
+    };
+
     DWORD getCurrentProcessImageBase();
     DWORD getCurrentProcessCodeBase();
     void toUpper(std::wstring& str);

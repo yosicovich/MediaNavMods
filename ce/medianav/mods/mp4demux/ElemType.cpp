@@ -512,7 +512,7 @@ Mpeg4ElementaryType::setHandler(const CMediaType* pmt, int idx)
     // handler based on m_type and idx
     if (m_type == Audio_AAC)
     {
-        debugPrintf(AAC_DEBUG, L"ElementaryType::SetType() mtCompare == *pmt && m_type == Audio_AAC\r\n");
+        debugPrintf(AAC_DEBUG, L"Mpeg4ElementaryType::setHandler() m_type == Audio_AAC\r\n");
         m_pHandler.reset(new CoreAACHandler());
     } else 
         // bugfix pointed out by David Hunter --
@@ -523,8 +523,9 @@ Mpeg4ElementaryType::setHandler(const CMediaType* pmt, int idx)
         {
             m_pHandler.reset(new DivxHandler(m_pDecoderSpecific, m_cDecoderSpecific));
         } 
-        else if ((m_type == Video_H264) && (*pmt->FormatType() != FORMAT_MPEG2Video))
+        else if ((m_type == Video_H264) && (idx > 0) && (*pmt->FormatType() != FORMAT_MPEG2Video))
         {
+            debugPrintf(DBG, L"Mpeg4ElementaryType::setHandler() choose H264ByteStreamHandler\r\n");
             m_pHandler.reset(new H264ByteStreamHandler(m_pDecoderSpecific, m_cDecoderSpecific));
         }
         else if ((m_type == Audio_WAVEFORMATEX) &&
@@ -533,6 +534,7 @@ Mpeg4ElementaryType::setHandler(const CMediaType* pmt, int idx)
         {
             m_pHandler.reset(new BigEndianAudioHandler());
         } else {
+            debugPrintf(DBG, L"Mpeg4ElementaryType::setHandler() choose NoChangeHandler\r\n");
             m_pHandler.reset(new NoChangeHandler());
         }
 }
@@ -545,13 +547,15 @@ Mpeg4ElementaryType::GetType(CMediaType* pmt, int nType) const
     switch (m_type)
     {
     case Video_H264:
-        if (nType == 1)
+        if(nType == 0)
         {
-			return GetType_H264ByteStream(pmt);
-        }
-		else if (nType == 0)
+            return GetType_AVCC(pmt);
+        }else if (nType == 1)
+        {
+            return GetType_H264(pmt);
+        }else if (nType == 2)
 		{
-			return GetType_H264(pmt);
+            return GetType_H264ByteStream(pmt);
 		}
         break;
 
@@ -618,12 +622,13 @@ Mpeg4ElementaryType::GetType(CMediaType* pmt, int nType) const
     return false;
 }
 
+FOURCCMap AVC1(FOURCC("1CVA"));
 bool
 Mpeg4ElementaryType::GetType_H264(CMediaType* pmt) const
 {
     pmt->InitMediaType();
     pmt->SetType(&MEDIATYPE_Video);
-    pmt->SetSubtype(&__uuidof(MEDIASUBTYPE_H264_MP4_Stream));
+    pmt->SetSubtype(&AVC1);
     pmt->SetFormatType(&FORMAT_MPEG2Video);
 
 	// following the Nero/Elecard standard, we use an mpeg2videoinfo block
@@ -695,10 +700,10 @@ Mpeg4ElementaryType::GetType_H264ByteStream(CMediaType* pmt) const
 {
     pmt->InitMediaType();
     pmt->SetType(&MEDIATYPE_Video);
-    pmt->SetSubtype(&H264);  //__uuidof(CLSID_H264));
+    pmt->SetSubtype(&H264);
 
 	pmt->SetFormatType(&FORMAT_VideoInfo2);
-	VIDEOINFOHEADER2* pvi2 = (VIDEOINFOHEADER2*)pmt->AllocFormatBuffer(sizeof(VIDEOINFOHEADER2));
+	VIDEOINFOHEADER2* pvi2 = (VIDEOINFOHEADER2*)pmt->AllocFormatBuffer(sizeof(VIDEOINFOHEADER2) + m_cDecoderSpecific);
 	ZeroMemory(pvi2, sizeof(VIDEOINFOHEADER2));
 	pvi2->bmiHeader.biWidth = m_cx;
 	pvi2->bmiHeader.biHeight = m_cy;
@@ -711,9 +716,40 @@ Mpeg4ElementaryType::GetType_H264ByteStream(CMediaType* pmt) const
 	pvi2->dwPictAspectRatioX = m_cx;
 	pvi2->dwPictAspectRatioY = m_cy;
 		
-	// interlace?
-	// aspect ratio?
+	if(m_cDecoderSpecific)
+    {
+        CopyMemory(reinterpret_cast<void*>(reinterpret_cast<DWORD>(pvi2) + sizeof(VIDEOINFOHEADER2)), m_pDecoderSpecific, m_cDecoderSpecific);
+    }
 	return true;
+}
+
+bool 
+Mpeg4ElementaryType::GetType_AVCC(CMediaType* pmt) const
+{
+    pmt->InitMediaType();
+    pmt->SetType(&MEDIATYPE_Video);
+    pmt->SetSubtype(&AVC1);
+
+    pmt->SetFormatType(&FORMAT_VideoInfo2);
+    VIDEOINFOHEADER2* pvi2 = (VIDEOINFOHEADER2*)pmt->AllocFormatBuffer(sizeof(VIDEOINFOHEADER2) + m_cDecoderSpecific);
+    ZeroMemory(pvi2, sizeof(VIDEOINFOHEADER2));
+    pvi2->bmiHeader.biSize = sizeof(BITMAPINFOHEADER) + m_cDecoderSpecific;
+    pvi2->bmiHeader.biWidth = m_cx;
+    pvi2->bmiHeader.biHeight = m_cy;
+    pvi2->bmiHeader.biSizeImage = DIBSIZE(pvi2->bmiHeader);
+    pvi2->bmiHeader.biCompression = FOURCC("1cva");
+    pvi2->AvgTimePerFrame = m_tFrame;
+    SetRect(&pvi2->rcSource, 0, 0, m_cx, m_cy);
+    pvi2->rcTarget = pvi2->rcSource;
+
+    pvi2->dwPictAspectRatioX = m_cx;
+    pvi2->dwPictAspectRatioY = m_cy;
+
+    if(m_cDecoderSpecific)
+    {
+        CopyMemory(reinterpret_cast<void*>(reinterpret_cast<DWORD>(pvi2) + sizeof(VIDEOINFOHEADER2)), m_pDecoderSpecific, m_cDecoderSpecific);
+    }
+    return true;
 }
 
 bool

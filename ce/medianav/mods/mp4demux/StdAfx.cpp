@@ -9,3 +9,15 @@
 #include <ObjBase.h>
 #include <initguid.h>
 #include <audshow.h>
+#include <stdarg.h>
+
+#ifdef LOGTOFILE
+Utils::FileLogger g_fileLogger(L"\\MD\\mp4demux.log");
+void WINAPIV NKDbgPrintfW(LPCWSTR lpszFmt, ...)
+{
+    va_list args;
+    va_start(args, lpszFmt);
+    g_fileLogger.writeLog(lpszFmt, args);
+    va_end(args);
+}
+#endif

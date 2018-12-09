@@ -387,7 +387,7 @@ DemuxInputPin::DemuxInputPin(DShowDemultiplexor* pFilter, CCritSec* pLock, HRESU
 : m_pParser(pFilter), 
   CBasePin(NAME("DemuxInputPin"), pFilter, pLock, phr, L"Input", PINDIR_INPUT)
 {
-    debugPrintf(DEMUX_DBG, L"DemuxInputPin::DemuxInputPin()\r\n");
+    pinDebugPrintf(DEMUX_DBG, L"DemuxInputPin::DemuxInputPin()\r\n");
 }
 
 // base pin overrides
@@ -482,7 +482,7 @@ DemuxOutputPin::DemuxOutputPin(MovieTrack* pTrack, DShowDemultiplexor* pDemux, C
   m_tLate(0),
   CBaseOutputPin(NAME("DemuxOutputPin"), pDemux, pLock, phr, pName)
 {
-    debugPrintf(DEMUX_DBG, L"DemuxOutputPin::DemuxOutputPin()\r\n");
+    pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::DemuxOutputPin()\r\n");
 }
 	
 STDMETHODIMP 
@@ -500,7 +500,7 @@ DemuxOutputPin::NonDelegatingQueryInterface(REFIID iid, void** ppv)
 HRESULT 
 DemuxOutputPin::CheckMediaType(const CMediaType *pmt)
 {
-    debugPrintf(DEMUX_DBG, L"DemuxOutputPin::CheckMediaType: enter\r\n");
+    pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::CheckMediaType: enter\r\n");
     CMediaType mtTrack;
     int idx = 0;
     while(m_pTrack->GetType(&mtTrack, idx++))
@@ -508,28 +508,32 @@ DemuxOutputPin::CheckMediaType(const CMediaType *pmt)
         if (*pmt == mtTrack)
         {
             // precise match to the type in the file
+            pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::CheckMediaType: Pin=%s MATCH idx = %d\r\n", Name(), --idx);
             return S_OK;
         }
     }
     // does not match any alternative
+    pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::CheckMediaType: Pin=%s NO MATCH\r\n", Name());
     return S_FALSE;
 }
 
 HRESULT 
 DemuxOutputPin::GetMediaType(int iPosition, CMediaType *pmt)
 {
-    debugPrintf(DEMUX_DBG, L"DemuxOutputPin::GetMediaType: enter\r\n");
+    pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::GetMediaType: Pin=%s iPosition = %d\r\n", Name(), iPosition);
     if (m_pTrack->GetType(pmt, iPosition))
     {
+        pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::GetMediaType: Pin=%s success\r\n", Name(), iPosition);
         return S_OK;
     } 
+    pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::GetMediaType: Pin=%s no more items\r\n", Name(), iPosition);
     return VFW_S_NO_MORE_ITEMS;
 }
     
 HRESULT 
 DemuxOutputPin::SetMediaType(const CMediaType* pmt)
 {
-    debugPrintf(DEMUX_DBG, L"DemuxOutputPin::SetMediaType: enter\r\n");
+    pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::SetMediaType: enter\r\n");
     HRESULT hr = CBaseOutputPin::SetMediaType(pmt);
     if (SUCCEEDED(hr))
     {
@@ -564,9 +568,9 @@ DemuxOutputPin::Active()
     HRESULT hr = CBaseOutputPin::Active();
     if (SUCCEEDED(hr) && IsConnected())
     {
-        debugPrintf(DEMUX_DBG, L"DemuxOutputPin::Active: StartThread()\r\n");
+        pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::Active: StartThread()\r\n");
         StartThread();
-        debugPrintf(DEMUX_DBG, L"DemuxOutputPin::Active: Started()\r\n");
+        pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::Active: Started()\r\n");
     }
     return hr;
 }
@@ -575,9 +579,9 @@ HRESULT
 DemuxOutputPin::Inactive()
 {
     HRESULT hr = CBaseOutputPin::Inactive();
-    debugPrintf(DEMUX_DBG, L"DemuxOutputPin::Inactive: StopThread()\r\n");
+    pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::Inactive: StopThread()\r\n");
     StopThread();
-    debugPrintf(DEMUX_DBG, L"DemuxOutputPin::Inactive: Stopped()\r\n");
+    pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::Inactive: Stopped()\r\n");
     return hr;
 }
 
@@ -607,7 +611,7 @@ DemuxOutputPin::ThreadProc()
         volatile DOUBLE dRate;
         m_pParser->GetSeekingParams(&tStart, &tStop, (DOUBLE*) &dRate);
 
-        debugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: DeliverNewSegment()\r\n");
+        pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: DeliverNewSegment()\r\n");
         DeliverNewSegment(tStart, tStop, dRate);
 
         m_tLate = 0;
@@ -617,7 +621,7 @@ DemuxOutputPin::ThreadProc()
         size_t segment;
         if (!m_pTrack->CheckInSegment(tStart, true, &segment, &nSample))
         {
-            debugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: DeliverEndOfStream() case 1\r\n");
+            pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: DeliverEndOfStream() case 1\r\n");
             DeliverEndOfStream();
             return 0;
         }
@@ -625,7 +629,7 @@ DemuxOutputPin::ThreadProc()
         {
             REFERENCE_TIME nSampleTime = m_pTrack->TimesIndex()->SampleToCTS(nSample);
             long nSample2 = m_pTrack->TimesIndex()->CTSToSample(nSampleTime);
-            debugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: nSample=%u,  nSampleTime=%I64d, tStart=%I64d, nSample2=%u\r\n", nSample, nSampleTime, tStart, nSample2);
+            pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: nSample=%u,  nSampleTime=%I64d, tStart=%I64d, nSample2=%u\r\n", nSample, nSampleTime, tStart, nSample2);
         }
 
         if (tStop > m_pTrack->Duration())   
@@ -671,7 +675,7 @@ DemuxOutputPin::ThreadProc()
 
             if (tNext >= tStop)
             {
-                debugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: DeliverEndOfStream() case 2\r\n");
+                pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: DeliverEndOfStream() case 2\r\n");
                 DeliverEndOfStream();
                 break;
             }
@@ -789,21 +793,21 @@ DemuxOutputPin::ThreadProc()
                     pSample->SetActualDataLength(cSample);
                     if (m_pTrack->GetKeyMap()->SyncFor(nSample) == nSample)
                     {
-                        debugPrintf(DEMUX_TRACE, L"DemuxOutputPin::ThreadProc: pSample->SetSyncPoint(true)\r\n");
+                        pinDebugPrintf(DEMUX_TRACE, L"DemuxOutputPin::ThreadProc: %S pSample->SetSyncPoint(true), nSample=%u\r\n", m_pTrack->Name(), nSample);
                         pSample->SetSyncPoint(true);
                     }
 
                     {
                         REFERENCE_TIME& nMediaStartTime = tNext;
                         REFERENCE_TIME nMediaStopTime = nMediaStartTime + tDur;
-                        debugPrintf(DEMUX_TRACE, L"DemuxOutputPin::ThreadProc: pSample->SetMediaTime(%I64d, %I64d)\r\n", nMediaStartTime, nMediaStopTime);
+                        pinDebugPrintf(DEMUX_TRACE, L"DemuxOutputPin::ThreadProc: pSample->SetMediaTime(%I64d, %I64d)\r\n", nMediaStartTime, nMediaStopTime);
                         pSample->SetMediaTime(&nMediaStartTime, &nMediaStopTime);
                     }
 
                     REFERENCE_TIME tSampleStart = tNext - tStart;
                     if (tSampleStart < 0)
                     {
-                        debugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: pSample->SetPreroll(true) tStart=%I64d\r\n", tStart);
+                        pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: pSample->SetPreroll(true) tStart=%I64d\r\n", tStart);
                         pSample->SetPreroll(true);
                     }
                     REFERENCE_TIME tSampleEnd = tSampleStart + tDur;
@@ -813,10 +817,10 @@ DemuxOutputPin::ThreadProc()
                     tSampleEnd = REFERENCE_TIME(tSampleEnd / dRate);
 
                     pSample->SetTime(&tSampleStart, &tSampleEnd);
-                    debugPrintf(DEMUX_TRACE, L"DemuxOutputPin::ThreadProc: pSample->SetTime(%I64d, %I64d)\r\n", tSampleStart, tSampleEnd);
+                    pinDebugPrintf(DEMUX_TRACE, L"DemuxOutputPin::ThreadProc: pSample->SetTime(%I64d, %I64d)\r\n", tSampleStart, tSampleEnd);
                     if (bFirst)
                     {
-                        debugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: pSample->SetDiscontinuity(true)\r\n");
+                        pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: pSample->SetDiscontinuity(true)\r\n");
                         pSample->SetDiscontinuity(true);
                         bFirst = false;
                     }
@@ -825,7 +829,7 @@ DemuxOutputPin::ThreadProc()
                 }else
                 {
                     // Most likely media has been removed
-                    debugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: Media removal detected!\r\n");
+                    pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: Media removal detected!\r\n");
                     m_pParser->NotifyEvent(EC_STREAM_ERROR_STOPPED, VFW_S_STREAM_OFF, 0);
                     break;
                 }
@@ -835,7 +839,7 @@ DemuxOutputPin::ThreadProc()
             nSample = lastSample;
             if (!m_pTrack->NextBySegment(&nSample, &segment))
             {
-                debugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: DeliverEndOfStream() case 3 nSample = %d, segment = %d\r\n", nSample, segment);
+                pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: DeliverEndOfStream() case 3 nSample = %d, segment = %d\r\n", nSample, segment);
                 DeliverEndOfStream();
                 break;
             }
@@ -856,7 +860,7 @@ BOOL DemuxOutputPin::GetMajorMediaType(GUID& MajorType) const
 	return TRUE;
 }
 
-HRESULT DemuxOutputPin::SeekBackToKeyFrame(REFERENCE_TIME& tStart) const
+HRESULT DemuxOutputPin::SeekBackToKeyFrame(REFERENCE_TIME& tStart)
 {
 	// NOTE: This basically duplicates initial seek logic in ThreadProc above
 	if(!m_pTrack)
@@ -867,11 +871,11 @@ HRESULT DemuxOutputPin::SeekBackToKeyFrame(REFERENCE_TIME& tStart) const
 		return S_FALSE;
 	REFERENCE_TIME tNext, tDur;
 	m_pTrack->GetTimeBySegment(nSample, segment, &tNext, &tDur);
-    debugPrintf(DEMUX_DBG, L"DemuxOutputPin::SeekBackToKeyFrame: tStart=%I64d, tNext=%I64d\r\n", tStart, tNext);
+    pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::SeekBackToKeyFrame: tStart=%I64d, tNext=%I64d\r\n", tStart, tNext);
 	if(tNext == tStart)
 		return S_FALSE;
 	tStart = tNext;
-    debugPrintf(DEMUX_DBG, L"DemuxOutputPin::SeekBackToKeyFrame: EXIT success\r\n");
+    pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::SeekBackToKeyFrame: EXIT success\r\n");
 	return S_OK;
 }
 
@@ -1047,11 +1051,11 @@ DemuxOutputPin::SetPositions(
     // not the controlling pin
     if (!m_pParser->SelectSeekingPin(this))
     {
-        debugPrintf(DEMUX_DBG, L"DemuxOutputPin::SetPositions EXIT not control pin\r\n");
+        pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::SetPositions EXIT not control pin\r\n");
         return S_OK;
     }
 
-    debugPrintf(DEMUX_DBG, L"DemuxOutputPin::SetPositions we are the control pin(%s) - seeking\r\n", Name());
+    pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::SetPositions we are the control pin(%s) - seeking\r\n", Name());
     // fetch current properties
     REFERENCE_TIME tStart, tStop;
     double dRate;

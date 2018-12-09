@@ -21,6 +21,7 @@
 			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\mediasdk.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -42,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\libUtils"
+				AdditionalIncludeDirectories="..\libUtils;$(MEDIA_SDK)\include"
 				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;_DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;DEBUG;_LIB;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
@@ -99,6 +100,7 @@
 			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\mediasdk.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -121,7 +123,7 @@
 				ExecutionBucket="7"
 				Optimization="2"
 				FavorSizeOrSpeed="2"
-				AdditionalIncludeDirectories="..\libUtils"
+				AdditionalIncludeDirectories="..\libUtils;$(MEDIA_SDK)\include"
 				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_LIB;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
 				RuntimeLibrary="0"
 				TreatWChar_tAsBuiltInType="false"
@@ -190,6 +192,14 @@
 				RelativePath=".\DShowDemuxFilter.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\handlers.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\StdAfx.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -202,10 +212,6 @@
 			</File>
 			<File
 				RelativePath=".\DShowDemuxFilter.h"
-				>
-			</File>
-			<File
-				RelativePath=".\handlers.cpp"
 				>
 			</File>
 			<File

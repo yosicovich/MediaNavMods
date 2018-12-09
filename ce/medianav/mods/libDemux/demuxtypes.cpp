@@ -255,6 +255,7 @@ bool ElementaryType::SetType(const CMediaType* pmt)
         {
             if (mtCompare == *pmt)
             {
+                debugPrintf(DEMUX_DBG, L"ElementaryType::SetType: mtCompare == *pmt, idx = %d\r\n", idx);
                 m_mtChosen = *pmt;
                 setHandler(pmt, idx);
                 return true;
