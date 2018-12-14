@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bouton", "bouton.vcproj", "{C1E55B75-E3FA-4BB7-8E56-DE1E8C053DAD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|DbAu13xx (MIPSII) = Debug|DbAu13xx (MIPSII)
+		Debug|SDK_md (MIPSII) = Debug|SDK_md (MIPSII)
+		Release|DbAu13xx (MIPSII) = Release|DbAu13xx (MIPSII)
+		Release|SDK_md (MIPSII) = Release|SDK_md (MIPSII)
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C1E55B75-E3FA-4BB7-8E56-DE1E8C053DAD}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{C1E55B75-E3FA-4BB7-8E56-DE1E8C053DAD}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{C1E55B75-E3FA-4BB7-8E56-DE1E8C053DAD}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{C1E55B75-E3FA-4BB7-8E56-DE1E8C053DAD}.Debug|SDK_md (MIPSII).ActiveCfg = Debug|SDK_md (MIPSII)
+		{C1E55B75-E3FA-4BB7-8E56-DE1E8C053DAD}.Debug|SDK_md (MIPSII).Build.0 = Debug|SDK_md (MIPSII)
+		{C1E55B75-E3FA-4BB7-8E56-DE1E8C053DAD}.Debug|SDK_md (MIPSII).Deploy.0 = Debug|SDK_md (MIPSII)
+		{C1E55B75-E3FA-4BB7-8E56-DE1E8C053DAD}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{C1E55B75-E3FA-4BB7-8E56-DE1E8C053DAD}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{C1E55B75-E3FA-4BB7-8E56-DE1E8C053DAD}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{C1E55B75-E3FA-4BB7-8E56-DE1E8C053DAD}.Release|SDK_md (MIPSII).ActiveCfg = Release|SDK_md (MIPSII)
+		{C1E55B75-E3FA-4BB7-8E56-DE1E8C053DAD}.Release|SDK_md (MIPSII).Build.0 = Release|SDK_md (MIPSII)
+		{C1E55B75-E3FA-4BB7-8E56-DE1E8C053DAD}.Release|SDK_md (MIPSII).Deploy.0 = Release|SDK_md (MIPSII)
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
