@@ -4,7 +4,6 @@
 #include "stdafx.h"
 #include "bouton.h"
 #include "simpleini.h"
-//#include "libpng.h"
 #include <iostream> 
 #include <fstream>
 #include <sstream>
@@ -13,7 +12,7 @@
 #include <time.h> 
 #include <wingdi.h>
 #include <windowsx.h>
-#include <vector>
+#include <set>
 #include <imaging.h>
 #include <imgguids.h>
 
@@ -64,12 +63,79 @@ TCHAR* ponlyonapp = NULL;
 bool bShowWindowClass = false;
 bool bShowWindowID = false;
 
+static const wchar_t cFilterDelimiter = L'|';
+static const wchar_t cNotMatchPrefix = L'!';
 static const std::wstring cAnyMatchPattern = L"@";
 
-typedef std::vector<std::wstring> TClassFilter;
+template<typename T> class TFilter
+{
+public:
+    bool check(const T& checkItem)
+    {
+        // Positive match
+        if(!m_matchSet.empty() && m_matchSet.find(checkItem) == m_matchSet.end())
+            return false;
+        // Negative match
+        return m_notMatchSet.empty() || m_notMatchSet.find(checkItem) == m_notMatchSet.end();
+    }
+
+    template<typename f> void populate(const std::wstring& src, f valueFunc, const wchar_t delimiter = cFilterDelimiter, const wchar_t notMatchPrefix = cNotMatchPrefix, const std::wstring& anyMatchPattern = cAnyMatchPattern)
+    {
+        std::wistringstream strStream(src);
+        std::wstring str;    
+        while (getline(strStream, str, delimiter))
+        {
+            if(str == anyMatchPattern)
+            {
+                clear();
+                return;
+            }
+
+            if(str.empty())
+                continue;
+
+            bool notMatchFlag = false;
+            if(str.at(0) == notMatchPrefix)
+            {
+                notMatchFlag = true;
+                str = str.substr(1);
+            }
+
+            if(str.empty())
+                continue;
+            T val;
+            if(!valueFunc(str, val))
+                continue;
+
+            addItem(val, notMatchFlag);
+        }
+    }
+
+    void addItem(const T& item, bool notMatch = false)
+    {
+        if(!notMatch)
+        {
+            m_matchSet.insert(item);
+        }else
+        {
+            m_notMatchSet.insert(item);
+        }
+    }
+
+    void clear()
+    {
+        m_matchSet.clear();
+        m_notMatchSet.clear();
+    }
+private:
+    std::set<T> m_matchSet;
+    std::set<T> m_notMatchSet;
+};
+
+typedef TFilter<std::wstring> TClassFilter;
 TClassFilter gClassFilter;
 
-typedef std::vector<unsigned short> TWindowIDFilter;
+typedef TFilter<unsigned short> TWindowIDFilter;
 TWindowIDFilter gWindowIDFilter;
 
 unsigned int gStatePollInterval = DEFAULT_POLL_INTERVAL_MS;
@@ -210,6 +276,21 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     return TRUE;
 }
 
+bool ClassFilterValueFunc(const std::wstring& str, std::wstring& valueStr)
+{
+    valueStr = str;
+    return true;
+}
+
+bool WindowIDFilterValueFunc(const std::wstring& str, unsigned short& val)
+{
+    unsigned int windowID;
+    if(swscanf_s(str.c_str(), L"%X", &windowID) == 0)
+        return false;
+    val = static_cast<unsigned short>(windowID);
+    return true;
+}
+
 int readConfig(HWND hWnd)
 {
     // get ini path
@@ -230,35 +311,13 @@ int readConfig(HWND hWnd)
     // Class filter    
     {
         std::wstring classFilter = ini.GetValue(L"Visibility", L"ClassFilter", cAnyMatchPattern.c_str());
-        std::wistringstream strStream(classFilter);
-        std::wstring str;    
-        while (getline(strStream, str, L'|'))
-        {
-            if(str == cAnyMatchPattern)
-            {
-                gClassFilter.clear();
-                break;
-            }
-            gClassFilter.push_back(str);
-        }
+        gClassFilter.populate(classFilter, ClassFilterValueFunc);
     }
 
     // WindowProc filter    
     {
-        std::wstring classFilter = ini.GetValue(L"Visibility", L"WindowIDFilter", cAnyMatchPattern.c_str());
-        std::wistringstream strStream(classFilter);
-        std::wstring str;    
-        while (getline(strStream, str, L'|'))
-        {
-            if(str == cAnyMatchPattern)
-            {
-                gWindowIDFilter.clear();
-                break;
-            }
-            unsigned int windowID;
-            if(swscanf_s(str.c_str(), L"%X", &windowID) != 0)
-                gWindowIDFilter.push_back(static_cast<unsigned short>(windowID));
-        }
+        std::wstring windowIDFilter = ini.GetValue(L"Visibility", L"WindowIDFilter", cAnyMatchPattern.c_str());
+        gWindowIDFilter.populate(windowIDFilter, WindowIDFilterValueFunc);
     }
 
     // Font color
@@ -361,17 +420,7 @@ void checkShowState()
         }
     }
 
-	bool fenetreok = gClassFilter.empty() && gWindowIDFilter.empty();
-
-    if(!fenetreok && !gWindowIDFilter.empty())
-    {
-        fenetreok = std::find(gWindowIDFilter.begin(), gWindowIDFilter.end(), windowID) != gWindowIDFilter.end();
-    }
-
-    if(!fenetreok && !gClassFilter.empty())
-    {
-        fenetreok = std::find(gClassFilter.begin(), gClassFilter.end(), windowClassName) != gClassFilter.end();
-    }
+	bool fenetreok = gClassFilter.check(windowClassName) && gWindowIDFilter.check(windowID);
 
 	if (fenetreok){
 
@@ -480,18 +529,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       // Painting
     case WM_PAINT:
         {
+            HDC hdc;
+            PAINTSTRUCT ps;
+            hdc = BeginPaint(hWnd, &ps);
             if(!gButtonText.empty())
             {
-                HDC hdc;
-                PAINTSTRUCT ps;
-                hdc = BeginPaint(hWnd, &ps);
                 if(gTextFont != NULL)
                     SelectObject(hdc, gTextFont);
                 SetTextColor(hdc, drawPressedState() ? RGB(~cTextColorR, ~cTextColorG, ~cTextColorB): RGB(cTextColorR, cTextColorG, cTextColorB));
                 RECT ClientRect;                // Client window size
                 SIZE Size;                      // Size of text output
                 GetClientRect(hWnd,&ClientRect);
-                // Put the times in the middle at the bottom of the window
 
                 SetBkMode(hdc, TRANSPARENT);
                 GetTextExtentPoint32(hdc,gButtonText.c_str(), gButtonText.size(),&Size);
@@ -506,8 +554,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         NULL, gButtonText.c_str(), gButtonText.size(), NULL);
                 }
 
-                EndPaint(hWnd, &ps);
             }
+            EndPaint(hWnd, &ps);
             break;
         }
 
