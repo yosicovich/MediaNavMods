@@ -62,6 +62,7 @@ HWND pWnd = GetForegroundWindow();
 TCHAR* ponlyonapp = NULL;
 bool bShowWindowClass = false;
 bool bShowWindowID = false;
+bool bVisible = false;
 
 static const wchar_t cFilterDelimiter = L'|';
 static const wchar_t cNotMatchPrefix = L'!';
@@ -243,7 +244,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     	return FALSE;
     }
 
-    hWnd = CreateWindow(_T("bouton"), _T("The Bouton"), WS_VISIBLE,
+    hWnd = CreateWindowEx(WS_EX_NOANIMATION | WS_EX_TOPMOST, _T("bouton"), _T("The Bouton"),WS_POPUP | WS_CLIPCHILDREN,
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
 
     if (!hWnd)
@@ -264,15 +265,12 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
     SetRect(&rBitmapLBtn, 0, 0, bmWidth, bmHeight);
 
-    SetWindowPos(hWnd, HWND_TOPMOST, 
-	rX, rY, bmWidth, bmHeight, 0);
+    SetWindowPos(hWnd, 0, rX, rY, bmWidth, bmHeight, SWP_NOZORDER);
 
 
-	//SetForegroundWindow((HWND)(((ULONG) hWnd) | 0x01));
     ShowWindow(hWnd, SW_HIDE);
 	
 	gWnd = hWnd;
-    //UpdateWindow(hWnd);
     return TRUE;
 }
 
@@ -422,13 +420,17 @@ void checkShowState()
 
 	bool fenetreok = gClassFilter.check(windowClassName) && gWindowIDFilter.check(windowID);
 
-	if (fenetreok){
+	if(fenetreok != bVisible)
+    {
+        bVisible = fenetreok;
+        if (fenetreok){
 
-        ShowWindow(gWnd, SW_SHOWNA);
-		BringWindowToTop(gWnd);
-	} else {
-		ShowWindow(gWnd, SW_HIDE);
-	}
+            ShowWindow(gWnd, SW_SHOWNOACTIVATE);
+        } else {
+            ShowWindow(gWnd, SW_HIDE);
+        }
+
+    }
 }
 static inline bool drawPressedState()
 {
