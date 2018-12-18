@@ -306,5 +306,29 @@ std::wstring convertToWString(const std::string& str)
     return std::wstring(reinterpret_cast<wchar_t *>(&resultWStr[0]), resultWStr.size());
 }
 
+bool checkRectCompleteCovered(HWND hWnd, RECT rect, const std::set<HWND>& skipWindows/* = std::set<HWND>()*/)
+{
+    HRGN selfRgn = CreateRectRgnIndirect(&rect);
+    HWND currentWnd = GetWindow(NULL, GW_HWNDFIRST);
+    int rgnType = SIMPLEREGION;
+    while (currentWnd && currentWnd !=hWnd && rgnType != NULLREGION)
+    {
+        if(IsWindowVisible(currentWnd))
+        {
+            if(GetWindowRect(currentWnd, &rect) == FALSE)
+                break;
+            HRGN tempRgn = CreateRectRgnIndirect(&rect);// currently examined window region
+            rgnType = CombineRgn(selfRgn, selfRgn, tempRgn, RGN_DIFF); // diff intersect
+            DeleteObject( tempRgn );
+        }
+        if (rgnType != NULLREGION) // there's a remaining portion
+            currentWnd = GetWindow(currentWnd, GW_HWNDNEXT);
+
+        while(currentWnd && skipWindows.find(currentWnd) != skipWindows.end())
+            currentWnd = GetWindow(currentWnd, GW_HWNDNEXT);
+    }
+    DeleteObject(selfRgn);
+    return rgnType == NULLREGION;
+}
 }; //namespace Utils
 

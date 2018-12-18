@@ -2,6 +2,7 @@
 #include "stdafx.h"
 #include <string>
 #include <vector>
+#include <set>
 
 #ifdef TESTMODE
 #define logPrintf NKDbgPrintfW
@@ -124,6 +125,7 @@ namespace Utils
     void dumpGUID(const GUID* guid);
 
     std::wstring convertToWString(const std::string& str);
-    
+
+    bool checkRectCompleteCovered(HWND hWnd, RECT rect, const std::set<HWND>& skipWindows = std::set<HWND>());
 };
 
