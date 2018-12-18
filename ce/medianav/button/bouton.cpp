@@ -53,7 +53,7 @@ ATOM			MyRegisterClass(HINSTANCE, LPTSTR);
 BOOL			InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 VOID CALLBACK TimerProc(  HWND     , UINT     ,  UINT_PTR ,  DWORD    );
-void printDate(HWND hWnd);
+bool printDate(HWND hWnd, bool forceRepaint = false);
 int readConfig(HWND hWnd);
 int RunApplication(HINSTANCE hInstance);
 
@@ -62,6 +62,7 @@ HWND pWnd = GetForegroundWindow();
 TCHAR* ponlyonapp = NULL;
 bool bShowWindowClass = false;
 bool bShowWindowID = false;
+bool bShowDate = false;
 bool bVisible = false;
 
 static const wchar_t cFilterDelimiter = L'|';
@@ -355,7 +356,8 @@ int readConfig(HWND hWnd)
             {
                 dateFormat = DateFormat_DMY;
             }
-            printDate(hWnd);
+            printDate(hWnd, true);
+            bShowDate = true;
             break;
         }
 
@@ -399,7 +401,7 @@ void checkShowState()
     std::wstring windowClassName(name, wcslen(name));
     unsigned short windowID = static_cast<unsigned short>(GetWindowLong(pWnd, GWL_WNDPROC));
 
-    if(bShowWindowClass || bShowWindowID)
+    if(bShowWindowClass || bShowWindowID )
     {
         std::wstring matchStr;
         if(bShowWindowID)
@@ -416,6 +418,9 @@ void checkShowState()
             gButtonText = matchStr;
             InvalidateRect(gWnd, NULL, TRUE);
         }
+    }else if(bShowDate && printDate(gWnd))
+    {
+        InvalidateRect(gWnd, NULL, TRUE);
     }
 
 	bool fenetreok = gClassFilter.check(windowClassName) && gWindowIDFilter.check(windowID);
@@ -607,7 +612,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 case TIMER_MIDNIGHT:
                     {
                         KillTimer(hWnd, TIMER_MIDNIGHT);
-                        printDate(hWnd);
+                        printDate(hWnd, true);
                         InvalidateRect(hWnd, &rBitmapLBtn, TRUE);
                         break;
                     }
@@ -624,7 +629,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-void printDate(HWND hWnd)
+static SYSTEMTIME gPrevTime = {0, 0, 0, 0, 0, 0, 0, 0};
+bool printDate(HWND hWnd, bool forceRepaint/* = false*/)
 {
     SYSTEMTIME lt;
     long msec;
@@ -632,6 +638,10 @@ void printDate(HWND hWnd)
 
     //Get current date
     GetLocalTime(&lt);
+    if(!forceRepaint && lt.wDay == gPrevTime.wDay && lt.wMonth == gPrevTime.wMonth && lt.wYear == gPrevTime.wYear)
+        return false;
+
+    gPrevTime = lt;
     switch (dateFormat)
     {
     case DateFormat_YMD:
@@ -651,4 +661,5 @@ void printDate(HWND hWnd)
     msec = (lt.wHour * 3600000) + (lt.wMinute * 60000) + (lt.wSecond * 1000) + lt.wMilliseconds;
     msec = 86400000 - msec;
     SetTimer(hWnd, TIMER_MIDNIGHT, msec, NULL);
+    return true;
 }
