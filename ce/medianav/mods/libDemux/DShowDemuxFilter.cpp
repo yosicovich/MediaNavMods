@@ -825,7 +825,13 @@ DemuxOutputPin::ThreadProc()
                         bFirst = false;
                     }
 
-                    Deliver(pSample);
+                    HRESULT hr = Deliver(pSample);
+                    if(hr != S_OK)
+                    {
+                        pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: error on Deliver() sample %08X!\r\n", hr);
+                        m_pParser->NotifyEvent(EC_STREAM_ERROR_STOPPED, hr, 0);
+                        break;
+                    }
                 }else
                 {
                     // Most likely media has been removed
