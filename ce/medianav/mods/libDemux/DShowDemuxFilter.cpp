@@ -215,7 +215,7 @@ DShowDemultiplexor::Seek(REFERENCE_TIME& tStart, BOOL bSeekToKeyFrame, const REF
     }
 	#pragma endregion
 	#pragma region Start Time Adjustment
-	if(bSeekToKeyFrame)
+	if(m_alwaysSeekToKeyFrame || bSeekToKeyFrame )
     {
         debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::Seek: Seeking to key frame\r\n");
 		DemuxOutputPin* pSeekingPin = m_pSeekingPin;
@@ -578,6 +578,7 @@ DemuxOutputPin::Active()
 HRESULT 
 DemuxOutputPin::Inactive()
 {
+    pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::Inactive: CBaseOutputPin::Inactive()\r\n");
     HRESULT hr = CBaseOutputPin::Inactive();
     pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::Inactive: StopThread()\r\n");
     StopThread();
@@ -629,7 +630,7 @@ DemuxOutputPin::ThreadProc()
         {
             REFERENCE_TIME nSampleTime = m_pTrack->TimesIndex()->SampleToCTS(nSample);
             long nSample2 = m_pTrack->TimesIndex()->CTSToSample(nSampleTime);
-            pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: nSample=%u,  nSampleTime=%I64d, tStart=%I64d, nSample2=%u\r\n", nSample, nSampleTime, tStart, nSample2);
+            pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: nSample=%u,  nSampleTime=%I64d, tStart=%I64d, nSample2=%u, nSyncBefore=%u\r\n", nSample, nSampleTime, tStart, nSample2, m_pTrack->GetKeyMap()->SyncFor(nSample));
         }
 
         if (tStop > m_pTrack->Duration())   
@@ -725,6 +726,7 @@ DemuxOutputPin::ThreadProc()
             HRESULT hr = GetDeliveryBuffer(&pSample, NULL, NULL, 0);
             if (hr != S_OK)
             {
+                pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: error on GetDeliveryBuffer() - no allocator? Stop. hr=0x%08X\r\n", hr);
                 break;
             }
 #pragma endregion 
@@ -824,14 +826,27 @@ DemuxOutputPin::ThreadProc()
                         pSample->SetDiscontinuity(true);
                         bFirst = false;
                     }
-
                     HRESULT hr = Deliver(pSample);
-                    if(hr != S_OK)
+                    switch(hr)
                     {
-                        pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: error on Deliver() sample %08X!\r\n", hr);
+                    case S_OK:
+                        break;
+                    case E_FAIL:// Not ready yet?
+                        hr = S_OK;
+                        pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: error on Deliver() - E_FAIL, codec not ready?\r\n");
+                        break;
+                    case VFW_E_WRONG_STATE:// Most likely we have been stopped
+                        // Most likely we have been stopped
+                        pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: error on Deliver() - Stopped?\r\n");
+                        break;
+                    default:
+                        pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: error on Deliver() - sample 0x%08X!\r\n", hr);
                         m_pParser->NotifyEvent(EC_STREAM_ERROR_STOPPED, hr, 0);
                         break;
                     }
+
+                    if(hr != S_OK)
+                        break;
                 }else
                 {
                     // Most likely media has been removed
@@ -1091,7 +1106,7 @@ DemuxOutputPin::SetPositions(
 	HRESULT nResult;
     if (dwCurrentFlags & AM_SEEKING_PositioningBitsMask)
     {
-        nResult = m_pParser->Seek(tStart, true/*dwCurrentFlags & AM_SEEKING_SeekToKeyFrame*/, tStop, dRate);
+        nResult = m_pParser->Seek(tStart, dwCurrentFlags & AM_SEEKING_SeekToKeyFrame, tStop, dRate);
     } else 
 	if(dwStopFlags & AM_SEEKING_PositioningBitsMask)
     {
