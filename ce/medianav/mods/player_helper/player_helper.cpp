@@ -154,7 +154,7 @@ BOOL CALLBACK EnumWindowsProc(_In_ HWND   hwnd, _In_ LPARAM lParam)
     DWORD wndProc = GetWindowLong(hwnd, GWL_WNDPROC);
     DWORD owner = GetWindowLong(hwnd, GWL_HWNDPARENT);
     wchar_t className[256];
-    className[256] = 0;
+    className[255] = 0;
     int classNameSize = GetClassName(hwnd, (LPWSTR)&className, 255);
     return TRUE;
 }

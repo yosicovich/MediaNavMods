@@ -185,6 +185,7 @@ class SampleSizes
 {
 public:
     SampleSizes();
+    virtual ~SampleSizes() {};
     
     virtual long Size(long nSample) const = 0;
     long SampleCount()  const
@@ -205,6 +206,7 @@ protected:
 class KeyMap
 {
 public:
+    virtual ~KeyMap() {};
     virtual long SyncFor(long nSample) const = 0;
     virtual long Next(long nSample) const = 0;
     virtual SIZE_T Get(SIZE_T*& pnIndexes) const = 0;
@@ -216,6 +218,7 @@ class SampleTimes
 {
 public:
     SampleTimes();
+    virtual ~SampleTimes() {};
 
     virtual long DTSToSample(LONGLONG tStart) = 0;
     virtual SIZE_T Get(REFERENCE_TIME*& pnTimes) const = 0;
@@ -268,6 +271,7 @@ class ElementaryType
 {
 public:
     ElementaryType();
+    virtual ~ElementaryType() {};
 
     virtual bool IsVideo() const = 0;
     string ShortName()
@@ -292,6 +296,7 @@ class MovieTrack
 {
 public:
     MovieTrack(Atom* pAtom, Movie* pMovie, long idx);
+    virtual ~MovieTrack() {};
     bool Valid()
     {
         return (m_pRoot != NULL);
@@ -349,6 +354,7 @@ class Movie
 {
 public:
     Movie(Atom* pRoot);
+    virtual ~Movie() {};
     long Tracks()
     {
         return (long)m_Tracks.size();
