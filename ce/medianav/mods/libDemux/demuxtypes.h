@@ -13,6 +13,9 @@
 #include <memory>
 #include <utils.h>
 
+class AtomReader;
+typedef smart_ptr<AtomReader> AtomReaderPtr;
+
 class Atom;
 typedef smart_ptr<Atom> AtomPtr;
 
@@ -21,7 +24,10 @@ typedef smart_ptr<Atom> AtomPtr;
 class AtomReader
 {
 public:
-    virtual ~AtomReader() {}
+    virtual ~AtomReader() 
+    {
+        debugPrintf(DEMUX_DBG, L"AtomReader::~AtomReader(): this=0x%08X\r\n", this);
+    }
 
     virtual HRESULT Read(LONGLONG llOffset, long cBytes, void* pBuffer) = 0;
     virtual LONGLONG Length() = 0;
@@ -35,15 +41,6 @@ public:
 };
 
 
-// MPEG-4 files (based on QuickTime) are comprised of file elements
-// with a length and 4-byte FOURCC type code. This basic header can
-// be extended with an 8-byte length and a 16-byte type GUID. 
-// 
-// The payload can contain other atoms recursively.
-//
-// Some atoms begin with a 1-byte version number and 3-byte flags field,
-// but as this is type-specific, we regard it as part of the payload.
-//
 // This Atom implementation accesses data
 // via the AtomReader abstraction. The data source may be
 // a containing atom or access to the file (perhaps via an input pin).
@@ -54,7 +51,10 @@ public:
     // to the constructor. This means we can use the same class for the outer file
     // container (which does not have a header).
     Atom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader, bool canHaveChildren = true);
-    virtual ~Atom() {debugPrintf(DEMUX_DBG, L"Atom::~Atom(): %08X\r\n", Type());}
+    virtual ~Atom() 
+    {
+        debugPrintf(DEMUX_DBG, L"Atom::~Atom(): 0x%08X(this=0x%08X)\r\n", Type(), this);
+    }
 
     virtual HRESULT Read(LONGLONG llOffset, long cBytes, void* pBuffer);
     virtual LONGLONG Length()
@@ -81,9 +81,9 @@ public:
 
     // these methods return a pointer to an Atom object that is contained within
     // this Atom -- so do not delete.
-    virtual Atom* Child(long nChild);
-    virtual Atom* FindChild(DWORD fourcc);
-    virtual Atom* FindNextChild(Atom* after, DWORD fourcc);
+    virtual AtomPtr Child(long nChild);
+    virtual AtomPtr FindChild(DWORD fourcc);
+    virtual AtomPtr FindNextChild(const AtomPtr& after, DWORD fourcc);
 
     virtual bool IsBuffered();
     // calls to Buffer and BufferRelease are refcounted and should correspond.
@@ -116,7 +116,7 @@ private:
 class AtomCache
 {
 public:
-    AtomCache(Atom* patm = NULL)
+    AtomCache(const AtomPtr& patm = AtomPtr())
     : m_pAtom(patm)
     {
 		if (patm != NULL)
@@ -126,12 +126,13 @@ public:
     }
     ~AtomCache()
     {
+        debugPrintf(DEMUX_DBG, L"AtomCache::~AtomCache(): m_pAtom = 0x%08X\r\n", m_pAtom.get());
 		if (m_pAtom != NULL)
 		{
 			m_pAtom->BufferRelease();
 		}
     }
-    const AtomCache& operator=(Atom* patm)
+    const AtomCache& operator=(const AtomPtr& patm)
     {
         if (m_pAtom != NULL)
         {
@@ -175,7 +176,7 @@ public:
         return m_pAtom->Length() - m_pAtom->HeaderSize();
     }
 private:
-    Atom* m_pAtom;
+    AtomPtr m_pAtom;
     const BYTE* m_pBuffer;
 };
 
@@ -185,7 +186,11 @@ class SampleSizes
 {
 public:
     SampleSizes();
-    virtual ~SampleSizes() {};
+    virtual ~SampleSizes() 
+    {
+        debugPrintf(DEMUX_DBG, L"SampleSizes::~SampleSizes()\r\n");
+
+    }
     
     virtual long Size(long nSample) const = 0;
     long SampleCount()  const
@@ -201,16 +206,21 @@ protected:
     long m_nSamples;
     long m_nMaxSize;
 };
+typedef smart_ptr<SampleSizes> SampleSizesPtr;
 
 // map of key samples
 class KeyMap
 {
 public:
-    virtual ~KeyMap() {};
+    virtual ~KeyMap()
+    {
+        debugPrintf(DEMUX_DBG, L"KeyMap::~KeyMap()\r\n");
+    }
     virtual long SyncFor(long nSample) const = 0;
     virtual long Next(long nSample) const = 0;
     virtual SIZE_T Get(SIZE_T*& pnIndexes) const = 0;
 };
+typedef smart_ptr<KeyMap> KeyMapPtr;
 
 // time and duration of samples
 // -- all times in 100ns units
@@ -218,7 +228,10 @@ class SampleTimes
 {
 public:
     SampleTimes();
-    virtual ~SampleTimes() {};
+    virtual ~SampleTimes()
+    {
+        debugPrintf(DEMUX_DBG, L"SampleTimes::~SampleTimes()\r\n");
+    }
 
     virtual long DTSToSample(LONGLONG tStart) = 0;
     virtual SIZE_T Get(REFERENCE_TIME*& pnTimes) const = 0;
@@ -237,10 +250,12 @@ protected:
     long m_rate;
     LONGLONG m_total;       // sum of durations, in reftime
 };
+typedef smart_ptr<SampleTimes> SampleTimesPtr;
 
 // --- movie and track headers ---------------------------
 
 class Movie;
+typedef smart_ptr<Movie> MoviePtr;
 
 struct EditEntry
 {
@@ -254,7 +269,10 @@ struct EditEntry
 class FormatHandler
 {
 public:
-    virtual ~FormatHandler() {}
+    virtual ~FormatHandler()
+    {
+        debugPrintf(DEMUX_DBG, L"FormatHandler::~FormatHandler()\r\n");
+    }
 
     virtual long BufferSize(long MaxSize) = 0;
     virtual void StartStream() = 0;
@@ -271,7 +289,10 @@ class ElementaryType
 {
 public:
     ElementaryType();
-    virtual ~ElementaryType() {};
+    virtual ~ElementaryType()
+    {
+        debugPrintf(DEMUX_DBG, L"ElementaryType::~ElementaryType()\r\n");
+    }
 
     virtual bool IsVideo() const = 0;
     string ShortName()
@@ -287,7 +308,7 @@ public:
     }
 
 protected:
-    std::auto_ptr<FormatHandler> m_pHandler;
+    smart_ptr<FormatHandler> m_pHandler;
     string m_shortname;
     CMediaType m_mtChosen;
 };
@@ -295,11 +316,15 @@ protected:
 class MovieTrack
 {
 public:
-    MovieTrack(Atom* pAtom, Movie* pMovie, long idx);
-    virtual ~MovieTrack() {};
+    MovieTrack(const AtomPtr& pAtom, Movie* pMovie, long idx);
+    virtual ~MovieTrack()
+    {
+        debugPrintf(DEMUX_DBG, L"MovieTrack::~MovieTrack()\r\n");
+    }
+
     bool Valid()
     {
-        return (m_pRoot != NULL);
+        return (m_pRoot.get() != NULL);
     }
     const char* Name()
     {
@@ -310,15 +335,15 @@ public:
     bool SetType(const CMediaType* pmt);
     FormatHandler* Handler();
 
-    SampleSizes* SizeIndex()
+    SampleSizesPtr SizeIndex()
     {
         return m_pSizes;
     }
-    KeyMap* GetKeyMap()
+    KeyMapPtr GetKeyMap()
     {
         return m_pKeyMap;
     }
-    SampleTimes* TimesIndex()
+    SampleTimesPtr TimesIndex()
     {
         return m_pTimes;
     }
@@ -335,7 +360,7 @@ public:
 	SIZE_T GetTimes(REFERENCE_TIME** ppnStartTimes, REFERENCE_TIME** ppnStopTimes, ULONG** ppnFlags, ULONG** ppnDataSizes);
 
 protected:
-    Atom* m_pRoot;
+    AtomPtr m_pRoot;
     Movie* m_pMovie;
     long m_idx;
     string m_strName;
@@ -353,13 +378,17 @@ typedef smart_ptr<MovieTrack> MovieTrackPtr;
 class Movie
 {
 public:
-    Movie(Atom* pRoot);
-    virtual ~Movie() {};
+    Movie(const AtomReaderPtr& pRoot);
+    virtual ~Movie()
+    {
+        debugPrintf(DEMUX_DBG, L"Movie::~Movie()\r\n");
+    }
+
     long Tracks()
     {
         return (long)m_Tracks.size();
     }
-    MovieTrack* Track(long nTrack) const
+    MovieTrackPtr Track(long nTrack) const
     {
         return m_Tracks[nTrack];
     }
@@ -368,7 +397,7 @@ public:
 
 protected:
     typedef std::vector<MovieTrackPtr> MovieTracks;
-    smart_ptr<Atom> m_pRoot;
+    AtomReaderPtr m_pRoot;
     MovieTracks m_Tracks;
 };
 

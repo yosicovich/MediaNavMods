@@ -44,14 +44,21 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libDemux", "libDemux\libDem
 		{1F71555E-8F6E-4929-B425-04E006387F07} = {1F71555E-8F6E-4929-B425-04E006387F07}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "playwnd", "playwnd\playwnd.vcproj", "{11B40D66-C298-445A-84C2-5258AC51530E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1F71555E-8F6E-4929-B425-04E006387F07} = {1F71555E-8F6E-4929-B425-04E006387F07}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|DbAu13xx (MIPSII) = Debug|DbAu13xx (MIPSII)
 		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|SDK_md (MIPSII) = Debug|SDK_md (MIPSII)
 		Release|Any CPU = Release|Any CPU
 		Release|DbAu13xx (MIPSII) = Release|DbAu13xx (MIPSII)
 		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|SDK_md (MIPSII) = Release|SDK_md (MIPSII)
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
@@ -61,6 +68,7 @@ Global
 		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
 		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Debug|SDK_md (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
@@ -68,6 +76,7 @@ Global
 		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
 		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}.Release|SDK_md (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
@@ -75,6 +84,7 @@ Global
 		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
 		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Debug|SDK_md (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
@@ -82,6 +92,7 @@ Global
 		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
 		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+		{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}.Release|SDK_md (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{1F71555E-8F6E-4929-B425-04E006387F07}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{1F71555E-8F6E-4929-B425-04E006387F07}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{1F71555E-8F6E-4929-B425-04E006387F07}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
@@ -89,6 +100,7 @@ Global
 		{1F71555E-8F6E-4929-B425-04E006387F07}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{1F71555E-8F6E-4929-B425-04E006387F07}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
 		{1F71555E-8F6E-4929-B425-04E006387F07}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Debug|SDK_md (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{1F71555E-8F6E-4929-B425-04E006387F07}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{1F71555E-8F6E-4929-B425-04E006387F07}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{1F71555E-8F6E-4929-B425-04E006387F07}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
@@ -96,6 +108,7 @@ Global
 		{1F71555E-8F6E-4929-B425-04E006387F07}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{1F71555E-8F6E-4929-B425-04E006387F07}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
 		{1F71555E-8F6E-4929-B425-04E006387F07}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+		{1F71555E-8F6E-4929-B425-04E006387F07}.Release|SDK_md (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{61171C79-4A09-4C9F-B300-507A26DC1539}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{61171C79-4A09-4C9F-B300-507A26DC1539}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{61171C79-4A09-4C9F-B300-507A26DC1539}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
@@ -103,6 +116,7 @@ Global
 		{61171C79-4A09-4C9F-B300-507A26DC1539}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{61171C79-4A09-4C9F-B300-507A26DC1539}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
 		{61171C79-4A09-4C9F-B300-507A26DC1539}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Debug|SDK_md (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{61171C79-4A09-4C9F-B300-507A26DC1539}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{61171C79-4A09-4C9F-B300-507A26DC1539}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{61171C79-4A09-4C9F-B300-507A26DC1539}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
@@ -110,6 +124,7 @@ Global
 		{61171C79-4A09-4C9F-B300-507A26DC1539}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{61171C79-4A09-4C9F-B300-507A26DC1539}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
 		{61171C79-4A09-4C9F-B300-507A26DC1539}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+		{61171C79-4A09-4C9F-B300-507A26DC1539}.Release|SDK_md (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
@@ -117,6 +132,7 @@ Global
 		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
 		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Debug|SDK_md (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
@@ -124,6 +140,7 @@ Global
 		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
 		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+		{459481D8-85A7-47DD-86DC-FA9B05D330A3}.Release|SDK_md (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{AADD89BF-42ED-4CA4-805A-C8FFE6AF4E16}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{AADD89BF-42ED-4CA4-805A-C8FFE6AF4E16}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{AADD89BF-42ED-4CA4-805A-C8FFE6AF4E16}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
@@ -131,6 +148,7 @@ Global
 		{AADD89BF-42ED-4CA4-805A-C8FFE6AF4E16}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{AADD89BF-42ED-4CA4-805A-C8FFE6AF4E16}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
 		{AADD89BF-42ED-4CA4-805A-C8FFE6AF4E16}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{AADD89BF-42ED-4CA4-805A-C8FFE6AF4E16}.Debug|SDK_md (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{AADD89BF-42ED-4CA4-805A-C8FFE6AF4E16}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{AADD89BF-42ED-4CA4-805A-C8FFE6AF4E16}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{AADD89BF-42ED-4CA4-805A-C8FFE6AF4E16}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
@@ -138,6 +156,7 @@ Global
 		{AADD89BF-42ED-4CA4-805A-C8FFE6AF4E16}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{AADD89BF-42ED-4CA4-805A-C8FFE6AF4E16}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
 		{AADD89BF-42ED-4CA4-805A-C8FFE6AF4E16}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+		{AADD89BF-42ED-4CA4-805A-C8FFE6AF4E16}.Release|SDK_md (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
@@ -145,6 +164,7 @@ Global
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Debug|SDK_md (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
@@ -152,6 +172,7 @@ Global
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}.Release|SDK_md (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
@@ -159,6 +180,7 @@ Global
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Debug|SDK_md (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
@@ -166,6 +188,7 @@ Global
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
 		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+		{1276D053-ABC6-4D2B-B89B-07FE401FEAE7}.Release|SDK_md (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Debug|Any CPU.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
@@ -173,6 +196,7 @@ Global
 		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Debug|Mixed Platforms.ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Debug|Mixed Platforms.Build.0 = Debug|DbAu13xx (MIPSII)
 		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Debug|Mixed Platforms.Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Debug|SDK_md (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
 		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Release|Any CPU.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
@@ -180,6 +204,27 @@ Global
 		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Release|Mixed Platforms.ActiveCfg = Release|DbAu13xx (MIPSII)
 		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Release|Mixed Platforms.Build.0 = Release|DbAu13xx (MIPSII)
 		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Release|Mixed Platforms.Deploy.0 = Release|DbAu13xx (MIPSII)
+		{24E97CA5-D04C-49DF-A608-70A4217575DA}.Release|SDK_md (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Debug|Any CPU.ActiveCfg = Debug|SDK_md (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Debug|Mixed Platforms.ActiveCfg = Debug|SDK_md (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Debug|Mixed Platforms.Build.0 = Debug|SDK_md (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Debug|Mixed Platforms.Deploy.0 = Debug|SDK_md (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Debug|SDK_md (MIPSII).ActiveCfg = Debug|SDK_md (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Debug|SDK_md (MIPSII).Build.0 = Debug|SDK_md (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Debug|SDK_md (MIPSII).Deploy.0 = Debug|SDK_md (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Release|Any CPU.ActiveCfg = Release|SDK_md (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Release|Mixed Platforms.ActiveCfg = Release|SDK_md (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Release|Mixed Platforms.Build.0 = Release|SDK_md (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Release|Mixed Platforms.Deploy.0 = Release|SDK_md (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Release|SDK_md (MIPSII).ActiveCfg = Release|SDK_md (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Release|SDK_md (MIPSII).Build.0 = Release|SDK_md (MIPSII)
+		{11B40D66-C298-445A-84C2-5258AC51530E}.Release|SDK_md (MIPSII).Deploy.0 = Release|SDK_md (MIPSII)
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

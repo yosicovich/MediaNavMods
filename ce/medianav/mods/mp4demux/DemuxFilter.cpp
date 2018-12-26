@@ -43,12 +43,7 @@ Mpeg4Demultiplexor::Mpeg4Demultiplexor(LPUNKNOWN pUnk, HRESULT* phr)
     setAlwaysSeekToKeyFrame(Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, TEXT("\\SOFTWARE\\Microsoft\\DirectX\\DirectShow\\MP4Demux"), TEXT("KeyFrameSeeking"), true));
 }
 
-Atom* Mpeg4Demultiplexor::createAtom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader)
+MoviePtr Mpeg4Demultiplexor::createMovie(const AtomReaderPtr& pRoot)
 {
-    return new Mpeg4Atom(pReader, llOffset, llLength, type, cHeader);
-}
-
-Movie* Mpeg4Demultiplexor::createMovie(Atom* pRoot)
-{
-    return new Mpeg4Movie(pRoot);
+    return MoviePtr(new Mpeg4Movie(pRoot));
 }

@@ -54,7 +54,7 @@ Mpeg4Atom::ScanChildrenAt(LONGLONG llOffset)
             break;
         }
 
-        AtomPtr pChild = new Mpeg4Atom(this, llOffset, llLength, type, cHeader);
+        AtomPtr pChild = AtomPtr(new Mpeg4Atom(this, llOffset, llLength, type, cHeader));
         m_Children.push_back(pChild);
 
         llOffset += llLength;
@@ -63,14 +63,15 @@ Mpeg4Atom::ScanChildrenAt(LONGLONG llOffset)
 
 // -- main movie header, contains list of tracks ---------------
 
-Mpeg4Movie::Mpeg4Movie(Atom* pRoot)
+Mpeg4Movie::Mpeg4Movie(const AtomReaderPtr& pRoot)
 : Movie(pRoot)
 {
-    Atom* pMovie = m_pRoot->FindChild(FOURCC("moov"));
+    AtomPtr pMp4 = AtomPtr(new Mpeg4Atom(pRoot.get(), 0, pRoot->Length(), 0, 0));
+    const AtomPtr& pMovie = pMp4->FindChild(FOURCC("moov"));
     if (pMovie != NULL)
     {
-        Atom* patmHdr = pMovie->FindChild(FOURCC("mvhd"));
-        if (patmHdr)
+        const AtomPtr& patmHdr = pMovie->FindChild(FOURCC("mvhd"));
+        if (patmHdr != NULL)
         {
             AtomCache phdr(patmHdr);
 
@@ -89,11 +90,11 @@ Mpeg4Movie::Mpeg4Movie(Atom* pRoot)
         long idxTrack = 0;
         for (int i = 0; i < pMovie->ChildCount(); i++)
         {
-            Atom* patm = pMovie->Child(i);
+            const AtomPtr& patm = pMovie->Child(i);
             if ((patm->Type() == FOURCC("trak")) ||
                 (patm->Type() == FOURCC("cctk")))
             {
-                MovieTrackPtr pTrack = new Mpeg4MovieTrack(patm, this, idxTrack++);
+                MovieTrackPtr pTrack = MovieTrackPtr(new Mpeg4MovieTrack(patm, this, idxTrack++));
                 if (pTrack->Valid())
                 {
                     m_Tracks.push_back(pTrack);
@@ -106,12 +107,11 @@ Mpeg4Movie::Mpeg4Movie(Atom* pRoot)
 // ------------------------------------------------------------------
 
 
-Mpeg4MovieTrack::Mpeg4MovieTrack(Atom* pAtom, Mpeg4Movie* pMovie, long idx)
-: MovieTrack(NULL, pMovie, idx),
-  m_patmSTBL(NULL)
+Mpeg4MovieTrack::Mpeg4MovieTrack(const AtomPtr& pAtom, Mpeg4Movie* pMovie, long idx)
+: MovieTrack(AtomPtr(), pMovie, idx)
 {
     // check version/flags entry for track header
-    Atom* pHdr = pAtom->FindChild(FOURCC("tkhd"));
+    const AtomPtr& pHdr = pAtom->FindChild(FOURCC("tkhd"));
     if (pHdr != NULL)
     {
         BYTE verflags[4];
@@ -120,7 +120,7 @@ Mpeg4MovieTrack::Mpeg4MovieTrack(Atom* pAtom, Mpeg4Movie* pMovie, long idx)
         {
             // edit list may contain offset for first sample
             REFERENCE_TIME tFirst = 0;
-            Atom* patmEDTS = pAtom->FindChild(FOURCC("edts"));
+            const AtomPtr& patmEDTS = pAtom->FindChild(FOURCC("edts"));
             if (patmEDTS != NULL)
             {
                 LONGLONG first = ParseEDTS(patmEDTS);
@@ -128,8 +128,8 @@ Mpeg4MovieTrack::Mpeg4MovieTrack(Atom* pAtom, Mpeg4Movie* pMovie, long idx)
                 tFirst = first * UNITS / pMovie->Scale();
             }
 
-            Atom* patmMDIA = pAtom->FindChild(FOURCC("mdia"));
-            if (patmMDIA && ParseMDIA(patmMDIA, tFirst))
+            const AtomPtr& patmMDIA = pAtom->FindChild(FOURCC("mdia"));
+            if (patmMDIA != NULL && ParseMDIA(patmMDIA, tFirst))
             {
                 // valid track -- make a name for the pin to use
                 ostringstream strm;
@@ -174,9 +174,9 @@ REFERENCE_TIME Mpeg4MovieTrack::Duration() const
 }
 
 LONGLONG 
-Mpeg4MovieTrack::ParseEDTS(Atom* patm)
+Mpeg4MovieTrack::ParseEDTS(const AtomPtr& patm)
 {
-    Atom* patmELST = patm->FindChild(FOURCC("elst"));
+    const AtomPtr& patmELST = patm->FindChild(FOURCC("elst"));
     if (patmELST != NULL)
     {
 		AtomCache pELST = patmELST;
@@ -204,10 +204,10 @@ Mpeg4MovieTrack::ParseEDTS(Atom* patm)
 
 // parse the track type information
 bool
-Mpeg4MovieTrack::ParseMDIA(Atom* patm, REFERENCE_TIME tFirst)
+Mpeg4MovieTrack::ParseMDIA(const AtomPtr& patm, REFERENCE_TIME tFirst)
 {
     // get track timescale from mdhd
-    Atom* patmMDHD = patm->FindChild(FOURCC("mdhd"));
+    const AtomPtr& patmMDHD = patm->FindChild(FOURCC("mdhd"));
     if (!patmMDHD)
     {
         return false;
@@ -226,31 +226,31 @@ Mpeg4MovieTrack::ParseMDIA(Atom* patm, REFERENCE_TIME tFirst)
     // that will give us the media type for this
     // track. That is in minf/stbl/stsd
 
-    Atom* patmMINF = patm->FindChild(FOURCC("minf"));
+    const AtomPtr& patmMINF = patm->FindChild(FOURCC("minf"));
     if (!patmMINF)
     {
         return false;
     }
-    m_patmSTBL = patmMINF->FindChild(FOURCC("stbl"));
-    if (!m_patmSTBL)
+    const AtomPtr& patmSTBL = patmMINF->FindChild(FOURCC("stbl"));
+    if (!patmSTBL)
     {
         return false;
     }
 
     // initialize index tables
     m_pSizes = new Mpeg4SampleSizes;
-    if ((!GetTypedPtr(Mpeg4SampleSizes, m_pSizes)->Parse(m_patmSTBL) || (m_pSizes->SampleCount() <= 0)))
+    if ((!GetTypedPtr(Mpeg4SampleSizes, m_pSizes)->Parse(patmSTBL) || (m_pSizes->SampleCount() <= 0)))
     {
         return false;
     }
     m_pKeyMap = new Mpeg4KeyMap;
-    if (!GetTypedPtr(Mpeg4KeyMap, m_pKeyMap)->Parse(m_patmSTBL))
+    if (!GetTypedPtr(Mpeg4KeyMap, m_pKeyMap)->Parse(patmSTBL))
     {
         return false;
     }
 
     m_pTimes = new Mpeg4SampleTimes;
-    if (!GetTypedPtr(Mpeg4SampleTimes, m_pTimes)->Parse(scale, tFirst, m_patmSTBL))
+    if (!GetTypedPtr(Mpeg4SampleTimes, m_pTimes)->Parse(scale, tFirst, patmSTBL))
     {
         return false;
     }
@@ -259,7 +259,7 @@ Mpeg4MovieTrack::ParseMDIA(Atom* patm, REFERENCE_TIME tFirst)
     // for the media type
     REFERENCE_TIME tFrame = Duration() / m_pSizes->SampleCount();
 
-    Atom* pSTSD = m_patmSTBL->FindChild(FOURCC("stsd"));
+    const AtomPtr& pSTSD = patmSTBL->FindChild(FOURCC("stsd"));
     if (!pSTSD || !ParseSTSD(tFrame, pSTSD))
     {
         return false;
@@ -341,7 +341,7 @@ Mpeg4MovieTrack::ParseMDIA(Atom* patm, REFERENCE_TIME tFirst)
 
 // locate and parse the ES_Descriptor    
 bool 
-Mpeg4MovieTrack::ParseSTSD(REFERENCE_TIME tFrame, Atom* pSTSD)
+Mpeg4MovieTrack::ParseSTSD(REFERENCE_TIME tFrame, const AtomPtr& pSTSD)
 {
     // We don't accept files with format changes mid-track,
     // so there must be only one descriptor entry 
@@ -353,7 +353,7 @@ Mpeg4MovieTrack::ParseSTSD(REFERENCE_TIME tFrame, Atom* pSTSD)
         return false;
     }
     pSTSD->ScanChildrenAt(8);
-    Atom* patm = pSTSD->Child(0);
+    const AtomPtr& patm = pSTSD->Child(0);
     if (!patm)
     {
         return false;

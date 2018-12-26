@@ -45,7 +45,7 @@
 				AdditionalOptions="-DMAE2"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\libUtils;..\libDemux;$(MEDIA_SDK)\include"
-				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;_DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_WINDOWS;_USRDLL;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_WINDOWS;_USRDLL;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;BOOST_DISABLE_ASSERTS"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
 				TreatWChar_tAsBuiltInType="false"
@@ -106,7 +106,7 @@
 				ForceDirty="-1"
 				RemoteDirectory=""
 				RegisterOutput="0"
-				AdditionalFiles=""
+				AdditionalFiles="playwnd.exe|$(SolutionDir)\$(PlatformName)\$(ConfigurationName)|%CSIDL_PROGRAM_FILES%\avidmx|0"
 			/>
 			<DebuggerTool
 			/>

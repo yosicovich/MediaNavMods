@@ -45,22 +45,19 @@ class Mpeg4Movie;
 class Mpeg4MovieTrack: public MovieTrack
 {
 public:
-    Mpeg4MovieTrack(Atom* pAtom, Mpeg4Movie* pMovie, long idx);
+    Mpeg4MovieTrack(const AtomPtr& pAtom, Mpeg4Movie* pMovie, long idx);
     virtual REFERENCE_TIME Duration() const;
 
 private:
-    bool ParseMDIA(Atom* patm, REFERENCE_TIME tFirst);
-    bool ParseSTSD(REFERENCE_TIME tFrame, Atom* pSTSD);
-    LONGLONG ParseEDTS(Atom* patm);
-
-private:
-    Atom* m_patmSTBL;
+    bool ParseMDIA(const AtomPtr& patm, REFERENCE_TIME tFirst);
+    bool ParseSTSD(REFERENCE_TIME tFrame, const AtomPtr& pSTSD);
+    LONGLONG ParseEDTS(const AtomPtr& patm);
 };
 
 class Mpeg4Movie: public Movie
 {
 public:
-    Mpeg4Movie(Atom* pRoot);
+    Mpeg4Movie(const AtomReaderPtr& pRoot);
     LONGLONG Scale() const
     {
         return m_scale;

@@ -85,7 +85,7 @@ class DemuxOutputPin
   public thread
 {
 public:
-    DemuxOutputPin(MovieTrack* pTrack, DShowDemultiplexor* pDemux, CCritSec* pLock, HRESULT* phr, LPCWSTR pName);
+    DemuxOutputPin(const MovieTrackPtr& pTrack, DShowDemultiplexor* pDemux, CCritSec* pLock, HRESULT* phr, LPCWSTR pName);
 	DECLARE_IUNKNOWN
 	STDMETHODIMP NonDelegatingQueryInterface(REFIID iid, void** ppv);
 
@@ -151,7 +151,7 @@ public:
     STDMETHODIMP GetMediaSampleTimes(ULONG* pnCount, LONGLONG** ppnStartTimes, LONGLONG** ppnStopTimes, ULONG** ppnFlags, ULONG** ppnDataSizes);
 
 private:
-    MovieTrack* m_pTrack;
+    MovieTrackPtr m_pTrack;
     DShowDemultiplexor* m_pParser;
 
 	// quality record
@@ -159,6 +159,7 @@ private:
 	REFERENCE_TIME m_tLate;
 };
 typedef IPinPtr DemuxOutputPinPtr;
+typedef smart_ptr<DemuxInputPin> DemuxInputPinPtr;
 
 class DShowDemultiplexor: public CBaseFilter
 {
@@ -188,8 +189,7 @@ public:
     HRESULT SetStopTime(const REFERENCE_TIME& tStop);
 
 protected:
-    virtual Atom* createAtom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader) = 0;
-    virtual Movie* createMovie(Atom* pRoot) = 0;
+    virtual MoviePtr createMovie(const AtomReaderPtr& pRoot) = 0;
     void setAlwaysSeekToKeyFrame(bool bVal)
     {
         m_alwaysSeekToKeyFrame = bVal;
@@ -201,7 +201,7 @@ protected:
     }
 private:
     CCritSec m_csFilter;
-    DemuxInputPin* m_pInput;
+    DemuxInputPinPtr m_pInput;
 
     // one output pin for each enabled track
     vector<DemuxOutputPinPtr> m_Outputs;
@@ -215,7 +215,7 @@ private:
     bool m_alwaysSeekToKeyFrame;
 
     // file headers
-    smart_ptr<Movie> m_pMovie;
+    MoviePtr m_pMovie;
 };
 
 #define pinDebugPrintf(lev, format, ...) debugPrintf(lev, L"PIN(%s) --- " format, Name(), __VA_ARGS__)

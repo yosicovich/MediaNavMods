@@ -88,7 +88,7 @@ class Mpeg4ElementaryType: public ElementaryType
 public:
     Mpeg4ElementaryType();
 
-    bool Parse(REFERENCE_TIME tFrame, Atom* patm); // atom should be stsd descriptor mp4v, jvt1, mp4a
+    bool Parse(REFERENCE_TIME tFrame, const AtomPtr& patm); // atom should be stsd descriptor mp4v, jvt1, mp4a
 	bool IsVideo() const;
     bool GetType(CMediaType* pmt, int nType) const;
     virtual void setHandler(const CMediaType* pmt, int idx);
@@ -103,7 +103,7 @@ public:
 		return m_type;
 	}
 private:
-    bool ParseDescriptor(Atom* patmESD);
+    bool ParseDescriptor(const AtomPtr& patmESD);
     bool GetType_AVCC(CMediaType* pmt) const;
     bool GetType_H264(CMediaType* pmt) const;
 	bool GetType_H264ByteStream(CMediaType* pmt) const;

@@ -61,7 +61,7 @@ AviAtom::ScanChildrenAt(LONGLONG llOffset)
             break;
         }
 
-        AtomPtr pChild = new AviAtom(this, llOffset, llLength, type, cHeader, canHaveChildren);
+        AtomPtr pChild = AtomPtr(new AviAtom(this, llOffset, llLength, type, cHeader, canHaveChildren));
         m_Children.push_back(pChild);
         debugPrintf(DBG, L"AviAtom::ScanChildrenAt: child has been created\r\n");
 
@@ -71,28 +71,29 @@ AviAtom::ScanChildrenAt(LONGLONG llOffset)
 
 // -- main movie header, contains list of tracks ---------------
 
-AviMovie::AviMovie(Atom* pRoot)
+AviMovie::AviMovie(const AtomReaderPtr& pRoot)
 : Movie(pRoot),
   m_hasVideo(false),
   m_hasAudio(false)
 {
     debugPrintf(DBG, L"AviMovie::AviMovie\r\n");
-/*    Atom* pMovie = m_pRoot->FindChild(ckidRIFF);
+    AtomPtr pRiff = AtomPtr(new AviAtom(pRoot.get(), 0, pRoot->Length(), /*ckidRIFF*/ 0, 0));
+/*    AtomPtr pMovie = m_pRoot->FindChild(ckidRIFF);
     if(pMovie == NULL)
         return;*/
 
     //debugPrintf(DBG, L"AviMovie::AviMovie: found RIFF\r\n");
-    Atom* pMovie = m_pRoot->FindChild(ckidAVI);
+    AtomPtr pMovie = pRiff->FindChild(ckidAVI);
     if(pMovie == NULL)
         return; // Badly formed file or not AVI format
 
     debugPrintf(DBG, L"AviMovie::AviMovie: found 'AVI '\r\n");
-    Atom* pHdrl = pMovie->FindChild(listtypeAVIHEADER);
+    AtomPtr pHdrl = pMovie->FindChild(listtypeAVIHEADER);
     if(pHdrl == NULL)
         return;
 
     debugPrintf(DBG, L"AviMovie::AviMovie: found hdrl\r\n");
-    Atom* pAvih = pHdrl->FindChild(ckidMAINAVIHEADER);
+    AtomPtr pAvih = pHdrl->FindChild(ckidMAINAVIHEADER);
     if(pAvih == NULL)
         return;
 
@@ -105,12 +106,12 @@ AviMovie::AviMovie(Atom* pRoot)
         return;
 
     debugPrintf(DBG, L"AviMovie::AviMovie: avih is valid\r\n");
-    Atom* pMovi = pMovie->FindChild(listtypeAVIMOVIE);
+    AtomPtr pMovi = pMovie->FindChild(listtypeAVIMOVIE);
     if(pMovi == NULL)
         return; // No movi list!!!
     
     debugPrintf(DBG, L"AviMovie::AviMovie: found movi\r\n");
-    Atom* pIdx1 = pMovie->FindChild(ckidAVIOLDINDEX);
+    AtomPtr pIdx1 = pMovie->FindChild(ckidAVIOLDINDEX);
     // We don't support non-indexed files now!
     if(pIdx1 == NULL)
         return;
@@ -130,15 +131,15 @@ AviMovie::AviMovie(Atom* pRoot)
     unsigned int offsetOfOffset = static_cast<unsigned int>(pMovi->Offset() + pMovi->HeaderSize() - pIndexArray->aIndex[0].dwOffset);
 
     debugPrintf(DBG, L"AviMovie::AviMovie: offsetOfOffset=%d, pMovi->Offset() = %I64d, pMovi->HeaderSize() = %u, pIndexArray->aIndex[0].dwOffset = %u\r\n", offsetOfOffset, pMovi->Offset(), pMovi->HeaderSize(), pIndexArray->aIndex[0].dwOffset);
-    Atom* pStrl = NULL;
+    AtomPtr pStrl;
     // Read streams
     vector<MovieTrackPtr> tracks;
     vector<MovieTrackPtr> disabledTracks;
     long idxTrack = 0;
-    while((pStrl = pHdrl->FindNextChild(pStrl, ckidSTREAMLIST)))
+    while((pStrl = pHdrl->FindNextChild(pStrl, ckidSTREAMLIST)) != NULL)
     {
         debugPrintf(DBG, L"AviMovie::AviMovie: enumirating tracks, idxTrack=%d\r\n", idxTrack);
-        MovieTrackPtr pTrack = new AviMovieTrack(pStrl, this, idxTrack++, pIndex, offsetOfOffset);
+        MovieTrackPtr pTrack = MovieTrackPtr(new AviMovieTrack(pStrl, this, idxTrack++, pIndex, offsetOfOffset));
         if (!pTrack->Valid())
             continue;
         if(GetTypedPtr(AviMovieTrack, pTrack)->isDisabled())
@@ -186,11 +187,11 @@ bool AviMovie::setTracks(const Movie::MovieTracks& sourceTracks)
 // ------------------------------------------------------------------
 
 
-AviMovieTrack::AviMovieTrack(Atom* pAtom, Movie* pMovie, long idx, const AtomCache& pIndex, unsigned int offsetOfOffset)
-: MovieTrack(NULL, pMovie, idx),
+AviMovieTrack::AviMovieTrack(const AtomPtr& pAtom, Movie* pMovie, long idx, const AtomCache& pIndex, unsigned int offsetOfOffset)
+: MovieTrack(AtomPtr(), pMovie, idx),
   m_disabled(false)
 {
-    Atom* pStrh = pAtom->FindChild(ckidSTREAMHEADER);
+    AtomPtr pStrh = pAtom->FindChild(ckidSTREAMHEADER);
     if(pStrh == NULL)
         return;
 
@@ -201,7 +202,7 @@ AviMovieTrack::AviMovieTrack(Atom* pAtom, Movie* pMovie, long idx, const AtomCac
     
     m_disabled = (streamHeader.dwFlags & AVISF_DISABLED) != 0;
 
-    Atom* pStrf = pAtom->FindChild(ckidSTREAMFORMAT);
+    AtomPtr pStrf = pAtom->FindChild(ckidSTREAMFORMAT);
     if(pStrf == NULL)
         return;
 
@@ -226,8 +227,8 @@ AviMovieTrack::AviMovieTrack(Atom* pAtom, Movie* pMovie, long idx, const AtomCac
     m_pTimes = new AviSampleTimes(streamHeader, m_pSizes);
 
     debugPrintf(DBG, L"AviMovieTrack::AviMovieTrack: AviSampleTimes created\r\n");
-    Atom* pStrn = pAtom->FindChild(ckidSTREAMNAME);
-    if(pStrn)
+    AtomPtr pStrn = pAtom->FindChild(ckidSTREAMNAME);
+    if(pStrn != NULL)
     {
        AtomCache pbuf(pStrn);
        m_strName.assign(reinterpret_cast<const char *>(*pbuf), static_cast<unsigned int>(pbuf.getDataSize()));

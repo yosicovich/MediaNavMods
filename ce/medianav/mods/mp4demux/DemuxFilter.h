@@ -38,8 +38,7 @@ public:
     static const AMOVIESETUP_FILTER m_sudFilter;
 
 protected:
-    virtual Atom* createAtom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader);
-    virtual Movie* createMovie(Atom* pRoot);
+    virtual MoviePtr createMovie(const AtomReaderPtr& pRoot);
 
 private:
     // construct only via class factory

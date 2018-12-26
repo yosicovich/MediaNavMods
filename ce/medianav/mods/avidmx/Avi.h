@@ -36,7 +36,7 @@ public:
 class AviMovieTrack: public MovieTrack
 {
 public:
-    AviMovieTrack(Atom* pAtom, Movie* pMovie, long idx, const AtomCache& pIndex, unsigned int offsetOfOffset);
+    AviMovieTrack(const AtomPtr& pAtom, Movie* pMovie, long idx, const AtomCache& pIndex, unsigned int offsetOfOffset);
     virtual REFERENCE_TIME Duration() const;
     bool isDisabled() const
     {
@@ -50,7 +50,7 @@ private:
 class AviMovie: public Movie
 {
 public:
-    AviMovie(Atom* pRoot);
+    AviMovie(const AtomReaderPtr& pRoot);
 
 private:
     bool m_hasVideo;

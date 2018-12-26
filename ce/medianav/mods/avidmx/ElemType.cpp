@@ -28,7 +28,7 @@ AviElementaryType::AviElementaryType()
 }
 
 bool 
-AviElementaryType::Parse(const AVISTREAMHEADER& streamHeader, Atom* pFormat)
+AviElementaryType::Parse(const AVISTREAMHEADER& streamHeader, const AtomPtr& pFormat)
 {
 	if(streamHeader.fccType != streamtypeVIDEO && streamHeader.fccType != streamtypeAUDIO)
         return false;
@@ -84,7 +84,7 @@ AviElementaryType::Parse(const AVISTREAMHEADER& streamHeader, Atom* pFormat)
             || _stricmp(handlerFourCCStr.c_str(), "DX50") == 0
             )
         {
-            m_pHandler.reset(new DivxHandler(reinterpret_cast<BYTE*>(reinterpret_cast<DWORD>(*m_format) + sizeof(BITMAPINFOHEADER)),additionalSize));
+            m_pHandler = new DivxHandler(reinterpret_cast<BYTE*>(reinterpret_cast<DWORD>(*m_format) + sizeof(BITMAPINFOHEADER)),additionalSize);
         }
     }else if(m_streamHeader.fccType == streamtypeAUDIO)
     {
@@ -107,7 +107,7 @@ AviElementaryType::Parse(const AVISTREAMHEADER& streamHeader, Atom* pFormat)
             break;
         case 0x00FF:
             m_mediaType.SetSubtype(&MEDIASUBTYPE_AAC_AUDIO);
-            m_pHandler.reset(new CoreAACHandler());
+            m_pHandler = new CoreAACHandler();
             break;
         default:
             {
@@ -132,8 +132,8 @@ AviElementaryType::IsVideo() const
     
 void AviElementaryType::setHandler(const CMediaType* pmt, int idx)
 {
-    if(!m_pHandler.get())
-        m_pHandler.reset(new NoChangeHandler());
+    if(!m_pHandler)
+        m_pHandler = new NoChangeHandler();
 }
 
 bool 

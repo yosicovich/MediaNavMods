@@ -95,7 +95,6 @@ DShowDemultiplexor::DShowDemultiplexor(LPUNKNOWN pUnk, HRESULT* phr, const CLSID
 DShowDemultiplexor::~DShowDemultiplexor()
 {
     debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::~DShowDemultiplexor(): m_pMovie->Tracks() = %u\r\n", m_pMovie->Tracks());
-    delete m_pInput;
 }
 
 
@@ -110,7 +109,7 @@ DShowDemultiplexor::GetPin(int n)
 {
     if (n == 0)
     {
-        return m_pInput;
+        return m_pInput.get();
     } else if (n <= (int)m_Outputs.size())
     {
         return Output(n-1);
@@ -259,23 +258,8 @@ DShowDemultiplexor::Seek(REFERENCE_TIME& tStart, BOOL bSeekToKeyFrame, const REF
 		}
 		if(pSeekingPin)
 		{
-			#if defined(_DEBUG)
-				TCHAR pszText[1024] = { 0 };
-				_stprintf_s(pszText, _T("%hs: tStart %I64d"), __FUNCTION__, tStart);
-				GUID MajorType;
-				if(pSeekingPin->GetMajorMediaType(MajorType))
-					if(MajorType == MEDIATYPE_Video)
-						_tcscat_s(pszText, _T(", using video pin"));
-					else if(MajorType == MEDIATYPE_Audio)
-						_tcscat_s(pszText, _T(", using audio pin"));
-				pSeekingPin->SeekBackToKeyFrame(tStart);
-				_stprintf_s(pszText + _tcslen(pszText), _countof(pszText) - _tcslen(pszText), _T(", updated m_tStart %I64d"), tStart);
-				_tcscat_s(pszText, _T("\n"));
-				OutputDebugString(pszText);
-			#else
-                debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::Seek: pSeekingPin->SeekBackToKeyFrame()\r\n");
-				pSeekingPin->SeekBackToKeyFrame(tStart);
-			#endif
+            debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::Seek: pSeekingPin->SeekBackToKeyFrame()\r\n");
+            pSeekingPin->SeekBackToKeyFrame(tStart);
 		}
 	}
 	#pragma endregion 
@@ -355,9 +339,7 @@ DShowDemultiplexor::CompleteConnect(IPin* pPeer)
     LONGLONG llTotal, llAvail;
     pRdr->Length(&llTotal, &llAvail);
     debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::CompleteConnect: Is about to create movie, current m_pMovie = %u\r\n", m_pMovie.get());
-    Atom* pfile = createAtom(m_pInput, 0, llTotal, 0, 0);
-    m_pMovie = createMovie(pfile);
-    // pfile now owned and deleted by Movie object
+    m_pMovie = createMovie(m_pInput.dynamic_pointer_cast<AtomReader>());
 
     debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::CompleteConnect: m_pMovie->Tracks() = %u\r\n", m_pMovie->Tracks());
     if (m_pMovie->Tracks() <= 0)
@@ -371,7 +353,7 @@ DShowDemultiplexor::CompleteConnect(IPin* pPeer)
     for (long  nTrack = 0; nTrack < m_pMovie->Tracks(); nTrack++)
     {
         debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::CompleteConnect: getting track nTrack = %u\r\n", nTrack);
-        MovieTrack* pTrack = m_pMovie->Track(nTrack);
+        MovieTrackPtr pTrack = m_pMovie->Track(nTrack);
         _bstr_t strName(pTrack->Name());
         debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::CompleteConnect: strName = %s - %S\r\n", strName.GetBSTR(), pTrack->Name());
         DemuxOutputPinPtr pPin = new DemuxOutputPin(pTrack, this, &m_csFilter, &hr, strName);
@@ -475,7 +457,7 @@ DemuxInputPin::Length()
 
 // -------- output pin ----------------------------------------
 
-DemuxOutputPin::DemuxOutputPin(MovieTrack* pTrack, DShowDemultiplexor* pDemux, CCritSec* pLock, HRESULT* phr, LPCWSTR pName)
+DemuxOutputPin::DemuxOutputPin(const MovieTrackPtr& pTrack, DShowDemultiplexor* pDemux, CCritSec* pLock, HRESULT* phr, LPCWSTR pName)
 : thread(THREAD_PRIORITY_ABOVE_NORMAL), // Make priority a slight higher not to exhaust the queue
   m_pParser(pDemux),
   m_pTrack(pTrack),

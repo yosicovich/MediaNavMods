@@ -75,7 +75,7 @@ public:
     {
     }
 
-    smart_ptr(T* pObj)
+    explicit smart_ptr(T* pObj)
     {
         m_pObject = pObj;
         AssignNew();
@@ -85,6 +85,16 @@ public:
     {
         m_pObject = ptr.m_pObject;
         m_pCount = ptr.m_pCount;
+        if (m_pCount != NULL)
+        {
+            m_pCount->Increment();
+        }
+    }
+
+    smart_ptr(ptr_shared_count* pCount, T* pObject)
+    {
+        m_pObject = pObject;
+        m_pCount = pCount;
         if (m_pCount != NULL)
         {
             m_pCount->Increment();
@@ -131,10 +141,6 @@ public:
     {
         return *m_pObject;
     }
-    operator T*() const
-    {
-        return m_pObject;
-    }
 
     T* get() const
     {
@@ -157,6 +163,23 @@ public:
         }
     }
 
+    bool operator!=(int null) const
+    {
+        return !operator ==(null);
+    }
+
+    bool operator==(const smart_ptr<T>& r) const
+    {
+        return m_pObject == r.m_pObject;
+    }
+    
+    
+    template<typename U> smart_ptr<U> dynamic_pointer_cast()
+    {
+        if(!(*this))
+            return smart_ptr<U>();
+        return smart_ptr<U>(m_pCount, m_pObject);
+    }
 
 private:
     void AssignNew()

@@ -43,12 +43,7 @@ AviDemultiplexor::AviDemultiplexor(LPUNKNOWN pUnk, HRESULT* phr)
     setAlwaysSeekToKeyFrame(Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, TEXT("\\SOFTWARE\\Microsoft\\DirectX\\DirectShow\\AVIDemux"), TEXT("KeyFrameSeeking"), true));
 }
 
-Atom* AviDemultiplexor::createAtom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader)
+MoviePtr AviDemultiplexor::createMovie(const AtomReaderPtr& pRoot)
 {
-    return new AviAtom(pReader, llOffset, llLength, type, cHeader);
-}
-
-Movie* AviDemultiplexor::createMovie(Atom* pRoot)
-{
-    return new AviMovie(pRoot);
+    return MoviePtr(new AviMovie(pRoot));
 }

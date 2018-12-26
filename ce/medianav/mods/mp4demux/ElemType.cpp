@@ -75,7 +75,7 @@ Mpeg4ElementaryType::Mpeg4ElementaryType()
 
 
 bool 
-Mpeg4ElementaryType::ParseDescriptor(Atom* patmESD)
+Mpeg4ElementaryType::ParseDescriptor(const AtomPtr& patmESD)
 {
     AtomCache pESD(patmESD);
     if (pESD[0] != 0)
@@ -157,7 +157,7 @@ struct QTVideo
 
 
 bool 
-Mpeg4ElementaryType::Parse(REFERENCE_TIME tFrame, Atom* patm)
+Mpeg4ElementaryType::Parse(REFERENCE_TIME tFrame, const AtomPtr& patm)
 {
 	m_shortname = "Unknown";
     m_tFrame = tFrame;
@@ -419,7 +419,7 @@ Mpeg4ElementaryType::Parse(REFERENCE_TIME tFrame, Atom* patm)
     patm->ScanChildrenAt(cOffset);
 	for (int i = 0; i < patm->ChildCount(); i++)
 	{
-	    Atom* patmESD = patm->Child(i);
+	    AtomPtr& patmESD = patm->Child(i);
 		if (!patmESD)
 		{
 			return false;
@@ -473,7 +473,7 @@ Mpeg4ElementaryType::Parse(REFERENCE_TIME tFrame, Atom* patm)
 			// search for esds in children of this atom
 			for (int j = 0; j < patmESD->ChildCount(); j++)
 			{
-				Atom* pwav = patmESD->Child(j);
+				AtomPtr& pwav = patmESD->Child(j);
 				if (pwav->Type() == FOURCC("esds"))
 				{
 					if (ParseDescriptor(pwav))
@@ -513,7 +513,7 @@ Mpeg4ElementaryType::setHandler(const CMediaType* pmt, int idx)
     if (m_type == Audio_AAC)
     {
         debugPrintf(AAC_DEBUG, L"Mpeg4ElementaryType::setHandler() m_type == Audio_AAC\r\n");
-        m_pHandler.reset(new CoreAACHandler());
+        m_pHandler = new CoreAACHandler();
     } else 
         // bugfix pointed out by David Hunter --
         // Use the divxhandler to prepend VOL header for divx and xvid types.
@@ -521,21 +521,21 @@ Mpeg4ElementaryType::setHandler(const CMediaType* pmt, int idx)
         // (should really compare subtypes here I think)
         if ((m_type == Video_Mpeg4) && (idx > 0))
         {
-            m_pHandler.reset(new DivxHandler(m_pDecoderSpecific, m_cDecoderSpecific));
+            m_pHandler = new DivxHandler(m_pDecoderSpecific, m_cDecoderSpecific);
         } 
         else if ((m_type == Video_H264) && (idx > 0) && (*pmt->FormatType() != FORMAT_MPEG2Video))
         {
             debugPrintf(DBG, L"Mpeg4ElementaryType::setHandler() choose H264ByteStreamHandler\r\n");
-            m_pHandler.reset(new H264ByteStreamHandler(m_pDecoderSpecific, m_cDecoderSpecific));
+            m_pHandler = new H264ByteStreamHandler(m_pDecoderSpecific, m_cDecoderSpecific);
         }
         else if ((m_type == Audio_WAVEFORMATEX) &&
             (m_fourcc == FOURCC("twos"))
             )
         {
-            m_pHandler.reset(new BigEndianAudioHandler());
+            m_pHandler = new BigEndianAudioHandler();
         } else {
             debugPrintf(DBG, L"Mpeg4ElementaryType::setHandler() choose NoChangeHandler\r\n");
-            m_pHandler.reset(new NoChangeHandler());
+            m_pHandler = new NoChangeHandler();
         }
 }
 

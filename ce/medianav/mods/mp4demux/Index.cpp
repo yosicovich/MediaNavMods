@@ -17,24 +17,21 @@
 
 Mpeg4SampleSizes::Mpeg4SampleSizes()
 : SampleSizes(),
-  m_nFixedSize(0),
-  m_patmSTSZ(NULL),
-  m_patmSTSC(NULL),
-  m_patmSTCO(NULL)
+  m_nFixedSize(0)
 {}
      
 bool 
-Mpeg4SampleSizes::Parse(Atom* patmSTBL)
+Mpeg4SampleSizes::Parse(const AtomPtr& patmSTBL)
 {
     // need to locate three inter-related tables
     // stsz, stsc and stco/co64
 
-    m_patmSTSZ = patmSTBL->FindChild(FOURCC("stsz"));
-    if (!m_patmSTSZ)
+    const AtomPtr& patmSTSZ = patmSTBL->FindChild(FOURCC("stsz"));
+    if (!patmSTSZ)
     {
         return false;
     }
-    m_pBuffer = m_patmSTSZ;
+    m_pBuffer = patmSTSZ;
     if (m_pBuffer[0] != 0)  // check version 0
     {
         return false;
@@ -57,27 +54,27 @@ Mpeg4SampleSizes::Parse(Atom* patmSTBL)
         }
     }
 
-    m_patmSTSC = patmSTBL->FindChild(FOURCC("stsc"));
-    if (!m_patmSTSC)
+    const AtomPtr& patmSTSC = patmSTBL->FindChild(FOURCC("stsc"));
+    if (!patmSTSC)
     {
         return false;
     }
-    m_pSTSC = m_patmSTSC;
+    m_pSTSC = patmSTSC;
     m_nEntriesSTSC = SwapLong(m_pSTSC+4);
 
-    m_patmSTCO = patmSTBL->FindChild(FOURCC("stco"));
-    if (m_patmSTCO)
+    AtomPtr& patmSTCO = patmSTBL->FindChild(FOURCC("stco"));
+    if (patmSTCO != NULL)
     {
         m_bCO64 = false;
     } else {
-        m_patmSTCO = patmSTBL->FindChild(FOURCC("co64"));
-        if (!m_patmSTCO)
+        patmSTCO = patmSTBL->FindChild(FOURCC("co64"));
+        if (!patmSTCO)
         {
             return false;
         }
         m_bCO64 = true;
     }
-    m_pSTCO = m_patmSTCO;
+    m_pSTCO = patmSTCO;
     m_nChunks = SwapLong(m_pSTCO + 4);
     return true;
 }
@@ -176,30 +173,20 @@ Mpeg4SampleSizes::AdjustFixedSize(long nBytes)
 
 Mpeg4KeyMap::Mpeg4KeyMap()
 : KeyMap(),
-  m_patmSTSS(NULL),
-  m_pSTSS(NULL),
   m_nEntries(0)
 {
 }
 
-Mpeg4KeyMap::~Mpeg4KeyMap()
-{
-    if (m_patmSTSS)
-    {
-        m_patmSTSS->BufferRelease();
-    }
-}
-
 bool 
-Mpeg4KeyMap::Parse(Atom* patmSTBL)
+Mpeg4KeyMap::Parse(const AtomPtr& patmSTBL)
 {
-    m_patmSTSS = patmSTBL->FindChild(FOURCC("stss"));
-    if (!m_patmSTSS)
+    const AtomPtr& patmSTSS = patmSTBL->FindChild(FOURCC("stss"));
+    if (!patmSTSS)
     {
 		// no key map -- so all samples are key
         return true;
     }
-    m_pSTSS = m_patmSTSS->Buffer() + m_patmSTSS->HeaderSize();
+    m_pSTSS = patmSTSS;
     if (m_pSTSS[0] != 0)  // check version 0
     {
         return false;
@@ -213,7 +200,7 @@ Mpeg4KeyMap::Parse(Atom* patmSTBL)
 long 
 Mpeg4KeyMap::SyncFor(long nSample) const
 {
-    if (!m_patmSTSS || (m_nEntries == 0))
+    if (m_nEntries == 0)
     {
         // no table -- all samples are key samples
         return nSample;
@@ -236,7 +223,7 @@ Mpeg4KeyMap::SyncFor(long nSample) const
 long 
 Mpeg4KeyMap::Next(long nSample) const
 {
-    if (!m_patmSTSS || (m_nEntries == 0))
+    if (m_nEntries == 0)
     {
         // no table -- all samples are key samples
         return nSample + 1;
@@ -273,13 +260,11 @@ SIZE_T Mpeg4KeyMap::Get(SIZE_T*& pnIndexes) const
 // ----- times index ----------------------------------
 
 Mpeg4SampleTimes::Mpeg4SampleTimes()
-: SampleTimes(),
-  m_patmCTTS(NULL),
-  m_patmSTTS(NULL)
+: SampleTimes()
 {
 }
 bool 
-Mpeg4SampleTimes::Parse(long scale, LONGLONG CTOffset, Atom* patmSTBL)
+Mpeg4SampleTimes::Parse(long scale, LONGLONG CTOffset, const AtomPtr& patmSTBL)
 {
     // scale - track timescale units/sec
     m_rate = scale;            
@@ -288,12 +273,12 @@ Mpeg4SampleTimes::Parse(long scale, LONGLONG CTOffset, Atom* patmSTBL)
     m_CTOffset = CTOffset;      // offset to start of first sample in 100ns
 
     // basic duration table
-    m_patmSTTS = patmSTBL->FindChild(FOURCC("stts"));
-    if (!m_patmSTTS)
+    const AtomPtr& patmSTTS = patmSTBL->FindChild(FOURCC("stts"));
+    if (!patmSTTS)
     {
         return false;
     }
-    m_pSTTS = m_patmSTTS;
+    m_pSTTS = patmSTTS;
     m_nSTTS = SwapLong(m_pSTTS + 4);
 
 	m_total = 0;
@@ -306,13 +291,12 @@ Mpeg4SampleTimes::Parse(long scale, LONGLONG CTOffset, Atom* patmSTBL)
 	m_total = TrackToReftime(m_total);
 
     // optional decode-to-composition offset table
-    m_patmCTTS = patmSTBL->FindChild(FOURCC("ctts"));
-    if (m_patmCTTS)
+    const AtomPtr& patmCTTS = patmSTBL->FindChild(FOURCC("ctts"));
+    if (patmCTTS != NULL)
     {
-        m_pCTTS = m_patmCTTS;
+        m_pCTTS = patmCTTS;
         m_nCTTS = SwapLong(m_pCTTS + 4);
     } else {
-        m_pCTTS = NULL;
         m_nCTTS = 0;
     }
 

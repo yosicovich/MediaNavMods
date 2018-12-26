@@ -1,13 +1,6 @@
 //
-// Mpeg4.cpp: implementation of Mpeg-4 parsing classes
+// demuxtypes.cpp: implementation of common demux classes
 //
-//
-// Geraint Davies, April 2004
-//
-// Copyright (c) GDCL 2004-6. All Rights Reserved. 
-// You are free to re-use this as the basis for your own filter development,
-// provided you retain this copyright notice in the source.
-// http://www.gdcl.co.uk
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
@@ -52,12 +45,12 @@ Atom::ChildCount()
     return (long)m_Children.size();
 }
 
-Atom* 
+AtomPtr 
 Atom::Child(long nChild)
 {
     if (nChild >= ChildCount())
     {
-        return NULL;
+        return AtomPtr();
     }
     list<AtomPtr>::iterator it = m_Children.begin();
     while ((nChild-- > 0) && (it != m_Children.end()))
@@ -66,37 +59,36 @@ Atom::Child(long nChild)
     }
     if (it == m_Children.end())
     {
-        return NULL;
+        return AtomPtr();
     }
     return *it;
 }
 
-Atom* 
+AtomPtr 
 Atom::FindChild(DWORD fourcc)
 {
     if (ChildCount() == 0) // force enum of children
     {
-        return NULL;
+        return AtomPtr();
     }
 
     list<AtomPtr>::iterator it = m_Children.begin();
     while (it != m_Children.end())
     {
-        Atom* pChild = *it;
-        if (pChild->Type() == fourcc)
+        if ((*it)->Type() == fourcc)
         {
-            return pChild;
+            return *it;
         }
         it++;
     }
-    return NULL;
+    return AtomPtr();
 }
 
-Atom* Atom::FindNextChild(Atom* after, DWORD fourcc)
+AtomPtr Atom::FindNextChild(const AtomPtr& after, DWORD fourcc)
 {
     if (ChildCount() == 0) // force enum of children
     {
-        return NULL;
+        return AtomPtr();
     }
 
     if(!after)
@@ -115,14 +107,13 @@ Atom* Atom::FindNextChild(Atom* after, DWORD fourcc)
 
     while (it != m_Children.end())
     {
-        Atom* pChild = *it;
-        if (pChild->Type() == fourcc)
+        if ((*it)->Type() == fourcc)
         {
-            return pChild;
+            return (*it);
         }
         it++;
     }
-    return NULL;
+    return AtomPtr();
 }
 
 bool 
@@ -269,7 +260,7 @@ bool ElementaryType::SetType(const CMediaType* pmt)
 }
 // -- main movie header, contains list of tracks ---------------
 
-Movie::Movie(Atom* pRoot)
+Movie::Movie(const AtomReaderPtr& pRoot)
 : m_pRoot(pRoot)
 {
 }
@@ -284,8 +275,8 @@ Movie::ReadAbsolute(LONGLONG llPos, BYTE* pBuffer, long cBytes)
 // ------------------------------------------------------------------
 
 
-MovieTrack::MovieTrack(Atom* pAtom, Movie* pMovie, long idx)
-: m_pRoot(NULL),
+MovieTrack::MovieTrack(const AtomPtr& pAtom, Movie* pMovie, long idx)
+: m_pRoot(),
   m_pMovie(pMovie),
   m_idx(idx),
   m_bOldFixedAudio(false)
@@ -418,7 +409,7 @@ SIZE_T MovieTrack::GetTimes(REFERENCE_TIME** ppnStartTimes, REFERENCE_TIME** ppn
 			ASSERT(pnFlags);
 			for(SIZE_T nSampleIndex = 0; nSampleIndex < nSampleCount; nSampleIndex++)
 				pnFlags[nSampleIndex] = AM_SAMPLE_TIMEVALID;
-			if(GetKeyMap())
+			if(GetKeyMap() != NULL)
 			{
 				SIZE_T* pnIndexes = NULL;
 				const SIZE_T nIndexCount = GetKeyMap()->Get(pnIndexes);

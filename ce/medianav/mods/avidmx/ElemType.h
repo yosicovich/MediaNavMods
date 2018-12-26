@@ -21,7 +21,7 @@ class AviElementaryType: public ElementaryType
 public:
     AviElementaryType();
 
-    bool Parse(const AVISTREAMHEADER& streamHeader, Atom* pFormat); 
+    bool Parse(const AVISTREAMHEADER& streamHeader, const AtomPtr& pFormat); 
 	bool IsVideo() const;
     bool GetType(CMediaType* pmt, int nType) const;
     virtual void setHandler(const CMediaType* pmt, int idx);

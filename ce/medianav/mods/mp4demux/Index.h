@@ -24,23 +24,20 @@ class Mpeg4SampleSizes: public SampleSizes
 public:
     Mpeg4SampleSizes();
 
-    bool Parse(Atom* patmSTBL);
+    bool Parse(const AtomPtr& patmSTBL);
     long Size(long nSample) const;
     LONGLONG Offset(long nSample) const;
 
 	// support for old-style uncompressed audio, where fixedsize =1 means 1 sample
 	void AdjustFixedSize(long nBytes);
 private:
-    Atom* m_patmSTSZ;
 	AtomCache m_pBuffer;
     long m_nFixedSize;
     
     long m_nEntriesSTSC;
     long m_nChunks;
     bool m_bCO64;
-    Atom* m_patmSTSC;
 	AtomCache m_pSTSC;
-    Atom* m_patmSTCO;
 	AtomCache m_pSTCO;
 };
 
@@ -49,16 +46,14 @@ class Mpeg4KeyMap: public KeyMap
 {
 public:
     Mpeg4KeyMap();
-    ~Mpeg4KeyMap();
 
-    bool Parse(Atom* patmSTBL);
+    bool Parse(const AtomPtr& patmSTBL);
     long SyncFor(long nSample) const;
 	long Next(long nSample) const;
 	SIZE_T Get(SIZE_T*& pnIndexes) const;
 
 private:
-    Atom* m_patmSTSS;
-    const BYTE* m_pSTSS;
+    AtomCache m_pSTSS;
     long m_nEntries;
 };
 
@@ -69,7 +64,7 @@ class Mpeg4SampleTimes: public SampleTimes
 public:
     Mpeg4SampleTimes();
 
-	bool Parse(long scale, LONGLONG CTOffset, Atom* patmSTBL);
+	bool Parse(long scale, LONGLONG CTOffset, const AtomPtr& patmSTBL);
 
     long DTSToSample(LONGLONG tStart);
 	SIZE_T Get(REFERENCE_TIME*& pnTimes) const;
@@ -82,8 +77,6 @@ public:
 private:
     LONGLONG m_CTOffset;        // CT offset of first sample
 
-    Atom* m_patmSTTS;
-    Atom* m_patmCTTS;
     AtomCache m_pSTTS;
     AtomCache m_pCTTS;
 
