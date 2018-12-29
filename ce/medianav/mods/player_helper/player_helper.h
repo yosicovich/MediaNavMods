@@ -11,6 +11,7 @@
 #endif
 
 //#define TESTMODE
+#define STABLE_ONLY
 
 #include "stdafx.h"
 #include "utils.h"
