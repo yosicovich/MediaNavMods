@@ -13,6 +13,12 @@
 //#define TESTMODE
 #define STABLE_ONLY
 
+#ifdef TESTMODE
+#ifdef STABLE_ONLY
+#undef STABLE_ONLY
+#endif
+#endif
+
 #include "stdafx.h"
 #include "utils.h"
 #//include <pwinuser.h>
