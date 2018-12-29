@@ -512,7 +512,7 @@ Mpeg4ElementaryType::setHandler(const CMediaType* pmt, int idx)
     // handler based on m_type and idx
     if (m_type == Audio_AAC)
     {
-        debugPrintf(AAC_DEBUG, L"Mpeg4ElementaryType::setHandler() m_type == Audio_AAC\r\n");
+        debugPrintf(DBG, L"Mpeg4ElementaryType::setHandler() m_type == Audio_AAC\r\n");
         m_pHandler = new CoreAACHandler();
     } else 
         // bugfix pointed out by David Hunter --

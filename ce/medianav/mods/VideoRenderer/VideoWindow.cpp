@@ -78,7 +78,6 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
     m_cxCrop(0),
     m_cyCrop(0),
     m_visible(FALSE),
-    m_pMediaSample(NULL),
     m_osdInfo(OSDInfo_MemUsage),
     m_longTapDetect(false),
     m_tapStartTime(0)
@@ -463,12 +462,8 @@ void CVideoWindow::RepaintLastImage()
 		pMediaSample->Release();
 	}else
     {
-        OS_Print(DBG, "CVideoWindow::RepaintLastImage() pMediaSample == NULL use cached one\r\n");
-        if(m_pMediaSample)
-        {
-            RenderSample(m_pMediaSample);
-            m_pMediaSample->Release();
-        }
+        OS_Print(DBG, "CVideoWindow::RepaintLastImage() pMediaSample == NULL issue EC_REPAINT\r\n");
+        //m_pRenderer->NotifyEvent(EC_REPAINT, 0, 0);
     }
 }
 
@@ -1085,16 +1080,13 @@ HRESULT CVideoWindow::RenderSample(IMediaSample *pMediaSample)
 {
     HRESULT hr;
 
-	//CAutoLock lock(&m_csWindow);
+	CAutoLock lock(&m_csWindow);
     
 	bool bAdvance = true;
 
     // If overlay is not visible skip any rendering to save resources.
     if(!m_pOverlay->IsVisible())
         return NOERROR;
-    //releaseCachedMediaSample();
-    //m_pMediaSample = pMediaSample;
-    //m_pMediaSample->AddRef();
 
 	if (m_bMPE)
 	{

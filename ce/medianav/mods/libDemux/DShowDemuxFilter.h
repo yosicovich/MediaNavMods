@@ -85,7 +85,7 @@ class DemuxOutputPin
   public thread
 {
 public:
-    DemuxOutputPin(const MovieTrackPtr& pTrack, DShowDemultiplexor* pDemux, CCritSec* pLock, HRESULT* phr, LPCWSTR pName);
+    DemuxOutputPin(const MovieTrackPtr& pTrack, DShowDemultiplexor* pDemux, CCritSec* pLock, HRESULT* phr, LPCWSTR pName, DWORD dwPriority = THREAD_PRIORITY_NORMAL);
 	DECLARE_IUNKNOWN
 	STDMETHODIMP NonDelegatingQueryInterface(REFIID iid, void** ppv);
 

@@ -356,7 +356,8 @@ DShowDemultiplexor::CompleteConnect(IPin* pPeer)
         MovieTrackPtr pTrack = m_pMovie->Track(nTrack);
         _bstr_t strName(pTrack->Name());
         debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::CompleteConnect: strName = %s - %S\r\n", strName.GetBSTR(), pTrack->Name());
-        DemuxOutputPinPtr pPin = new DemuxOutputPin(pTrack, this, &m_csFilter, &hr, strName);
+        // Make priority higher not to exhaust the queue
+        DemuxOutputPinPtr pPin = new DemuxOutputPin(pTrack, this, &m_csFilter, &hr, strName, THREAD_PRIORITY_TIME_CRITICAL);
         debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::CompleteConnect: DemuxOutputPin created\r\n", strName.GetBSTR(), pTrack->Name());
         m_Outputs.push_back(pPin);
     }
@@ -457,8 +458,8 @@ DemuxInputPin::Length()
 
 // -------- output pin ----------------------------------------
 
-DemuxOutputPin::DemuxOutputPin(const MovieTrackPtr& pTrack, DShowDemultiplexor* pDemux, CCritSec* pLock, HRESULT* phr, LPCWSTR pName)
-: thread(THREAD_PRIORITY_ABOVE_NORMAL), // Make priority a slight higher not to exhaust the queue
+DemuxOutputPin::DemuxOutputPin(const MovieTrackPtr& pTrack, DShowDemultiplexor* pDemux, CCritSec* pLock, HRESULT* phr, LPCWSTR pName, DWORD dwPriority/* = THREAD_PRIORITY_NORMAL*/)
+: thread(dwPriority),
   m_pParser(pDemux),
   m_pTrack(pTrack),
   m_tLate(0),
@@ -663,6 +664,8 @@ DemuxOutputPin::ThreadProc()
                 break;
             }
 
+            if(m_tLate)
+                pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: LATE!!! m_tLate = %d\r\n", m_tLate);
 #pragma region Quality
             if (bHandleQuality)
             {

@@ -77,7 +77,6 @@ protected:
     int             m_cyCrop;
 
     BOOL            m_visible;
-    IMediaSample*   m_pMediaSample;
     
     OSDInfo         m_osdInfo;
     bool            m_longTapDetect;
