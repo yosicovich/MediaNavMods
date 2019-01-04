@@ -64,6 +64,8 @@ bool bShowWindowClass = false;
 bool bShowWindowID = false;
 bool bShowDate = false;
 bool bVisible = false;
+POINT checkPoint = {0, 0};
+bool alwaysOnTop = false;
 
 static const wchar_t cFilterDelimiter = L'|';
 static const wchar_t cNotMatchPrefix = L'!';
@@ -307,6 +309,10 @@ int readConfig(HWND hWnd)
     // Poll Interval
     gStatePollInterval = ini.GetLongValue(L"Visibility", L"StatePollIntervalMS", DEFAULT_POLL_INTERVAL_MS);
 
+    // Check point
+    checkPoint.x = ini.GetLongValue(L"Visibility", L"WindowPointCheckX", 0);
+    checkPoint.y = ini.GetLongValue(L"Visibility", L"WindowPointCheckY", 0);
+
     // Class filter    
     {
         std::wstring classFilter = ini.GetValue(L"Visibility", L"ClassFilter", cAnyMatchPattern.c_str());
@@ -372,6 +378,7 @@ int readConfig(HWND hWnd)
     if(!hBitmapBtn)
         return FALSE;
 
+    alwaysOnTop = ini.GetBoolValue(L"Position", L"AlwaysOnTop", false);
     return TRUE;
 }
 
@@ -389,7 +396,12 @@ int readConfig(HWND hWnd)
 
 void checkShowState()
 {
-	HWND nWnd = GetForegroundWindow();
+    HWND nWnd;
+    if(checkPoint.x == 0 && checkPoint.y == 0)
+        nWnd = GetForegroundWindow();
+    else
+        nWnd = WindowFromPoint(checkPoint);
+
 	if (gWnd != nWnd && pWnd != nWnd) {
 		pWnd = nWnd;
 	}
@@ -431,6 +443,8 @@ void checkShowState()
         if (fenetreok){
 
             ShowWindow(gWnd, SW_SHOWNOACTIVATE);
+            if(alwaysOnTop)
+                BringWindowToTop(gWnd);
         } else {
             ShowWindow(gWnd, SW_HIDE);
         }
