@@ -103,7 +103,11 @@ PLAYER_HELPER_API bool fixCodecsPath()
     registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{0ba13ea1-70e5-11db-9690-00e08161165f}\\InprocServer32", L"", cCodecsBase + L"VideoRenderer.dll"));
     registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D1E456E1-47E5-497a-ABA1-A0C57C3CE5C0}\\InprocServer32", L"", cCodecsBase + L"vorbisdecfilter.dll"));
 #ifndef STABLE_ONLY
-    //registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{1F3F5741-A9EE-4bd9-B64E-99C5534B3817}\\InprocServer32", L"", cCodecsBase + L"ac3decfilter.dll"));
+#ifdef WITH_DEBUGGER
+    registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{1F3F5741-A9EE-4bd9-B64E-99C5534B3817}\\InprocServer32", L"", L"\\Program Files\\ac3decfilter\\ac3decfilter.dll"));
+#else
+    registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{1F3F5741-A9EE-4bd9-B64E-99C5534B3817}\\InprocServer32", L"", cCodecsBase + L"ac3decfilter.dll"));
+#endif
     registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{3E4DCA25-347E-4678-B22A-6F4CC68FF2A8}\\InprocServer32", L"", cCodecsBase + L"audiocorefilter.dll"));
     registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{9EBFDAAE-0963-4b5a-8B2E-EDB9B943820B}\\InprocServer32", L"", cCodecsBase + L"matroskafilter.dll"));
 #endif

@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "voAC3DecTest", "voAC3DecTest\voAC3DecTest.vcproj", "{DD1BD8D1-5851-4612-ADD3-70F9949F1586}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307} = {CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "voAC3DecLib", "..\voAC3DecLib\voAC3DecLib.vcproj", "{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|DbAu13xx (MIPSII) = Debug|DbAu13xx (MIPSII)
+		Debug|Win32 = Debug|Win32
+		Release|DbAu13xx (MIPSII) = Release|DbAu13xx (MIPSII)
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Debug|Win32.Build.0 = Debug|Win32
+		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Release|Win32.ActiveCfg = Release|Win32
+		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Release|Win32.Build.0 = Release|Win32
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Debug|Win32.Build.0 = Debug|Win32
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Release|Win32.ActiveCfg = Release|Win32
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
