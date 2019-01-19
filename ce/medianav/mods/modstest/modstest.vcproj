@@ -66,7 +66,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,6.00 /machine:MIPS"
-				AdditionalDependencies="&quot;C:\dev\workspace\medianav\mods\player_helper\DbAu13xx (MIPSII)\Debug\player_helper.lib&quot;"
+				AdditionalDependencies="toolhelp.lib"
 				OutputFile="$(OutDir)/modstest.exe"
 				LinkIncremental="2"
 				DelayLoadDLLs="$(NOINHERIT)"
@@ -154,6 +154,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,6.00 /machine:MIPS"
+				AdditionalDependencies="toolhelp.lib"
 				OutputFile="$(OutDir)/modstest.exe"
 				LinkIncremental="1"
 				DelayLoadDLLs="$(NOINHERIT)"

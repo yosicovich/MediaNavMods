@@ -8,6 +8,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "player_helper", "player_hel
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "modstest", "modstest\modstest.vcproj", "{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}"
 	ProjectSection(ProjectDependencies) = postProject
+		{1F71555E-8F6E-4929-B425-04E006387F07} = {1F71555E-8F6E-4929-B425-04E006387F07}
 		{5CBB21E4-D3DD-4F72-AA65-BAF9BA300142} = {5CBB21E4-D3DD-4F72-AA65-BAF9BA300142}
 	EndProjectSection
 EndProject

@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "modstest.h"
 #include "player_helper.h"
+#include "SystemMeter.h"
 
 #define MAX_LOADSTRING 100
 
@@ -16,20 +17,20 @@ ATOM			MyRegisterClass(HINSTANCE, LPTSTR);
 BOOL			InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
+Utils::SystemMeter* g_systemMeter;
 
 int WINAPI WinMain(HINSTANCE hInstance,
                    HINSTANCE hPrevInstance,
                    LPTSTR    lpCmdLine,
                    int       nCmdShow)
 {
-    test();
+    //test();
     
     MSG msg;
-
 	// Perform application initialization:
 	if (!InitInstance(hInstance, nCmdShow)) 
 	{
-		return FALSE;
+        return FALSE;
 	}
 
 	HACCEL hAccelTable;
@@ -202,6 +203,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
         case WM_INITDIALOG:
+            g_systemMeter = new Utils::SystemMeter();
             RECT rectChild, rectParent;
             int DlgWidth, DlgHeight;	// dialog width and height in pixel units
             int NewPosX, NewPosY;
@@ -221,6 +223,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 SetWindowPos(hDlg, 0, NewPosX, NewPosY,
                     0, 0, SWP_NOZORDER | SWP_NOSIZE);
             }
+            SetTimer(hDlg, WM_USER+100, 1000, NULL);
             return (INT_PTR)TRUE;
 
         case WM_COMMAND:
@@ -233,7 +236,17 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
         case WM_CLOSE:
             EndDialog(hDlg, message);
+            KillTimer(hDlg, WM_USER+100);
+            delete g_systemMeter;
             return TRUE;
+        case WM_TIMER:
+            if(wParam == WM_USER+100)
+            {
+                wchar_t loadStr[50];
+                swprintf_s(loadStr, 50, L"CPU: %d%%, Mem: %d%%", g_systemMeter->getCPULoad(), g_systemMeter->getMemoryStatus().dwMemoryLoad);
+                SetWindowText(GetDlgItem(hDlg, IDC_STATIC_LOAD), loadStr);
+            }
+
 
     }
     return (INT_PTR)FALSE;
