@@ -357,7 +357,7 @@ DShowDemultiplexor::CompleteConnect(IPin* pPeer)
         _bstr_t strName(pTrack->Name());
         debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::CompleteConnect: strName = %s - %S\r\n", strName.GetBSTR(), pTrack->Name());
         // Make priority higher not to exhaust the queue
-        DemuxOutputPinPtr pPin = new DemuxOutputPin(pTrack, this, &m_csFilter, &hr, strName, THREAD_PRIORITY_HIGHEST);
+        DemuxOutputPinPtr pPin = new DemuxOutputPin(pTrack, this, &m_csFilter, &hr, strName, THREAD_PRIORITY_NORMAL);
         debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::CompleteConnect: DemuxOutputPin created\r\n", strName.GetBSTR(), pTrack->Name());
         m_Outputs.push_back(pPin);
     }
