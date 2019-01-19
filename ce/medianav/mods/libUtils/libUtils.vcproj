@@ -186,6 +186,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SystemMeter.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\utils.cpp"
 				>
 			</File>
@@ -201,6 +205,10 @@
 			</File>
 			<File
 				RelativePath=".\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SystemMeter.h"
 				>
 			</File>
 			<File
