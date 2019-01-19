@@ -1000,13 +1000,21 @@ void CVideoWindow::OnScreenDisplay(IMediaSample *pSample)
 
 	OS_Print(FUNC, "CVideoWindow::OnScreenDisplay\r\n");
 
+    if(m_osdInfo != OSDInfo_MemUsage && m_pSystemMeter.get() != NULL)
+        m_pSystemMeter.reset();
+
     switch(m_osdInfo)
     {
     case OSDInfo_MemUsage:
         {
-            MEMORYSTATUS memStatus;
+            if(m_pSystemMeter.get() == NULL)
+            {
+                m_pSystemMeter.reset(new Utils::SystemMeter());
+            }
+            MEMORYSTATUS memStatus = m_pSystemMeter->getMemoryStatus();
+            DWORD dwCPULoad = m_pSystemMeter->getCPULoad();
             GlobalMemoryStatus(&memStatus);
-            wsprintf(szOSDInfo, TEXT("Memory status: Load:%d%%, Available: %dMB, Total: %dMB"), memStatus.dwMemoryLoad, 
+            wsprintf(szOSDInfo, TEXT("CPU: %2d%%; Memory: %2d%%, Available: %3dMB, Total: %3dMB"), dwCPULoad, memStatus.dwMemoryLoad, 
                 memStatus.dwAvailPhys / cOneMegabyte,
                 memStatus.dwTotalPhys / cOneMegabyte);
             break;
@@ -1129,7 +1137,7 @@ HRESULT CVideoWindow::RenderSample(IMediaSample *pMediaSample)
 //	m_pOverlay->SetNextBuffer(m_OverlayBuffers[m_CurOverlayBuffer]);
 	m_pOverlay->SetCurrentBuffer((unsigned int)m_pOverlayBuffers[m_CurOverlayBuffer]->pPhysical);
 
-	if (m_OSD_enabled && m_osdInfo == OSDInfo_VideoTimestamps)
+	if (m_OSD_enabled && (m_osdInfo == OSDInfo_VideoTimestamps || m_osdInfo == OSDInfo_MemUsage))
 	{
 		OnScreenDisplay(pMediaSample);
 	}

@@ -11,7 +11,8 @@
 #include "AuAllocator.h"
 #include "AuOverlay.h"
 #include "dshow\SecureConnection.h"
-
+#include <memory>
+#include "SystemMeter.h"
 
 #ifndef __VIDEORENDERER_H
 #define __VIDEORENDERER_H
@@ -81,6 +82,7 @@ protected:
     OSDInfo         m_osdInfo;
     bool            m_longTapDetect;
     DWORD           m_tapStartTime;
+    std::auto_ptr<Utils::SystemMeter> m_pSystemMeter;
 
 
 	void CreateOverlay();
