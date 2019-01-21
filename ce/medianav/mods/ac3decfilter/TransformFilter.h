@@ -54,6 +54,12 @@ private:
 
     // Misc
     long m_maxOutputBufUsed;
+
+#if DBG > 0
+    //Debug
+    LONGLONG m_dbgAvgFrameProcessTime;
+#endif
+
 };
 
 

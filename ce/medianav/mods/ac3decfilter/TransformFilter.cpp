@@ -64,6 +64,9 @@ AC3DecoderFilter::AC3DecoderFilter(LPUNKNOWN pUnk, HRESULT* phr)
 ,m_hCodec(NULL)
 ,m_maxChannels(0)
 ,m_maxOutputBufUsed(0)
+#if DBG > 0
+,m_dbgAvgFrameProcessTime(0)
+#endif
 {
     debugPrintf(DBG, L"AC3DecoderFilter::AC3DecoderFilter()\r\n");
     yyGetAC3DecFunc(&m_audioAPI);
@@ -89,7 +92,20 @@ AC3DecoderFilter::AC3DecoderFilter(LPUNKNOWN pUnk, HRESULT* phr)
 
 AC3DecoderFilter::~AC3DecoderFilter()
 {
+#if DBG > 0
+    LARGE_INTEGER freq;
+    if(QueryPerformanceFrequency(&freq))
+    {
+        m_dbgAvgFrameProcessTime *= 1000000;
+        m_dbgAvgFrameProcessTime /= freq.QuadPart;
+    }else
+    {
+        debugPrintf(DBG, L"AC3DecoderFilter::~AC3DecoderFilter() QueryPerformanceFrequency() failed\r\n");
+    }
+    debugPrintf(DBG, L"AC3DecoderFilter::~AC3DecoderFilter() m_maxOutputBufUsed=%d, avarage frame processing time = %I64d us\r\n", m_maxOutputBufUsed, m_dbgAvgFrameProcessTime);
+#else
     debugPrintf(DBG, L"AC3DecoderFilter::~AC3DecoderFilter() m_maxOutputBufUsed=%d\r\n", m_maxOutputBufUsed);
+#endif
     if(m_hCodec)
     {
         m_audioAPI.Uninit(m_hCodec);
@@ -122,17 +138,42 @@ HRESULT AC3DecoderFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
         outData.Buffer = reinterpret_cast<VO_PBYTE>(reinterpret_cast<size_t>(outData.Buffer) + outData.Length);
         bufRemains -=outData.Length;
         outData.Length = bufRemains;
+#if DBG > 0
+        LARGE_INTEGER startTime;
+        bool measureFailed = false;
+        if(!QueryPerformanceCounter(&startTime))
+        {
+            debugPrintf(DBG, L"AC3DecoderFilter::Transform() QueryPerformanceCounter() failed at start\r\n");
+            measureFailed = true;
+        }
+#endif
         returnCode = m_audioAPI.GetOutputData(m_hCodec, &outData, &outFormat);
+#if DBG > 0
+        if(!measureFailed)
+        {
+            LARGE_INTEGER endTime;
+            if(!QueryPerformanceCounter(&endTime))
+            {
+                debugPrintf(DBG, L"AC3DecoderFilter::Transform() QueryPerformanceCounter() failed at and\r\n");
+            }else
+            {
+                LONGLONG processValue = endTime.QuadPart - startTime.QuadPart;
+                if(m_dbgAvgFrameProcessTime == 0)
+                    m_dbgAvgFrameProcessTime = processValue;
+                else
+                {
+                    m_dbgAvgFrameProcessTime = (m_dbgAvgFrameProcessTime + processValue) / 2;
+                }
+            }
+        }
+#endif
+
     } while (!returnCode);
     if(returnCode && returnCode != VO_ERR_INPUT_BUFFER_SMALL)
     {
         debugPrintf(DBG, L"AC3DecoderFilter::Transform(): m_audioAPI.GetOutputData() failed: 0x%08X\r\n", returnCode);
         return E_FAIL;
     }
-    /*if(outFormat.InputUsed < inData.Length)
-    {
-        debugPrintf(DBG, L"AC3DecoderFilter::Transform(): m_audioAPI.GetOutputData() not all input is used: input=%d, used=%d\r\n", inData.Length, outFormat.InputUsed);
-    }*/
     long usedBuffer = pOut->GetSize() - bufRemains;
     if(m_maxOutputBufUsed < usedBuffer)
         m_maxOutputBufUsed = usedBuffer;
