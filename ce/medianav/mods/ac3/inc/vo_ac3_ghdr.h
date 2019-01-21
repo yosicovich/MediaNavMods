@@ -19,8 +19,6 @@
 #ifndef  __VO_AC3_GHDR_H__
 #define  __VO_AC3_GHDR_H__
 
-#include "voAC3DecID.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */

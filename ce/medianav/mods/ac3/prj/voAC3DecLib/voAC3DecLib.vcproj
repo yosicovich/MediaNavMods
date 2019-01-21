@@ -4,6 +4,7 @@
 	Version="9,00"
 	Name="voAC3DecLib"
 	ProjectGUID="{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}"
+	RootNamespace="voAC3DecLib"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -245,6 +246,7 @@
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
 				Optimization="3"
+				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../inc;../../glue/Include"
 				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
 			/>
@@ -501,10 +503,6 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\vo_ac3_var.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\inc\voAC3DecID.h"
 				>
 			</File>
 		</Filter>

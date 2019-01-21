@@ -23,6 +23,7 @@
 * ac3_dec_setparam();   the function set ac3 decoder diff modle
 * ac3_dec_getparam();   the function get ac3 decoder diff model information
 */
+#include   <stdlib.h>
 #include   <stdio.h>
 #include   "vo_ac3_var.h"
 #include   "vo_ac3_ghdr.h"

@@ -3,7 +3,6 @@
 
 #include	<stdlib.h>
 #include	<string.h>
-#include    "voAC3DecID.h"
 #include    "voMem.h"
 
 #define		BUFFER_STORE	32*1024

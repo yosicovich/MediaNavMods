@@ -6,7 +6,6 @@
 
 #ifndef __MEM_ALIGN_H__
 #define __MEM_ALIGN_H__
-#include "voAC3DecID.h"
 #include "voMem.h"
 
 void *voAC3Dec_mem_malloc(VO_MEM_OPERATOR *pMemop, unsigned int size, unsigned char alignment);

@@ -26,6 +26,11 @@
 #include	<time.h>
 #include    "voAC3.h"
 #include    "cmnMemory.h"
+#ifndef _WIN32_WCE
+#include <sys/timeb.h>
+#endif
+
+
 
 #ifdef LINUX
 #include <dlfcn.h>
@@ -60,6 +65,66 @@ int     frameend = -1;					   /* ending frame */
 int     chanptr[6] = {0, 1, 2, 3, 4, 5};                  
 
 typedef int (VO_API * VOGETAUDIODECAPI) (VO_AUDIO_CODECAPI * pDecHandle);
+long getMeasureStamp()
+{
+#ifdef _WIN32_WCE
+    return GetTickCount() / 10;
+#else
+    struct timeb tm;
+    ftime (&tm);
+    return tm.time * 100 + tm.millitm / 10;
+#endif
+}
+static void print_fps (int final)
+{
+    static unsigned int frame_counter = 0;
+    static long tbeg, tstart;
+    static int total_elapsed = 0;
+    static int last_count = 0;
+    long tend;
+    float fps, tfps;
+    int frames, elapsed;
+
+    tend = getMeasureStamp();
+
+    if (!frame_counter) {
+        tstart = tbeg = tend;
+        //signal (SIGINT, signal_handler);
+    }
+
+    elapsed = tend - tbeg;
+    total_elapsed = tend - tstart;
+
+    if (final) {
+        if (total_elapsed)
+            tfps = frame_counter * 100.0 / total_elapsed;
+        else
+            tfps = 0;
+
+        fprintf (stderr,"\n%d frames decoded in %.2f seconds (%.2f fps)\n",
+            frame_counter, total_elapsed / 100.0, tfps);
+
+        return;
+    }
+
+    frame_counter++;
+
+    if (elapsed < 50)	/* only display every 0.50 seconds */
+        return;
+
+    tbeg = tend;
+    frames = frame_counter - last_count;
+
+    fps = frames * 100.0 / elapsed;
+    tfps = frame_counter * 100.0 / total_elapsed;
+
+    fprintf (stderr, "%d frames in %.2f sec (%.2f fps), "
+        "%d last %.2f sec (%.2f fps)\033[K\r", frame_counter,
+        total_elapsed / 100.0, tfps, frames, elapsed / 100.0, fps);
+
+    last_count = frame_counter;
+}
+
 
 int decoder(const char* srcfile, const char* dstfile)
 {
@@ -214,8 +279,9 @@ int decoder(const char* srcfile, const char* dstfile)
 				{
 					printf("hehe!\n");
 				}
-				fwrite(outData.Buffer, 1, outData.Length, fdst);
-				fflush(fdst);
+				//fwrite(outData.Buffer, 1, outData.Length, fdst);
+                print_fps (0);
+				//fflush(fdst);
 			}
 		} while(returnCode != VO_ERR_INPUT_BUFFER_SMALL);
 
@@ -258,7 +324,7 @@ safe_exit:
 }
 
 #ifdef _WIN32_WCE
-int WinMain(int argc, TCHAR **argv) 
+int _tmain(int argc, _TCHAR* argv[])
 #else // _WIN32_WCE
 int main(int argc, char **argv)  // for gcc compiler;
 #endif//_WIN32_WCE
@@ -281,8 +347,8 @@ int main(int argc, char **argv)  // for gcc compiler;
 	}
 
 #ifdef _WIN32_WCE
-	inFileName  = "/My Storage/ac3/BSI18.ac3";
-	outFileName = "/My Storage/ac3/BSI18.pcm";
+	inFileName  = "\\MD\\v2\\test.ac3";
+	outFileName = "\\MD\\v2\\test.pcm";
 #else
 	inFileName  = ac3fname;
 	outFileName = pcmfname;

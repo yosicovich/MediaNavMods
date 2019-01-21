@@ -4,6 +4,7 @@
 	Version="9,00"
 	Name="voAC3DecTest"
 	ProjectGUID="{DD1BD8D1-5851-4612-ADD3-70F9949F1586}"
+	RootNamespace="voAC3DecTest"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -124,8 +125,10 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
+				Optimization="0"
 				AdditionalIncludeDirectories="../../../glue/Include;../../../glue/Common"
-				PreprocessorDefinitions="DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
+				PreprocessorDefinitions="_CONSOLE;DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -140,7 +143,9 @@
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,6.00 /machine:MIPS"
 				AdditionalDependencies="&quot;$(SolutionDir)DbAu13xx (MIPSII)\$(ConfigurationName)\voAC3DecLib.lib&quot;"
+				GenerateDebugInformation="true"
 				SubSystem="8"
+				EntryPointSymbol="mainWCRTStartup"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -278,7 +283,7 @@
 				ExecutionBucket="7"
 				Optimization="3"
 				AdditionalIncludeDirectories="../../../glue/Include;../../../glue/Common"
-				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;_CONSOLE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
+				PreprocessorDefinitions="_CONSOLE;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;_CONSOLE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -292,6 +297,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,6.00 /machine:MIPS"
+				EntryPointSymbol="mainWCRTStartup"
 			/>
 			<Tool
 				Name="VCALinkTool"
