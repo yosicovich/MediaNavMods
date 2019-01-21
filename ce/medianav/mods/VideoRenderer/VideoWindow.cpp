@@ -47,7 +47,7 @@
 #ifdef TESTMODE
 #define CHECK_SHOW_STATE_TIMER_INTERVAL_MS 1000
 #else
-#define CHECK_SHOW_STATE_TIMER_INTERVAL_MS 100
+#define CHECK_SHOW_STATE_TIMER_INTERVAL_MS 300
 #endif
 
 static const DWORD cLongTapTimeMS = 2000;
@@ -96,7 +96,7 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
 	
 	AllocateBuffers();
 
-    if(SetTimer(m_hwnd, CHECK_SHOW_STATE_TIMER_ID, 1000, NULL) == 0)
+    if(SetTimer(m_hwnd, CHECK_SHOW_STATE_TIMER_ID, CHECK_SHOW_STATE_TIMER_INTERVAL_MS, NULL) == 0)
         OS_Print(DBG, "create show state timer failed!\r\n");
 
     ActivateWindow();
@@ -419,6 +419,10 @@ LRESULT CVideoWindow::OnReceiveMessage(HWND hwnd,          // Window handle
         case CHECK_SHOW_STATE_TIMER_ID:
             {
                 checkSetWindowVisibility();
+
+                if(m_OSD_enabled)
+                    OnScreenDisplay(NULL);
+
                 break;
             }
         }
@@ -1014,7 +1018,7 @@ void CVideoWindow::OnScreenDisplay(IMediaSample *pSample)
             MEMORYSTATUS memStatus = m_pSystemMeter->getMemoryStatus();
             DWORD dwCPULoad = m_pSystemMeter->getCPULoad();
             GlobalMemoryStatus(&memStatus);
-            wsprintf(szOSDInfo, TEXT("CPU: %2d%%; Memory: %2d%%, Available: %3dMB, Total: %3dMB"), dwCPULoad, memStatus.dwMemoryLoad, 
+            wsprintf(szOSDInfo, TEXT("CPU: %3d%%; Memory: %2d%%, Available: %3dMB, Total: %3dMB"), dwCPULoad, memStatus.dwMemoryLoad, 
                 memStatus.dwAvailPhys / cOneMegabyte,
                 memStatus.dwTotalPhys / cOneMegabyte);
             break;
@@ -1137,7 +1141,7 @@ HRESULT CVideoWindow::RenderSample(IMediaSample *pMediaSample)
 //	m_pOverlay->SetNextBuffer(m_OverlayBuffers[m_CurOverlayBuffer]);
 	m_pOverlay->SetCurrentBuffer((unsigned int)m_pOverlayBuffers[m_CurOverlayBuffer]->pPhysical);
 
-	if (m_OSD_enabled && (m_osdInfo == OSDInfo_VideoTimestamps || m_osdInfo == OSDInfo_MemUsage))
+	if (m_OSD_enabled && (m_osdInfo == OSDInfo_VideoTimestamps))
 	{
 		OnScreenDisplay(pMediaSample);
 	}
