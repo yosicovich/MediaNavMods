@@ -104,9 +104,9 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="\MD\vtest"
 				RegisterOutput="0"
-				AdditionalFiles="playwnd.exe|$(SolutionDir)\$(PlatformName)\$(ConfigurationName)|%CSIDL_PROGRAM_FILES%\avidmx|0"
+				AdditionalFiles=""
 			/>
 			<DebuggerTool
 			/>

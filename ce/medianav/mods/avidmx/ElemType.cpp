@@ -96,8 +96,8 @@ AviElementaryType::Parse(const AVISTREAMHEADER& streamHeader, const AtomPtr& pFo
         assert(m_format.getDataSize() >= sizeof(WAVEFORMATEX));
         if(!m_mediaType.SetFormat((BYTE *)*m_format, static_cast<ULONG>(m_format.getDataSize())))
             return false;
-        WORD formatTag = reinterpret_cast<const WAVEFORMATEX*>(*m_format)->wFormatTag;
-        switch(formatTag)
+        const WAVEFORMATEX* pWfx = reinterpret_cast<const WAVEFORMATEX*>(*m_format);
+        switch(pWfx->wFormatTag)
         {
         case 0x674f:
         case 0x6750:
@@ -111,7 +111,7 @@ AviElementaryType::Parse(const AVISTREAMHEADER& streamHeader, const AtomPtr& pFo
             break;
         default:
             {
-                FOURCCMap aud(formatTag);
+                FOURCCMap aud(pWfx->wFormatTag);
                 m_mediaType.SetSubtype(&aud);
                 break;
             }
