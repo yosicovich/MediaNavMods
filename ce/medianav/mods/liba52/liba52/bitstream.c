@@ -29,8 +29,6 @@
 #include "a52_internal.h"
 #include "bitstream.h"
 
-#define BUFFER_SIZE 4096
-
 void a52_bitstream_set_ptr (a52_state_t * state, const uint8_t * buf)
 {
     int align;

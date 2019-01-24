@@ -208,8 +208,6 @@ static const sample_t scale_factor[25] = {
     0.00000000000363797880709171295166015625,
     0.000000000001818989403545856475830078125
 };
-#else
-int scale_factor = 0;
 #endif
 
 static const uint16_t dither_lut[256] = {

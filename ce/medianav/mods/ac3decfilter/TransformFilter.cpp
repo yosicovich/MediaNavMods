@@ -453,7 +453,7 @@ HRESULT AC3DecoderFilter::SetOutputMediaType(const CMediaType *pmt)
     }
     m_a52Flags |= m_a52OutputSpeakersConfig;
 
-    // Gain level 1 means no gain.
+    // Gain level 1 means no gain. Maximum possible gain is 2 since our fixed point implementation has -2 to 2 range.
     m_a52Level = a52_to_level(1);
 
     m_a52OneOutBlockSize = cAC3OneChannelOutBlockSize * m_curOutputWfx.nChannels;

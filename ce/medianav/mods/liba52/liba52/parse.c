@@ -367,8 +367,6 @@ static void coeff_get (a52_state_t * state, sample_t * coeff,
 
     for (i = 0; i <= 24; i++)
 	factor[i] = scale_factor[i] * level;
-#else
-    int factor = 0;
 #endif
 
     exp = expbap->exp;

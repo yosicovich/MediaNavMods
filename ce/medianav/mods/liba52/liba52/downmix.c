@@ -150,7 +150,8 @@ int a52_downmix_init (int input, int flags, level_t * level,
 	    break;
 
 	default:
-	    return output;
+        adjust = LEVEL(1);
+	    break;
 	}
 
 	*level = MUL_L (*level, adjust);
