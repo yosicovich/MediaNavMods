@@ -73,7 +73,7 @@ BEGIN
             VALUE "FileDescription", "GDCL based AVI Demux"
             VALUE "FileVersion", "1.0.1.3"
             VALUE "InternalName", "avidmx"
-            VALUE "LegalCopyright", "Copyright © 2017-2018 www.medianav.ru. All rights reserved."
+            VALUE "LegalCopyright", "Copyright © 2017-2019 www.medianav.ru. All rights reserved."
             VALUE "OriginalFilename", "avidmx.dll"
             VALUE "ProductName", "MediaNav CE mods"
             VALUE "ProductVersion", "9.1.3.0.11"
