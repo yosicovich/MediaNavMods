@@ -1,6 +1,5 @@
 #include "SystemMeter.h"
 
-
 namespace Utils {
 
 SystemMeter::SystemMeter()
@@ -9,10 +8,12 @@ SystemMeter::SystemMeter()
 ,m_hIdleThread(NULL)
 ,m_dwLastThreadTime(0)
 ,m_dwLastTickTime(0)
-,m_bCheckThreadExit(false)
-,m_bIdleThreadExit(false)
 ,m_dwCPULoad(0)
 {
+    m_hExitEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if(!m_hExitEvent)
+        return;
+
     DWORD ThreadID;
     m_hIdleThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)SystemMeter::idleThread, (LPVOID)this, CREATE_SUSPENDED, &ThreadID);
 
@@ -27,7 +28,7 @@ SystemMeter::SystemMeter()
 
     if( m_hCheckThread == NULL )
     {
-        m_bIdleThreadExit = true;
+        SetEvent(m_hExitEvent);
         WaitForSingleObject(m_hIdleThread, 3000);
         return;
     }
@@ -38,15 +39,19 @@ SystemMeter::SystemMeter()
 
 SystemMeter::~SystemMeter()
 {
-    if(!m_threadsCreated)
-        return;
+    if(m_threadsCreated)
+    {
+        SetEvent(m_hExitEvent);
 
-    m_bCheckThreadExit = true;
-    WaitForSingleObject(m_hCheckThread, 3000);
+        WaitForSingleObject(m_hCheckThread, 3000);
+        CloseHandle(m_hCheckThread);
 
-    m_bIdleThreadExit = true;
-    WaitForSingleObject(m_hIdleThread, 3000);
+        WaitForSingleObject(m_hIdleThread, 3000);
+        CloseHandle(m_hIdleThread);
+    }
 
+    if(m_hExitEvent)
+        CloseHandle(m_hExitEvent);
 }
 
 DWORD SystemMeter::getCPULoad() const
@@ -104,17 +109,16 @@ void SystemMeter::idleThread(LPVOID pvParams)
 {
     SystemMeter* pSelf = reinterpret_cast<SystemMeter*>(pvParams);
 
-    while(!pSelf->m_bIdleThreadExit);
+    while(WaitForSingleObject(pSelf->m_hExitEvent, 0) == WAIT_TIMEOUT );
 }
 
 void SystemMeter::checkThread(LPVOID pvParams)
 {
     SystemMeter* pSelf = reinterpret_cast<SystemMeter*>(pvParams);
 
-    while(!pSelf->m_bCheckThreadExit)
+    while(WaitForSingleObject(pSelf->m_hExitEvent, 1000) == WAIT_TIMEOUT )
     {
         pSelf->getSystemLoad();
-        Sleep(1000);
     }
 }
 

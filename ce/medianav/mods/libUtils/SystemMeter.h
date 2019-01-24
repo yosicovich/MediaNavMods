@@ -20,8 +20,7 @@ namespace Utils
         HANDLE  m_hCheckThread;
         DWORD   m_dwLastThreadTime;
         DWORD   m_dwLastTickTime;
-        BOOL    m_bCheckThreadExit;
-        BOOL    m_bIdleThreadExit;
+        HANDLE  m_hExitEvent;
 
         DWORD   m_dwCPULoad;
     };
