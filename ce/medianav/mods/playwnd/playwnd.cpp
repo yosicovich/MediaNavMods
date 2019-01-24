@@ -483,6 +483,7 @@ HRESULT ToggleFullScreen(void)
     };
     static int roundIndex = 0;
     static int matchCount = 0;
+#if 0
     if(matchCount++ % 10 == 0)
     {
         RETAILMSG(1, (TEXT("CloseClip()\r\n")));
@@ -494,6 +495,7 @@ HRESULT ToggleFullScreen(void)
         RETAILMSG(1, (TEXT("PlayMovieInWindow() - OK\r\n")));
         return S_OK;
     }
+#endif
     if(g_psCurrent != psRUNNING)
         return S_OK;
     LONGLONG minPos=0, maxPos=0, pos=0;
@@ -768,7 +770,7 @@ LRESULT CALLBACK WndMainProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 int PASCAL WinMain(HINSTANCE hInstC, HINSTANCE hInstP, LPTSTR lpCmdLine, int nCmdShow)
 {
 #ifdef DEBUG
-    Utils::RegistryAccessor::setString(HKEY_CLASSES_ROOT, L"\\CLSID\\{D1E456E1-47E5-497a-ABA1-A0C57C3CE5C0}\\InprocServer32", L"", L"\\Program Files\\avidmx\\avidmx.dll");
+//    Utils::RegistryAccessor::setString(HKEY_CLASSES_ROOT, L"\\CLSID\\{D1E456E1-47E5-497a-ABA1-A0C57C3CE5C0}\\InprocServer32", L"", L"\\Program Files\\avidmx\\avidmx.dll");
 #endif
     MSG msg = { 0 };
     WNDCLASS wc;
@@ -820,7 +822,7 @@ int PASCAL WinMain(HINSTANCE hInstC, HINSTANCE hInstP, LPTSTR lpCmdLine, int nCm
         }
 
         // Open the specified media file or prompt for a title
-        //PostMessage(ghApp, WM_COMMAND, ID_FILE_OPENCLIP, 0);
+        PostMessage(ghApp, WM_COMMAND, ID_FILE_OPENCLIP, 0);
 
         // Main message loop
         while(GetMessage(&msg,NULL,0,0))
