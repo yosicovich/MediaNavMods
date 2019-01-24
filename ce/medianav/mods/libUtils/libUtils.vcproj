@@ -204,6 +204,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\smartptr.h"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.h"
 				>
 			</File>

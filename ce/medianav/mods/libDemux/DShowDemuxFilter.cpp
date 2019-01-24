@@ -823,7 +823,6 @@ DemuxOutputPin::ThreadProc()
                         pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: error on Deliver() - E_FAIL, codec not ready?\r\n");
                         break;
                     case VFW_E_WRONG_STATE:// Most likely we have been stopped
-                        // Most likely we have been stopped
                         pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: error on Deliver() - Stopped?\r\n");
                         break;
                     default:
