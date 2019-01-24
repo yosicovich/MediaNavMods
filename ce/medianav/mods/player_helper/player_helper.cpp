@@ -56,12 +56,15 @@ static void globalEnvInit()
     g_mediaExts.insert(L".WMA");
 
     // New
+    //Video
     g_mediaExts.insert(L".MP4");
     g_mediaExts.insert(L".FLAC");
     g_mediaExts.insert(L".MKV");
     g_mediaExts.insert(L".AVI");
 
+    // Audio
     g_mediaExts.insert(L".M4A");
+    g_mediaExts.insert(L".AC3");
 }
 
 
