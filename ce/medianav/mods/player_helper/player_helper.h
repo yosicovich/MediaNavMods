@@ -11,7 +11,6 @@
 #endif
 
 //#define TESTMODE
-//#define WITH_DEBUGGER
 #define STABLE_ONLY
 
 #ifdef TESTMODE
