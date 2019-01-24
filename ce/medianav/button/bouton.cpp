@@ -15,6 +15,8 @@
 #include <set>
 #include <imaging.h>
 #include <imgguids.h>
+#include <memory>
+#include "SystemMeter.h"
 
 #define TIMER_MIDNIGHT 1000
 #define TIMER_POLL 1001
@@ -54,6 +56,7 @@ BOOL			InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 VOID CALLBACK TimerProc(  HWND     , UINT     ,  UINT_PTR ,  DWORD    );
 bool printDate(HWND hWnd, bool forceRepaint = false);
+void printCPULoad();
 int readConfig(HWND hWnd);
 int RunApplication(HINSTANCE hInstance);
 
@@ -63,9 +66,13 @@ TCHAR* ponlyonapp = NULL;
 bool bShowWindowClass = false;
 bool bShowWindowID = false;
 bool bShowDate = false;
+bool bShowCPULoad = false;
+int cpuLoadPollCount = 1;
+int cpuLoadPollCur = 0;
 bool bVisible = false;
 POINT checkPoint = {0, 0};
 bool alwaysOnTop = false;
+std::auto_ptr<Utils::SystemMeter> pSystemMeter;
 
 static const wchar_t cFilterDelimiter = L'|';
 static const wchar_t cNotMatchPrefix = L'!';
@@ -349,6 +356,13 @@ int readConfig(HWND hWnd)
         if(bShowWindowClass)
             break;
 
+        bShowCPULoad = ini.GetBoolValue(L"Text", L"ShowCPULoad", false);
+        if(bShowCPULoad)
+        {
+            cpuLoadPollCount = 1000 / gStatePollInterval;
+            break;
+        }
+
         if(ini.GetBoolValue(L"Text", L"ShowDate", false))
         {
             std::wstring dateFmt = ini.GetValue(L"Text", L"DateFormat", L"DMY");
@@ -428,6 +442,14 @@ void checkShowState()
         if(!matchStr.empty() && gButtonText != matchStr)
         {
             gButtonText = matchStr;
+            InvalidateRect(gWnd, NULL, TRUE);
+        }
+    }else if(bShowCPULoad)
+    {
+        if(++cpuLoadPollCur == cpuLoadPollCount)
+        {
+            cpuLoadPollCur = 0;
+            printCPULoad();
             InvalidateRect(gWnd, NULL, TRUE);
         }
     }else if(bShowDate && printDate(gWnd))
@@ -676,4 +698,15 @@ bool printDate(HWND hWnd, bool forceRepaint/* = false*/)
     msec = 86400000 - msec;
     SetTimer(hWnd, TIMER_MIDNIGHT, msec, NULL);
     return true;
+}
+
+void printCPULoad()
+{
+    wchar_t text[8];
+    
+    if(pSystemMeter.get() == NULL)
+        pSystemMeter.reset(new Utils::SystemMeter());
+
+    swprintf_s(text, 8, L"%3d%%", pSystemMeter->getCPULoad());
+    gButtonText = text;
 }
