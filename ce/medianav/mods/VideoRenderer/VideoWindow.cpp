@@ -1004,8 +1004,8 @@ void CVideoWindow::OnScreenDisplay(IMediaSample *pSample)
 
 	OS_Print(FUNC, "CVideoWindow::OnScreenDisplay\r\n");
 
-    if(m_osdInfo != OSDInfo_MemUsage && m_pSystemMeter.get() != NULL)
-        m_pSystemMeter.reset();
+    if(m_osdInfo != OSDInfo_MemUsage)
+        stopSystemMeter();
 
     switch(m_osdInfo)
     {
@@ -1017,7 +1017,6 @@ void CVideoWindow::OnScreenDisplay(IMediaSample *pSample)
             }
             MEMORYSTATUS memStatus = m_pSystemMeter->getMemoryStatus();
             DWORD dwCPULoad = m_pSystemMeter->getCPULoad();
-            GlobalMemoryStatus(&memStatus);
             wsprintf(szOSDInfo, TEXT("CPU: %3d%%; Memory: %2d%%, Available: %3dMB, Total: %3dMB"), dwCPULoad, memStatus.dwMemoryLoad, 
                 memStatus.dwAvailPhys / cOneMegabyte,
                 memStatus.dwTotalPhys / cOneMegabyte);
@@ -1262,7 +1261,9 @@ BOOL CALLBACK EnumWindowsProc(_In_ HWND   hwnd, _In_ LPARAM lParam)
 
 BOOL CVideoWindow::isNoShowState()
 {
-    //return FALSE;
+#ifdef NO_HIDE
+    return FALSE;
+#endif
     // Camera window doesn't get focus until user clicks it.
     // So we have to detect camera
     HWND rvcWnd = FindWindow(L"RVC WND", NULL);
@@ -1322,6 +1323,8 @@ void CVideoWindow::refreshWindowState()
 void CVideoWindow::toggleOnScreenInfo()
 {
     m_OSD_enabled = !m_OSD_enabled;
+    if(!m_OSD_enabled)
+        stopSystemMeter();
     // Force window to repaint. It will erase OSD if it was disabled.
     PaintWindow(TRUE);
 }
@@ -1335,6 +1338,12 @@ void CVideoWindow::switchOSDInfo()
     // Force window to repaint. It will erase OSD if it was disabled.
     PaintWindow(TRUE);
 }
+void CVideoWindow::stopSystemMeter()
+{
+    if(m_pSystemMeter.get() != NULL)
+        m_pSystemMeter.reset();
+}
+
 // This allows a client to set the complete window size and position in one
 // atomic operation. The same affect can be had by changing each dimension
 // in turn through their individual properties although some flashing will

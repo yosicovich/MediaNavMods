@@ -18,6 +18,7 @@
 #define __VIDEORENDERER_H
 
 //#define TESTMODE
+//#define NO_HIDE
 // Forward declarations
 
 class CVideoRenderer;
@@ -92,6 +93,7 @@ protected:
     BOOL isNoShowState();
     void toggleOnScreenInfo();
     void switchOSDInfo();
+    void stopSystemMeter();
 
 public:
 	CAuOverlay		*m_pOverlay;
