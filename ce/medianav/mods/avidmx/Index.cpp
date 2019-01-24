@@ -47,6 +47,8 @@ AviSampleSizes::Parse(const AVISTREAMHEADER& streamHeader, unsigned int streamId
     WORD indexWord = MAKEAVICKIDSTREAM(streamIdx);
     debugPrintf(DBG, L"AviSampleSizes::Parse: indexLength = %u, indexWord = %hu\r\n", indexLength, indexWord);
     long keyFramesCount = 0;
+    long curKeyFrameSample = 0;
+    long nCurSample = 0;
     for(unsigned int i = 0; i < indexLength; ++i)
     {
         if(static_cast<WORD>(pIndexArray->aIndex[i].dwChunkId) != indexWord)
@@ -55,12 +57,16 @@ AviSampleSizes::Parse(const AVISTREAMHEADER& streamHeader, unsigned int streamId
         long size = pIndexArray->aIndex[i].dwSize;
         bool keyFrame = (pIndexArray->aIndex[i].dwFlags & AVIIF_KEYFRAME) != 0 || allSamplesAreKeys;
         if(keyFrame)
+        {
             ++keyFramesCount;
+            curKeyFrameSample = nCurSample;
+        }
         if(m_nMaxSize < size)
             m_nMaxSize = size;
         long framesPerSample = streamHeader.dwSampleSize == 0 ? 1 : (size / streamHeader.dwSampleSize);
+        m_samplesArray.push_back(SampleRec(offset, size, framesPerSample, m_totalFrames, curKeyFrameSample));
         m_totalFrames += framesPerSample;
-        m_samplesArray.push_back(SampleRec(offset, size, framesPerSample, keyFrame));
+        ++nCurSample;
     }
 
     m_nSamples = static_cast<long>(m_samplesArray.size());
@@ -86,12 +92,12 @@ AviSampleSizes::Offset(long nSample) const
     return m_samplesArray[nSample].offset;
 }
 
-bool AviSampleSizes::isKeyFrame(long nSample) const
+long AviSampleSizes::getKeyFrameFor(long nSample) const
 {
     if(nSample >= m_nSamples)
         nSample = m_nSamples - 1;
 
-    return m_samplesArray[nSample].keyFrame;
+    return m_samplesArray[nSample].keyFrameSample;
 }
 
 long AviSampleSizes::GetSampleFrames(long nSample) const
@@ -100,6 +106,14 @@ long AviSampleSizes::GetSampleFrames(long nSample) const
         nSample = m_nSamples - 1;
 
     return m_samplesArray[nSample].framesPerSample;
+}
+
+long AviSampleSizes::GetSampleTotalFramesSoFar(long nSample) const
+{
+    if(nSample >= m_nSamples)
+        nSample = m_nSamples - 1;
+    
+    return m_samplesArray[nSample].totalFramesSoFar;
 }
 
 // --- sync sample map --------------------------------
@@ -113,12 +127,7 @@ AviKeyMap::AviKeyMap(const smart_ptr<SampleSizes>& sampleSizes)
 long 
 AviKeyMap::SyncFor(long nSample) const
 {
-    for(;nSample > 0; --nSample)
-    {
-        if(m_sampleSizes->isKeyFrame(nSample))
-            return nSample;
-    }
-    return 0;
+    return m_sampleSizes->getKeyFrameFor(nSample);
 }
 
 long 
@@ -126,7 +135,7 @@ AviKeyMap::Next(long nSample) const
 {
     for(;nSample < m_sampleSizes->SampleCount(); ++nSample)
     {
-        if(m_sampleSizes->isKeyFrame(nSample))
+        if(m_sampleSizes->getKeyFrameFor(nSample) == nSample)
             return nSample;
     }
     return m_sampleSizes->SampleCount() - 1; // Or 0?
@@ -179,8 +188,7 @@ AviSampleTimes::SampleToCTS(long nSample)
     long frame = 0;
     if(!m_oneFramePerSample)
     {
-        for(long i = 0; i < nSample; ++i)
-            frame += m_sampleSizes->GetSampleFrames(i);
+        frame = m_sampleSizes->GetSampleTotalFramesSoFar(nSample);
     }else
     {
         frame = nSample;

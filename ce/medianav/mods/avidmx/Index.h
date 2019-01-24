@@ -28,8 +28,9 @@ public:
     bool Parse(const AVISTREAMHEADER& streamHeader, unsigned int streamIdx, const AVIOLDINDEX* pIndexArray, unsigned int offsetOfOffset);
     long Size(long nSample) const;
     LONGLONG Offset(long nSample) const;
-    bool isKeyFrame(long nSample) const;
+    long getKeyFrameFor(long nSample) const;
     long GetSampleFrames(long nSample) const;
+    long GetSampleTotalFramesSoFar(long nSample) const;
     LONGLONG TotalFrames() const 
     {
         return m_totalFrames;
@@ -37,14 +38,15 @@ public:
 private:
     struct SampleRec
     {
-        SampleRec(long offset, long size, long framesPerSample, bool keyFrame)
-            :offset(offset), size(size), framesPerSample(framesPerSample), keyFrame(keyFrame)
+        SampleRec(long offset, long size, long framesPerSample, long totalFramesSoFar, long keyFrameSample)
+            :offset(offset), size(size), framesPerSample(framesPerSample), totalFramesSoFar(totalFramesSoFar), keyFrameSample(keyFrameSample)
         {
         }
         long offset;
         long size;
         long framesPerSample;
-        bool keyFrame;
+        long totalFramesSoFar;
+        long keyFrameSample;
     };
     typedef std::vector<SampleRec> SamplesArray;
 
