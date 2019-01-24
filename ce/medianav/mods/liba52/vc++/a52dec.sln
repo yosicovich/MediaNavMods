@@ -1,0 +1,56 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liba52", "liba52.vcproj", "{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libao", "libao.vcproj", "{1B352C71-61DC-41D8-ABE1-964228E59C8D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "a52dec", "a52dec.vcproj", "{CF79F719-346D-4638-BE7F-5F18D70A2CC1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954} = {A2F44FE1-0C57-4F85-8E2A-2B98AE971954}
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D} = {1B352C71-61DC-41D8-ABE1-964228E59C8D}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|DbAu13xx (MIPSII) = Debug|DbAu13xx (MIPSII)
+		Debug|Win32 = Debug|Win32
+		Release|DbAu13xx (MIPSII) = Release|DbAu13xx (MIPSII)
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Debug|Win32.Build.0 = Debug|Win32
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Release|Win32.ActiveCfg = Release|Win32
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Release|Win32.Build.0 = Release|Win32
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Debug|Win32.Build.0 = Debug|Win32
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Release|Win32.ActiveCfg = Release|Win32
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Release|Win32.Build.0 = Release|Win32
+		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Debug|Win32.Build.0 = Debug|Win32
+		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Release|Win32.ActiveCfg = Release|Win32
+		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
