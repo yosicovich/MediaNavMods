@@ -20,13 +20,15 @@
 #define ToHex(n)	((BYTE) (((n) > 9) ? ((n) - 10 + 'A') : ((n) + '0')))
 #define MAKEAVICKIDSTREAM(stream) MAKEWORD(ToHex(((stream) & 0xf0) >> 4), ToHex((stream) & 0x0f))
 
-AviSampleSizes::AviSampleSizes()
-: SampleSizes(),
-  m_totalFrames(0)
+AviTrackIndex::AviTrackIndex()
+: TrackIndex(),
+  m_totalFrames(0),
+  m_start(0),
+  m_oneFramePerSample(false)
 {}
      
 bool 
-AviSampleSizes::Parse(const AVISTREAMHEADER& streamHeader, unsigned int streamIdx, const AVIOLDINDEX* pIndexArray, unsigned int offsetOfOffset)
+AviTrackIndex::Parse(const AVISTREAMHEADER& streamHeader, unsigned int streamIdx, const AVIOLDINDEX* pIndexArray, unsigned int offsetOfOffset)
 {
     unsigned int indexLength = pIndexArray->cb / sizeof(struct AVIOLDINDEX::_avioldindex_entry);
     if(streamHeader.dwSampleSize == 0)
@@ -46,36 +48,43 @@ AviSampleSizes::Parse(const AVISTREAMHEADER& streamHeader, unsigned int streamId
 
     WORD indexWord = MAKEAVICKIDSTREAM(streamIdx);
     debugPrintf(DBG, L"AviSampleSizes::Parse: indexLength = %u, indexWord = %hu\r\n", indexLength, indexWord);
-    long keyFramesCount = 0;
-    long curKeyFrameSample = 0;
-    long nCurSample = 0;
+    DWORD keySamplesCount = 0;
+    DWORD curKeyFrameSample = 0;
+    DWORD nCurSample = 0;
     for(unsigned int i = 0; i < indexLength; ++i)
     {
         if(static_cast<WORD>(pIndexArray->aIndex[i].dwChunkId) != indexWord)
             continue;
-        long offset = pIndexArray->aIndex[i].dwOffset + sizeof(RIFFCHUNK) + offsetOfOffset;
-        long size = pIndexArray->aIndex[i].dwSize;
+        DWORD offset = pIndexArray->aIndex[i].dwOffset + sizeof(RIFFCHUNK) + offsetOfOffset;
+        DWORD size = pIndexArray->aIndex[i].dwSize;
         bool keyFrame = (pIndexArray->aIndex[i].dwFlags & AVIIF_KEYFRAME) != 0 || allSamplesAreKeys;
         if(keyFrame)
         {
-            ++keyFramesCount;
+            ++keySamplesCount;
             curKeyFrameSample = nCurSample;
         }
         if(m_nMaxSize < size)
             m_nMaxSize = size;
-        long framesPerSample = streamHeader.dwSampleSize == 0 ? 1 : (size / streamHeader.dwSampleSize);
+        DWORD framesPerSample = streamHeader.dwSampleSize == 0 ? 1 : (size / streamHeader.dwSampleSize);
         m_samplesArray.push_back(SampleRec(offset, size, framesPerSample, m_totalFrames, curKeyFrameSample));
         m_totalFrames += framesPerSample;
         ++nCurSample;
     }
 
-    m_nSamples = static_cast<long>(m_samplesArray.size());
-    debugPrintf(DBG, L"AviSampleSizes::Parse: m_nSamples = %u, keyFramesCount=%u, m_totalFrames=%u\r\n", m_nSamples, keyFramesCount, m_totalFrames);
+    m_nSamples = static_cast<DWORD>(m_samplesArray.size());
+
+    m_scale = streamHeader.dwScale;
+    m_rate = streamHeader.dwRate;
+    m_start = streamHeader.dwStart;
+    m_total = TrackToReftime(m_totalFrames);
+    m_oneFramePerSample = streamHeader.dwSampleSize == 0;
+
+    debugPrintf(DBG, L"AviTrackIndex::Parse: \r\n\t m_nSamples = %u\r\n\t keySamplesCount=%u\r\n\t m_totalFrames=%u\r\n\t m_scale=%u\r\n\t m_rate=%u\r\n\t m_start=%u\r\n\t m_total=%I64u\r\n\t streamHeader.dwSampleSize=%u\r\n", m_nSamples, keySamplesCount, m_totalFrames, m_scale, m_rate, m_start, m_total, streamHeader.dwSampleSize);
     return true;
 }
 
-long 
-AviSampleSizes::Size(long nSample) const
+DWORD 
+AviTrackIndex::Size(DWORD nSample) const
 {
     if(nSample >= m_nSamples)
         nSample = m_nSamples - 1;
@@ -84,7 +93,7 @@ AviSampleSizes::Size(long nSample) const
 }
                  
 LONGLONG 
-AviSampleSizes::Offset(long nSample) const
+AviTrackIndex::Offset(DWORD nSample) const
 {
     if(nSample >= m_nSamples)
         nSample = m_nSamples - 1;
@@ -92,7 +101,8 @@ AviSampleSizes::Offset(long nSample) const
     return m_samplesArray[nSample].offset;
 }
 
-long AviSampleSizes::getKeyFrameFor(long nSample) const
+DWORD 
+AviTrackIndex::SyncFor(DWORD nSample) const
 {
     if(nSample >= m_nSamples)
         nSample = m_nSamples - 1;
@@ -100,95 +110,51 @@ long AviSampleSizes::getKeyFrameFor(long nSample) const
     return m_samplesArray[nSample].keyFrameSample;
 }
 
-long AviSampleSizes::GetSampleFrames(long nSample) const
+DWORD 
+AviTrackIndex::Next(DWORD nSample) const
 {
-    if(nSample >= m_nSamples)
-        nSample = m_nSamples - 1;
-
-    return m_samplesArray[nSample].framesPerSample;
-}
-
-long AviSampleSizes::GetSampleTotalFramesSoFar(long nSample) const
-{
-    if(nSample >= m_nSamples)
-        nSample = m_nSamples - 1;
-    
-    return m_samplesArray[nSample].totalFramesSoFar;
-}
-
-// --- sync sample map --------------------------------
-
-AviKeyMap::AviKeyMap(const smart_ptr<SampleSizes>& sampleSizes)
-: KeyMap(),
-  m_sampleSizes(reinterpret_cast<const smart_ptr<AviSampleSizes>& >(sampleSizes))
-{
-}
-
-long 
-AviKeyMap::SyncFor(long nSample) const
-{
-    return m_sampleSizes->getKeyFrameFor(nSample);
-}
-
-long 
-AviKeyMap::Next(long nSample) const
-{
-    for(;nSample < m_sampleSizes->SampleCount(); ++nSample)
+    for(;nSample < m_nSamples; ++nSample)
     {
-        if(m_sampleSizes->getKeyFrameFor(nSample) == nSample)
+        if(m_samplesArray[nSample].keyFrameSample == nSample)
             return nSample;
     }
-    return m_sampleSizes->SampleCount() - 1; // Or 0?
+    return m_nSamples - 1; // Or 0?
 }
 
-SIZE_T AviKeyMap::Get(SIZE_T*& pnIndexes) const
+SIZE_T AviTrackIndex::Get(SIZE_T*& pnIndexes) const
 {
 	return 0;
 }
 
-// ----- times index ----------------------------------
-
-AviSampleTimes::AviSampleTimes(const AVISTREAMHEADER& streamHeader, const smart_ptr<SampleSizes>& sampleSizes)
-: SampleTimes(),
-  m_sampleSizes(reinterpret_cast<const smart_ptr<AviSampleSizes>& >(sampleSizes)),
-  m_oneFramePerSample(false)
-{  
-    m_scale = streamHeader.dwScale;
-    m_rate = streamHeader.dwRate;
-    m_start = streamHeader.dwStart;
-    m_total = TrackToReftime(m_sampleSizes->TotalFrames());
-    m_oneFramePerSample = streamHeader.dwSampleSize == 0;
-    debugPrintf(DBG, L"AviSampleTimes::AviSampleTimes: m_scale=%u, m_rate=%u, m_start=%u, m_total=%I64u, streamHeader.dwSampleSize=%u\r\n", m_scale, m_rate, m_start, m_total, streamHeader.dwSampleSize);
-}
-
-long 
-AviSampleTimes::DTSToSample(LONGLONG tStart)
+DWORD 
+AviTrackIndex::DTSToSample(LONGLONG tStart)
 {
-    long frame = static_cast<long>(ReftimeToTrack(tStart) - m_start);
+    DWORD frame = static_cast<DWORD>(ReftimeToTrack(tStart) - m_start);
     if(m_oneFramePerSample)
         return frame;
-    long nSample = 0;
-    long sampleFrames = 0;
-    while((sampleFrames = m_sampleSizes->GetSampleFrames(nSample)) <= frame)
+    DWORD nSample = 0;
+    while(nSample < m_nSamples && (m_samplesArray[nSample].totalFramesSoFar + m_samplesArray[nSample].framesPerSample) < frame)
     {
         ++nSample;
-        frame -= sampleFrames;
     }
     return nSample;
 }
 
-SIZE_T AviSampleTimes::Get(REFERENCE_TIME*& pnTimes) const
+SIZE_T AviTrackIndex::Get(REFERENCE_TIME*& pnTimes) const
 {
 	return 0;
 }
 
 LONGLONG 
-AviSampleTimes::SampleToCTS(long nSample)
+AviTrackIndex::SampleToCTS(DWORD nSample)
 {
-    long frame = 0;
+    if(nSample >= m_nSamples)
+        nSample = m_nSamples - 1;
+
+    DWORD frame = 0;
     if(!m_oneFramePerSample)
     {
-        frame = m_sampleSizes->GetSampleTotalFramesSoFar(nSample);
+        frame = m_samplesArray[nSample].totalFramesSoFar;
     }else
     {
         frame = nSample;
@@ -198,17 +164,20 @@ AviSampleTimes::SampleToCTS(long nSample)
 
 // offset from decode to composition time for this sample
 LONGLONG 
-AviSampleTimes::CTSOffset(long nSample) const
+AviTrackIndex::CTSOffset(DWORD nSample) const
 {
     // Always 0 for AVI
     return 0;
 }
 
 LONGLONG 
-AviSampleTimes::Duration(long nSample)
+AviTrackIndex::Duration(DWORD nSample)
 {
+    if(nSample >= m_nSamples)
+        nSample = m_nSamples - 1;
+
     if(!m_oneFramePerSample)
-        return TrackToReftime(m_sampleSizes->GetSampleFrames(nSample));
+        return TrackToReftime(m_samplesArray[nSample].framesPerSample);
     else
         return TrackToReftime(1);
 }

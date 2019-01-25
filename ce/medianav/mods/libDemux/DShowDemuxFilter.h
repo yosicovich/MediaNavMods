@@ -55,7 +55,7 @@ public:
 
     // AtomReader abstraction:
     // access to the file from container parsing classes
-    HRESULT Read(LONGLONG llOffset, long cBytes, void* pBuffer);
+    HRESULT Read(LONGLONG llOffset, DWORD cBytes, void* pBuffer);
     LONGLONG Length();
 
     // ...but we don't support the caching interface for the whole file

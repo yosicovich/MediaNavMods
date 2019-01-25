@@ -23,7 +23,7 @@
 #define listtypeAVIMOVIE FCC('movi')
 #define ckidSTREAMNAME FCC('strn')
 
-AviAtom::AviAtom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader, bool canHaveChildren/* = true*/)
+AviAtom::AviAtom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, DWORD cHeader, bool canHaveChildren/* = true*/)
 : Atom(pReader, llOffset, llLength, type, cHeader, canHaveChildren)
 {
 }
@@ -37,7 +37,7 @@ AviAtom::ScanChildrenAt(LONGLONG llOffset)
     while (llOffset < m_llLength)
     {
         RIFFCHUNK chunk;
-        long cHeader = sizeof(chunk);
+        DWORD cHeader = sizeof(chunk);
         if(Read(llOffset, sizeof(chunk), reinterpret_cast<BYTE *>(&chunk)) != S_OK)
             break;
         debugPrintf(DBG, L"AviAtom::ScanChildrenAt: chunk.fcc=%08X, chunk.cb=%u\r\n", chunk.fcc, chunk.cb);
@@ -135,7 +135,7 @@ AviMovie::AviMovie(const AtomReaderPtr& pRoot)
     // Read streams
     vector<MovieTrackPtr> tracks;
     vector<MovieTrackPtr> disabledTracks;
-    long idxTrack = 0;
+    DWORD idxTrack = 0;
     while((pStrl = pHdrl->FindNextChild(pStrl, ckidSTREAMLIST)) != NULL)
     {
         debugPrintf(DBG, L"AviMovie::AviMovie: enumirating tracks, idxTrack=%d\r\n", idxTrack);
@@ -187,7 +187,7 @@ bool AviMovie::setTracks(const Movie::MovieTracks& sourceTracks)
 // ------------------------------------------------------------------
 
 
-AviMovieTrack::AviMovieTrack(const AtomPtr& pAtom, Movie* pMovie, long idx, const AtomCache& pIndex, unsigned int offsetOfOffset)
+AviMovieTrack::AviMovieTrack(const AtomPtr& pAtom, Movie* pMovie, DWORD idx, const AtomCache& pIndex, unsigned int offsetOfOffset)
 : MovieTrack(AtomPtr(), pMovie, idx),
   m_disabled(false)
 {
@@ -216,17 +216,13 @@ AviMovieTrack::AviMovieTrack(const AtomPtr& pAtom, Movie* pMovie, long idx, cons
     
     const AVIOLDINDEX* pIndexArray = reinterpret_cast<const AVIOLDINDEX*>(pIndex.getRawBuffer());
 
-    m_pSizes = new AviSampleSizes;
-    if ((!GetTypedPtr(AviSampleSizes, m_pSizes)->Parse(streamHeader, m_idx, pIndexArray, offsetOfOffset) || (m_pSizes->SampleCount() <= 0)))
+    m_pIndex = new AviTrackIndex();
+    if ((!GetTypedPtr(AviTrackIndex, m_pIndex)->Parse(streamHeader, m_idx, pIndexArray, offsetOfOffset) || (m_pIndex->SampleCount() <= 0)))
     {
         return;
     }
-    m_pKeyMap = new AviKeyMap(m_pSizes);
-    debugPrintf(DBG, L"AviMovieTrack::AviMovieTrack: AviSampleSizes and AviKeyMap are created\r\n");
+    debugPrintf(DBG, L"AviMovieTrack::AviMovieTrack: AviTrackIndex is created\r\n");
 
-    m_pTimes = new AviSampleTimes(streamHeader, m_pSizes);
-
-    debugPrintf(DBG, L"AviMovieTrack::AviMovieTrack: AviSampleTimes created\r\n");
     AtomPtr pStrn = pAtom->FindChild(ckidSTREAMNAME);
     if(pStrn != NULL)
     {
@@ -246,7 +242,7 @@ AviMovieTrack::AviMovieTrack(const AtomPtr& pAtom, Movie* pMovie, long idx, cons
     EditEntry e;
     e.offset = 0;
     e.sumDurations = 0;
-    e.duration = TimesIndex()->TotalDuration();
+    e.duration = Index()->TotalDuration();
     m_Edits.push_back(e);
 
     m_pRoot = pAtom;
@@ -254,5 +250,5 @@ AviMovieTrack::AviMovieTrack(const AtomPtr& pAtom, Movie* pMovie, long idx, cons
 
 REFERENCE_TIME AviMovieTrack::Duration() const
 {
-    return m_pTimes->TotalDuration();
+    return Index()->TotalDuration();
 }

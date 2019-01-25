@@ -8,16 +8,16 @@
 class NoChangeHandler : public FormatHandler
 {
 public:
-    long BufferSize(long MaxSize);
+    DWORD BufferSize(DWORD MaxSize);
     void StartStream();
-    long PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, long cBytes);
+    DWORD PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, DWORD cBytes);
 };
 
 // for CoreAAC, minimum buffer size is 8192 bytes.
 class CoreAACHandler : public NoChangeHandler
 {
 public:
-    long BufferSize(long MaxSize)
+    DWORD BufferSize(DWORD MaxSize)
     {
         if (MaxSize < 8192)
         {
@@ -32,13 +32,13 @@ public:
 class DivxHandler : public NoChangeHandler
 {
 public:
-    DivxHandler(const BYTE* pDSI, long cDSI);
-    long BufferSize(long MaxSize);
+    DivxHandler(const BYTE* pDSI, DWORD cDSI);
+    DWORD BufferSize(DWORD MaxSize);
     void StartStream();
-    long PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, long cBytes);
+    DWORD PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, DWORD cBytes);
 private:
     smart_array<BYTE> m_pPrepend;
-    long m_cBytes;
+    DWORD m_cBytes;
     bool m_bFirst;
 };
 
@@ -47,12 +47,12 @@ private:
 class H264ByteStreamHandler : public NoChangeHandler
 {
 public:
-    H264ByteStreamHandler(const BYTE* pDSI, long cDSI);
+    H264ByteStreamHandler(const BYTE* pDSI, DWORD cDSI);
     void StartStream()
     {
         m_bFirst = true;
     }
-    long BufferSize(long MaxSize)
+    DWORD BufferSize(DWORD MaxSize)
     {
         // we need to add 00 00 00 01 for each NALU. There
         // could potentially be several NALUs for each frame. Assume a max of 12.
@@ -62,10 +62,10 @@ public:
         }
         return MaxSize + m_cPrepend;
     }
-    long PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, long cBytes);
+    DWORD PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, DWORD cBytes);
 
 private:
-    long m_cLength;
+    DWORD m_cLength;
     smart_array<BYTE> m_pPrepend;
     int m_cPrepend;
     bool m_bFirst;

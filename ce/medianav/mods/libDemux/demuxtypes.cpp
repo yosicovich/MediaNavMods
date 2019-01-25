@@ -7,7 +7,7 @@
 #include "demuxtypes.h"
 #include <sstream>
 
-Atom::Atom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader, bool canHaveChildren/* = true*/)
+Atom::Atom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, DWORD cHeader, bool canHaveChildren/* = true*/)
 : m_pSource(pReader),
   m_llOffset(llOffset),
   m_cBufferRefCount(0),
@@ -19,12 +19,12 @@ Atom::Atom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type
 }
 
 HRESULT 
-Atom::Read(LONGLONG llOffset, long cBytes, void* pBuffer)
+Atom::Read(LONGLONG llOffset, DWORD cBytes, void* pBuffer)
 {
     HRESULT hr = S_OK;
     if (IsBuffered())
     {
-        const BYTE* pSrc = Buffer() + long(llOffset);
+        const BYTE* pSrc = Buffer() + DWORD(llOffset);
         CopyMemory(pBuffer,  pSrc,  cBytes);
         BufferRelease();
     } else {
@@ -34,7 +34,7 @@ Atom::Read(LONGLONG llOffset, long cBytes, void* pBuffer)
 }
    
 
-long 
+DWORD 
 Atom::ChildCount()
 {
     if (m_Children.size() == 0 && !m_bChildrenScaned)
@@ -42,11 +42,11 @@ Atom::ChildCount()
         ScanChildrenAt(0);
         m_bChildrenScaned = true;
     }
-    return (long)m_Children.size();
+    return (DWORD)m_Children.size();
 }
 
 AtomPtr 
-Atom::Child(long nChild)
+Atom::Child(DWORD nChild)
 {
     if (nChild >= ChildCount())
     {
@@ -138,10 +138,10 @@ Atom::Buffer()
     {
         if (m_pSource->IsBuffered() && (m_llOffset < 0x7fffffff))
         {
-            return m_pSource->Buffer() + long(m_llOffset);
+            return m_pSource->Buffer() + DWORD(m_llOffset);
         }
-        m_Buffer = new BYTE[long(m_llLength)];
-        Read(0, long(m_llLength), m_Buffer);
+        m_Buffer = new BYTE[DWORD(m_llLength)];
+        Read(0, DWORD(m_llLength), m_Buffer);
     }
     m_cBufferRefCount++;
     return m_Buffer;
@@ -159,21 +159,15 @@ Atom::BufferRelease()
 
 // sample count and sizes ------------------------------------------------
 
-SampleSizes::SampleSizes()
+TrackIndex::TrackIndex()
 : m_nSamples(0),
-  m_nMaxSize(0)
-{}
-
-// ----- times index ----------------------------------
-
-SampleTimes::SampleTimes()
-: m_scale(1),
+  m_nMaxSize(0),
+  m_scale(1),
   m_rate(1),
   m_total(0)
-{
-}
+{}
 
-long SampleTimes::CTSToSample(LONGLONG tStart)
+DWORD TrackIndex::CTSToSample(LONGLONG tStart)
 {
     if (!HasCTSTable())
     {
@@ -194,7 +188,7 @@ long SampleTimes::CTSToSample(LONGLONG tStart)
             pos = tStart - (UNITS/2);
         }
     }
-    long n = DTSToSample(pos); 
+    DWORD n = DTSToSample(pos); 
     for (;;)
     {
         LONGLONG cts = SampleToCTS(n);
@@ -219,13 +213,13 @@ long SampleTimes::CTSToSample(LONGLONG tStart)
     }
 }
 LONGLONG 
-SampleTimes::TrackToReftime(LONGLONG nTrack) const
+TrackIndex::TrackToReftime(LONGLONG nTrack) const
 {
     // convert times in the track timescale to 100ns
     return (REFERENCE_TIME(nTrack) * m_scale * UNITS) / m_rate;
 }
 
-LONGLONG SampleTimes::ReftimeToTrack(LONGLONG reftime) const
+LONGLONG TrackIndex::ReftimeToTrack(LONGLONG reftime) const
 {
     return ((reftime * m_rate) + (UNITS/2)) / (UNITS * m_scale);
 }
@@ -266,7 +260,7 @@ Movie::Movie(const AtomReaderPtr& pRoot)
 }
     
 HRESULT 
-Movie::ReadAbsolute(LONGLONG llPos, BYTE* pBuffer, long cBytes)
+Movie::ReadAbsolute(LONGLONG llPos, BYTE* pBuffer, DWORD cBytes)
 {
     return m_pRoot->Read(llPos, cBytes, pBuffer);
 }
@@ -275,7 +269,7 @@ Movie::ReadAbsolute(LONGLONG llPos, BYTE* pBuffer, long cBytes)
 // ------------------------------------------------------------------
 
 
-MovieTrack::MovieTrack(const AtomPtr& pAtom, Movie* pMovie, long idx)
+MovieTrack::MovieTrack(const AtomPtr& pAtom, Movie* pMovie, DWORD idx)
 : m_pRoot(),
   m_pMovie(pMovie),
   m_idx(idx),
@@ -308,15 +302,15 @@ MovieTrack::Handler()
 }
 
 HRESULT 
-MovieTrack::ReadSample(long nSample, BYTE* pBuffer, long cBytes)
+MovieTrack::ReadSample(DWORD nSample, BYTE* pBuffer, DWORD cBytes)
 {
-    LONGLONG llPos = m_pSizes->Offset(nSample);
+    LONGLONG llPos = Index()->Offset(nSample);
 
     // llPos is absolute within referenced file
     return GetMovie()->ReadAbsolute(llPos, pBuffer, cBytes);
 }
 
-bool MovieTrack::CheckInSegment(REFERENCE_TIME tNext, bool bSyncBefore, size_t* pnSegment, long* pnSample)
+bool MovieTrack::CheckInSegment(REFERENCE_TIME tNext, bool bSyncBefore, size_t* pnSegment, DWORD* pnSample)
 {
 	for (size_t idx = 0; idx < m_Edits.size(); idx++)
 	{
@@ -334,14 +328,14 @@ bool MovieTrack::CheckInSegment(REFERENCE_TIME tNext, bool bSyncBefore, size_t* 
 				// map to sample number
 				LONGLONG rCTS = tNext - it->sumDurations;
 				LONGLONG trackCTS = rCTS + it->offset;
-				long n = TimesIndex()->CTSToSample(trackCTS);
+				DWORD n = Index()->CTSToSample(trackCTS);
 				if (n < 0)
 				{
 					return false;
 				}
 				if (bSyncBefore)
 				{
-					n = GetKeyMap()->SyncFor(n);
+					n = Index()->SyncFor(n);
 				}
 
 				*pnSample = n;
@@ -355,16 +349,16 @@ bool MovieTrack::CheckInSegment(REFERENCE_TIME tNext, bool bSyncBefore, size_t* 
 }
 
 void MovieTrack::GetTimeBySegment(
-	long nSample, 
+	DWORD nSample, 
 	size_t segment, 
 	REFERENCE_TIME* ptStart, 
 	REFERENCE_TIME* pDuration)
 {
 	EditEntry* it = &m_Edits[segment];
-	REFERENCE_TIME cts = TimesIndex()->SampleToCTS(nSample);
+	REFERENCE_TIME cts = Index()->SampleToCTS(nSample);
 	REFERENCE_TIME relCTS = cts - it->offset;
 
-	REFERENCE_TIME duration = TimesIndex()->Duration(nSample);
+	REFERENCE_TIME duration = Index()->Duration(nSample);
 	if ((relCTS + duration) > it->duration)
 	{
 		duration = it->duration - relCTS;
@@ -373,15 +367,15 @@ void MovieTrack::GetTimeBySegment(
 	*pDuration = duration;
 }
 
-bool MovieTrack::NextBySegment(long* pnSample, size_t* psegment)
+bool MovieTrack::NextBySegment(DWORD* pnSample, size_t* psegment)
 {
-	int n = *pnSample + 1;
+	DWORD n = *pnSample + 1;
 	EditEntry* it = &m_Edits[*psegment];
 
 
-	if (n < SizeIndex()->SampleCount())
+	if (n < Index()->SampleCount())
 	{
-		REFERENCE_TIME cts = TimesIndex()->SampleToCTS(n);
+		REFERENCE_TIME cts = Index()->SampleToCTS(n);
 		REFERENCE_TIME relCTS = cts - it->offset;
 		if (relCTS < it->duration)
 		{
@@ -396,11 +390,11 @@ bool MovieTrack::NextBySegment(long* pnSample, size_t* psegment)
 SIZE_T MovieTrack::GetTimes(REFERENCE_TIME** ppnStartTimes, REFERENCE_TIME** ppnStopTimes, ULONG** ppnFlags, ULONG** ppnDataSizes)
 {
 	ASSERT(ppnStartTimes);
-	if(!TimesIndex())
+	if(!Index())
 		return 0;
 	ppnStopTimes; ppnDataSizes;
 	ASSERT(!ppnStopTimes && !ppnDataSizes); // Not Implemented
-	const SIZE_T nSampleCount = TimesIndex()->Get(*ppnStartTimes);
+	const SIZE_T nSampleCount = Index()->Get(*ppnStartTimes);
 	if(nSampleCount)
 	{
 		if(ppnFlags)
@@ -409,27 +403,24 @@ SIZE_T MovieTrack::GetTimes(REFERENCE_TIME** ppnStartTimes, REFERENCE_TIME** ppn
 			ASSERT(pnFlags);
 			for(SIZE_T nSampleIndex = 0; nSampleIndex < nSampleCount; nSampleIndex++)
 				pnFlags[nSampleIndex] = AM_SAMPLE_TIMEVALID;
-			if(GetKeyMap() != NULL)
-			{
-				SIZE_T* pnIndexes = NULL;
-				const SIZE_T nIndexCount = GetKeyMap()->Get(pnIndexes);
-				if(nIndexCount)
-				{
-					for(SIZE_T nIndexIndex = 0; nIndexIndex < nIndexCount; nIndexIndex++)
-					{
-						const SIZE_T nSampleIndex = pnIndexes[nIndexIndex];
-						ASSERT(nSampleIndex < nSampleCount);
-						if(nSampleIndex < nSampleCount)
-							pnFlags[nSampleIndex] |= AM_SAMPLE_SPLICEPOINT;
-					}
-				} else
-				{
-					// NOTE: Missing key map means all samples are splice points (all frames are key frames)
-					for(SIZE_T nSampleIndex = 0; nSampleIndex < nSampleCount; nSampleIndex++)
-						pnFlags[nSampleIndex] |= AM_SAMPLE_SPLICEPOINT;
-				}
-				CoTaskMemFree(pnIndexes);
-			}
+            SIZE_T* pnIndexes = NULL;
+            const SIZE_T nIndexCount = Index()->Get(pnIndexes);
+            if(nIndexCount)
+            {
+                for(SIZE_T nIndexIndex = 0; nIndexIndex < nIndexCount; nIndexIndex++)
+                {
+                    const SIZE_T nSampleIndex = pnIndexes[nIndexIndex];
+                    ASSERT(nSampleIndex < nSampleCount);
+                    if(nSampleIndex < nSampleCount)
+                        pnFlags[nSampleIndex] |= AM_SAMPLE_SPLICEPOINT;
+                }
+            } else
+            {
+                // NOTE: Missing key map means all samples are splice points (all frames are key frames)
+                for(SIZE_T nSampleIndex = 0; nSampleIndex < nSampleCount; nSampleIndex++)
+                    pnFlags[nSampleIndex] |= AM_SAMPLE_SPLICEPOINT;
+            }
+            CoTaskMemFree(pnIndexes);
 			*ppnFlags = pnFlags;
 		}
 	}

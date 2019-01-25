@@ -4,8 +4,8 @@
 // ----- format-specific handlers -------------------
 
 // default no-translation
-long 
-NoChangeHandler::BufferSize(long MaxSize)
+DWORD 
+NoChangeHandler::BufferSize(DWORD MaxSize)
 {
     return MaxSize;
 }
@@ -15,8 +15,8 @@ NoChangeHandler::StartStream()
 {
 }
 
-long 
-NoChangeHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, long cBytes)
+DWORD 
+NoChangeHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, DWORD cBytes)
 {
     BYTE* pBuffer;
     pSample->GetPointer(&pBuffer);
@@ -29,7 +29,7 @@ NoChangeHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG ll
 }
 
 // DivX
-DivxHandler::DivxHandler(const BYTE* pDSI, long cDSI)
+DivxHandler::DivxHandler(const BYTE* pDSI, DWORD cDSI)
 : m_cBytes(0)
 {
     // The divx codec requires the stream to start with a VOL
@@ -52,8 +52,8 @@ DivxHandler::DivxHandler(const BYTE* pDSI, long cDSI)
     }
 }
 
-long 
-DivxHandler::BufferSize(long MaxSize)
+DWORD 
+DivxHandler::BufferSize(DWORD MaxSize)
 {
     // we need to prepend the media type data
     // to the first sample, and with seeking, we don't know which
@@ -67,14 +67,14 @@ DivxHandler::StartStream()
     m_bFirst = true;
 }
 
-long 
-DivxHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, long cBytes)
+DWORD 
+DivxHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, DWORD cBytes)
 {
     if (m_bFirst)
     {
         m_bFirst = false;
 
-        if (pSample->GetSize() < (cBytes + m_cBytes))
+        if (static_cast<DWORD>(pSample->GetSize()) < (cBytes + m_cBytes))
         {
             return 0;
         }
@@ -97,7 +97,7 @@ DivxHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos,
 }
 
 // H264
-H264ByteStreamHandler::H264ByteStreamHandler(const BYTE* pDSI, long cDSI)
+H264ByteStreamHandler::H264ByteStreamHandler(const BYTE* pDSI, DWORD cDSI)
 : m_cLength(0),
 m_cPrepend(cDSI)
 {
@@ -115,8 +115,8 @@ int ReadMSW(const BYTE* p)
 }
 
 // convert length-preceded format to start code format
-long
-H264ByteStreamHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, long cBytes)
+DWORD
+H264ByteStreamHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, DWORD cBytes)
 {
     // check that length field is in valid range
     if ((m_cLength == 0) || (m_cLength > 5))
@@ -126,7 +126,7 @@ H264ByteStreamHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGL
 
     BYTE* pDest;
     pSample->GetPointer(&pDest);
-    long cRemain = pSample->GetSize();
+    DWORD cRemain = pSample->GetSize();
 
     if (m_bFirst)
     {
@@ -179,8 +179,8 @@ H264ByteStreamHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGL
         }
         llPos += m_cLength;
         cBytes -= m_cLength;
-        long cThis = 0;
-        for (int i = 0; i < m_cLength; i++)
+        DWORD cThis = 0;
+        for (DWORD i = 0; i < m_cLength; i++)
         {
             cThis <<= 8;
             cThis += abLength[i];
@@ -207,6 +207,6 @@ H264ByteStreamHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGL
     }
     BYTE* pStart;
     pSample->GetPointer(&pStart);
-    return long(pDest - pStart);		// 32-bit consumption per packet is safe
+    return DWORD(pDest - pStart);		// 32-bit consumption per packet is safe
 }
 

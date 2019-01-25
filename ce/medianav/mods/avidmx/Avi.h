@@ -26,7 +26,7 @@ public:
     // all the header params are parsed in the "Child" method and passed
     // to the constructor. This means we can use the same class for the outer file
     // container (which does not have a header).
-    AviAtom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader, bool canHaveChildren = true);
+    AviAtom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, DWORD cHeader, bool canHaveChildren = true);
     // call this if the child items do not start immediately after the header
     // -- llOffset is an offset from HeaderSize
     virtual void ScanChildrenAt(LONGLONG llOffset);
@@ -36,7 +36,7 @@ public:
 class AviMovieTrack: public MovieTrack
 {
 public:
-    AviMovieTrack(const AtomPtr& pAtom, Movie* pMovie, long idx, const AtomCache& pIndex, unsigned int offsetOfOffset);
+    AviMovieTrack(const AtomPtr& pAtom, Movie* pMovie, DWORD idx, const AtomCache& pIndex, unsigned int offsetOfOffset);
     virtual REFERENCE_TIME Duration() const;
     bool isDisabled() const
     {

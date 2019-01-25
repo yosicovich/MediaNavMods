@@ -350,7 +350,7 @@ DShowDemultiplexor::CompleteConnect(IPin* pPeer)
 
     // construct output pin for each valid track
     HRESULT hr = S_OK;
-    for (long  nTrack = 0; nTrack < m_pMovie->Tracks(); nTrack++)
+    for (DWORD  nTrack = 0; nTrack < m_pMovie->Tracks(); nTrack++)
     {
         debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::CompleteConnect: getting track nTrack = %u\r\n", nTrack);
         MovieTrackPtr pTrack = m_pMovie->Track(nTrack);
@@ -432,7 +432,7 @@ DemuxInputPin::BreakConnect()
 }
 
 HRESULT 
-DemuxInputPin::Read(LONGLONG llOffset, long cBytes, void* pBuffer)
+DemuxInputPin::Read(LONGLONG llOffset, DWORD cBytes, void* pBuffer)
 {
     HRESULT hr = E_FAIL;
     IAsyncReaderPtr pRdr = GetConnected();
@@ -531,7 +531,7 @@ DemuxOutputPin::SetMediaType(const CMediaType* pmt)
 HRESULT 
 DemuxOutputPin::DecideBufferSize(IMemAllocator * pAlloc, ALLOCATOR_PROPERTIES * pprop)
 {
-    long cMax = m_pTrack->SizeIndex()->MaxSize();
+    DWORD cMax = m_pTrack->Index()->MaxSize();
     if (m_pTrack->Handler() == NULL)
     {
         return VFW_E_TYPE_NOT_ACCEPTED;
@@ -603,7 +603,7 @@ DemuxOutputPin::ThreadProc()
         m_tLate = 0;
 
         // wind back to key frame before and check against duration
-        long nSample;
+        DWORD nSample;
         size_t segment;
         if (!m_pTrack->CheckInSegment(tStart, true, &segment, &nSample))
         {
@@ -613,9 +613,9 @@ DemuxOutputPin::ThreadProc()
         }
         
         {
-            REFERENCE_TIME nSampleTime = m_pTrack->TimesIndex()->SampleToCTS(nSample);
-            long nSample2 = m_pTrack->TimesIndex()->CTSToSample(nSampleTime);
-            pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: nSample=%u,  nSampleTime=%I64d, tStart=%I64d, nSample2=%u, nSyncBefore=%u\r\n", nSample, nSampleTime, tStart, nSample2, m_pTrack->GetKeyMap()->SyncFor(nSample));
+            REFERENCE_TIME nSampleTime = m_pTrack->Index()->SampleToCTS(nSample);
+            DWORD nSample2 = m_pTrack->Index()->CTSToSample(nSampleTime);
+            pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: nSample=%u,  nSampleTime=%I64d, tStart=%I64d, nSample2=%u, nSyncBefore=%u\r\n", nSample, nSampleTime, tStart, nSample2, m_pTrack->Index()->SyncFor(nSample));
         }
 
         if (tStop > m_pTrack->Duration())   
@@ -623,7 +623,7 @@ DemuxOutputPin::ThreadProc()
             tStop = m_pTrack->Duration();
         }
         // used only for quality management. No segment support yet
-        long nStop = m_pTrack->TimesIndex()->DTSToSample(tStop);
+        DWORD nStop = m_pTrack->Index()->DTSToSample(tStop);
 
         bool bFirst = true;
         pHandler->StartStream();
@@ -687,10 +687,10 @@ DemuxOutputPin::ThreadProc()
                 while (late > (perFrame / 2))
                 {
                     // we are more than 3/4 frame late. Should we skip?
-                    int next = m_pTrack->GetKeyMap()->Next(nSample);
+                    DWORD next = m_pTrack->Index()->Next(nSample);
                     if (next && (next <= nStop))
                     {
-                        REFERENCE_TIME tDiff = m_pTrack->TimesIndex()->SampleToCTS(next) - m_pTrack->TimesIndex()->SampleToCTS(nSample);
+                        REFERENCE_TIME tDiff = m_pTrack->Index()->SampleToCTS(next) - m_pTrack->Index()->SampleToCTS(nSample);
                         tDiff = REFERENCE_TIME(tDiff / dRate);
                         if ((next == (nSample+1)) || ((tDiff/2) < late))
                         {
@@ -718,16 +718,16 @@ DemuxOutputPin::ThreadProc()
             }
 #pragma endregion 
 
-            LONGLONG llPos = m_pTrack->SizeIndex()->Offset(nSample);
-            long cSample = m_pTrack->SizeIndex()->Size(nSample);
-            long lastSample = nSample;
+            LONGLONG llPos = m_pTrack->Index()->Offset(nSample);
+            DWORD cSample = m_pTrack->Index()->Size(nSample);
+            DWORD lastSample = nSample;
 
 #pragma region Processing
             if ((cSample < 16) && (m_pTrack->IsOldAudioFormat()))
             {
                 // this is the older MOV format: uncompressed audio is indexed by individual samples
                 // fill the buffer with contiguous samples
-                long nThis = lastSample;
+                DWORD nThis = lastSample;
                 size_t segThis = segment;
                 while (m_pTrack->NextBySegment(&nThis, &segThis))
                 {
@@ -737,13 +737,13 @@ DemuxOutputPin::ThreadProc()
                     {
                         break;
                     }
-                    LONGLONG llPosNext = m_pTrack->SizeIndex()->Offset(nThis);
+                    LONGLONG llPosNext = m_pTrack->Index()->Offset(nThis);
                     if (llPosNext != (llPos + cSample))
                     {
                         break;
                     }
-                    long cNext = m_pTrack->SizeIndex()->Size(nThis);
-                    if ((cSample + cNext) > pSample->GetSize())
+                    DWORD cNext = m_pTrack->Index()->Size(nThis);
+                    if ((cSample + cNext) > static_cast<DWORD>(pSample->GetSize()))
                     {
                         break;
                     }
@@ -766,7 +766,7 @@ DemuxOutputPin::ThreadProc()
 #pragma region Delivery
             if (cSample > 0)
             {
-                if (cSample > pSample->GetSize())
+                if (cSample > static_cast<DWORD>(pSample->GetSize()))
                 {
                     // internal error since we checked the sizes
                     // before setting the allocator
@@ -780,7 +780,7 @@ DemuxOutputPin::ThreadProc()
                 if (cSample > 0)
                 {
                     pSample->SetActualDataLength(cSample);
-                    if (m_pTrack->GetKeyMap()->SyncFor(nSample) == nSample)
+                    if (m_pTrack->Index()->SyncFor(nSample) == nSample)
                     {
                         pinDebugPrintf(DEMUX_TRACE, L"DemuxOutputPin::ThreadProc: %S pSample->SetSyncPoint(true), nSample=%u\r\n", m_pTrack->Name(), nSample);
                         pSample->SetSyncPoint(true);
@@ -873,7 +873,7 @@ HRESULT DemuxOutputPin::SeekBackToKeyFrame(REFERENCE_TIME& tStart)
 	if(!m_pTrack)
 		return E_NOINTERFACE;
 	size_t segment;
-	long nSample;
+	DWORD nSample;
 	if (!m_pTrack->CheckInSegment(tStart, true, &segment, &nSample))
 		return S_FALSE;
 	REFERENCE_TIME tNext, tDur;
