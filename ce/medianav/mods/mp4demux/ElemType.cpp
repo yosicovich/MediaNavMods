@@ -36,11 +36,11 @@ inline DWORD Swap4Bytes(DWORD x)
 class BigEndianAudioHandler : public NoChangeHandler
 {
 public:
-    long PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, long cBytes);
+    DWORD PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, DWORD cBytes);
 };
 
-long 
-BigEndianAudioHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, long cBytes)
+DWORD 
+BigEndianAudioHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG llPos, DWORD cBytes)
 {
     cBytes = __super::PrepareOutput(pSample, pMovie, llPos, cBytes);
     if (cBytes > 0)
@@ -83,7 +83,7 @@ Mpeg4ElementaryType::ParseDescriptor(const AtomPtr& patmESD)
         return false;   // only version 0 is speced
     }
 
-	long cPayload = long(patmESD->Length() - patmESD->HeaderSize());
+	DWORD cPayload = DWORD(patmESD->Length() - patmESD->HeaderSize());
 
     // parse the ES_Descriptor to get the decoder info
     Descriptor ESDescr;
@@ -91,7 +91,7 @@ Mpeg4ElementaryType::ParseDescriptor(const AtomPtr& patmESD)
     {
         return false;
     }
-	long cOffset = 3;
+	DWORD cOffset = 3;
     BYTE flags = ESDescr.Start()[2];
     if (flags & 0x80)
     {
@@ -165,7 +165,7 @@ Mpeg4ElementaryType::Parse(REFERENCE_TIME tFrame, const AtomPtr& patm)
     // the ESD atom is at the end of a type-specific
     // structure.
     AtomCache pSD(patm);
-    long cOffset;
+    DWORD cOffset;
 	bool bDescriptor = true;
     if (patm->Type() == FOURCC("mp4v"))
     {
@@ -209,7 +209,7 @@ Mpeg4ElementaryType::Parse(REFERENCE_TIME tFrame, const AtomPtr& patm)
 		m_fourcc = BI_RGB;
 
 		// casting this to the structure makes it clearer what
-		// info is there, but remember all shorts and longs are byte swapped
+		// info is there, but remember all shorts and DWORDs are byte swapped
 		const QTVideo* pformat = (const QTVideo*)(const BYTE*)pSD;
 		m_cx = Swap2Bytes(pformat->width);
 		m_cy = Swap2Bytes(pformat->height);
@@ -343,7 +343,7 @@ Mpeg4ElementaryType::Parse(REFERENCE_TIME tFrame, const AtomPtr& patm)
 		{
 			if (version > 0)
 			{
-				long cSearch = 28;
+				DWORD cSearch = 28;
 				while (cSearch < (patm->Length()-8))
 				{
 					if ((DWORD)SwapLong(pSD + cSearch + 4) == FOURCC("wave"))
@@ -417,7 +417,7 @@ Mpeg4ElementaryType::Parse(REFERENCE_TIME tFrame, const AtomPtr& patm)
     }
 
     patm->ScanChildrenAt(cOffset);
-	for (int i = 0; i < patm->ChildCount(); i++)
+	for (DWORD i = 0; i < patm->ChildCount(); i++)
 	{
 	    AtomPtr& patmESD = patm->Child(i);
 		if (!patmESD)
@@ -426,7 +426,7 @@ Mpeg4ElementaryType::Parse(REFERENCE_TIME tFrame, const AtomPtr& patm)
 		}
     
 		AtomCache pESD(patmESD);
-		long cPayload = long(patmESD->Length() - patmESD->HeaderSize());
+		DWORD cPayload = DWORD(patmESD->Length() - patmESD->HeaderSize());
 		if ((m_type == Video_H264) && !bDescriptor)
 		{
 			// iso 14496-15
@@ -471,7 +471,7 @@ Mpeg4ElementaryType::Parse(REFERENCE_TIME tFrame, const AtomPtr& patm)
 		{
 			// this appears to be a non-ISO file (prob quicktime)
 			// search for esds in children of this atom
-			for (int j = 0; j < patmESD->ChildCount(); j++)
+			for (DWORD j = 0; j < patmESD->ChildCount(); j++)
 			{
 				AtomPtr& pwav = patmESD->Child(j);
 				if (pwav->Type() == FOURCC("esds"))
@@ -896,7 +896,7 @@ Mpeg4ElementaryType::GetType_AAC(CMediaType* pmt, int n) const
     CopyMemory((pwfx+1),  m_pDecoderSpecific,  m_cDecoderSpecific);
 
     // parse decoder-specific info to get rate/channels
-    long samplerate = ((m_pDecoderSpecific[0] & 0x7) << 1) + ((m_pDecoderSpecific[1] & 0x80) >> 7);
+    DWORD samplerate = ((m_pDecoderSpecific[0] & 0x7) << 1) + ((m_pDecoderSpecific[1] & 0x80) >> 7);
     pwfx->nSamplesPerSec = SamplingFrequencies[samplerate];
     pwfx->nBlockAlign = 1;
     pwfx->wBitsPerSample = 16;
@@ -948,11 +948,11 @@ Mpeg4ElementaryType::GetType_WAVEFORMATEX(CMediaType* pmt) const
 
 // --- descriptor parsing ----------------------
 bool 
-Descriptor::Parse(const BYTE* pBuffer, long cBytes)
+Descriptor::Parse(const BYTE* pBuffer, DWORD cBytes)
 {
     m_pBuffer = pBuffer;
     m_type = (eType)pBuffer[0];
-    long idx = 1;
+    DWORD idx = 1;
     m_cBytes = 0;
     do {
         m_cBytes = (m_cBytes << 7) + (pBuffer[idx] & 0x7f);
@@ -969,7 +969,7 @@ Descriptor::Parse(const BYTE* pBuffer, long cBytes)
 
     
 bool 
-Descriptor::DescriptorAt(long cOffset, Descriptor& desc)
+Descriptor::DescriptorAt(DWORD cOffset, Descriptor& desc)
 {
     return desc.Parse(Start() + cOffset, Length() - cOffset); 
 }

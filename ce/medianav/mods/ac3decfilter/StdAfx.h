@@ -26,7 +26,12 @@ using namespace std;
 #pragma warning(pop)
 #define FOURCC(p)   (DWORD(p[3] | (p[2] << 8) | (p[1] << 16) | (p[0] << 24)))
 
+#ifdef _DEBUG
+#define TESTMODE
+#else
 //#define TESTMODE
+#endif
+
 //#define LOGTOFILE
 #include "utils.h"
 

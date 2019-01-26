@@ -104,7 +104,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="\MD\vtest"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
@@ -200,7 +200,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="\MD\vtest"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>

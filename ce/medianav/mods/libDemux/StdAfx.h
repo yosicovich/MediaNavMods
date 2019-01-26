@@ -29,7 +29,12 @@ using namespace std;
 
 #pragma warning(pop)
 
+#ifdef _DEBUG
+#define TESTMODE
+#else
 //#define TESTMODE
+#endif
+
 #ifdef TESTMODE
 #define DEMUX_DBG 1
 #define DEMUX_TRACE 0

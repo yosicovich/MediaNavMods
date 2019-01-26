@@ -31,7 +31,7 @@ public:
     {
     }
 
-    bool Parse(const BYTE* pBuffer, long cBytes);
+    bool Parse(const BYTE* pBuffer, DWORD cBytes);
     
     enum eType
     {
@@ -46,18 +46,18 @@ public:
     const BYTE* Start() {
         return m_pBuffer + Header();
     }
-    long Header() {
+    DWORD Header() {
         return m_cHdr;
     }
-    long Length() {
+    DWORD Length() {
         return m_cBytes;
     }
-    bool DescriptorAt(long cOffset, Descriptor& desc);
+    bool DescriptorAt(DWORD cOffset, Descriptor& desc);
 
 private:
     eType m_type;
-    long m_cHdr;
-    long m_cBytes;
+    DWORD m_cHdr;
+    DWORD m_cBytes;
     const BYTE* m_pBuffer;
 };
 
@@ -117,10 +117,10 @@ private:
     REFERENCE_TIME m_tFrame;
     eESType m_type;
     smart_array<BYTE> m_pDecoderSpecific;
-    long m_cDecoderSpecific;
+    DWORD m_cDecoderSpecific;
 
-    long m_cx;
-    long m_cy;
+    DWORD m_cx;
+    DWORD m_cy;
     static const int SamplingFrequencies[];
     static const GUID* AAC_GUIDS[];
 

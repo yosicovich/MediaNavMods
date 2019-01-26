@@ -127,13 +127,13 @@ SIZE_T AviTrackIndex::Get(SIZE_T*& pnIndexes) const
 }
 
 DWORD 
-AviTrackIndex::DTSToSample(LONGLONG tStart)
+AviTrackIndex::DTSToSample(LONGLONG tStart) const
 {
     DWORD frame = static_cast<DWORD>(ReftimeToTrack(tStart) - m_start);
     if(m_oneFramePerSample)
         return frame;
     DWORD nSample = 0;
-    while(nSample < m_nSamples && (m_samplesArray[nSample].totalFramesSoFar + m_samplesArray[nSample].framesPerSample) < frame)
+    while(nSample < m_nSamples && (m_samplesArray[nSample].totalFramesSoFar + m_samplesArray[nSample].framesPerSample) <= frame)
     {
         ++nSample;
     }
@@ -146,7 +146,7 @@ SIZE_T AviTrackIndex::Get(REFERENCE_TIME*& pnTimes) const
 }
 
 LONGLONG 
-AviTrackIndex::SampleToCTS(DWORD nSample)
+AviTrackIndex::SampleToCTS(DWORD nSample) const
 {
     if(nSample >= m_nSamples)
         nSample = m_nSamples - 1;
@@ -162,16 +162,8 @@ AviTrackIndex::SampleToCTS(DWORD nSample)
     return TrackToReftime(m_start + frame);
 }
 
-// offset from decode to composition time for this sample
 LONGLONG 
-AviTrackIndex::CTSOffset(DWORD nSample) const
-{
-    // Always 0 for AVI
-    return 0;
-}
-
-LONGLONG 
-AviTrackIndex::Duration(DWORD nSample)
+AviTrackIndex::Duration(DWORD nSample) const
 {
     if(nSample >= m_nSamples)
         nSample = m_nSamples - 1;

@@ -17,6 +17,8 @@
 #include "thread.h"
 #include "demuxtypes.h"
 
+#define INT_RATE
+
 //
 // Partially derived from GDCL sample MPEG-1 parser filter
 // available in source form at http://www.gdcl.co.uk/articles

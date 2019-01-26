@@ -16,7 +16,7 @@
 #include "Index.h"
 #include <sstream>
 
-Mpeg4Atom::Mpeg4Atom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader)
+Mpeg4Atom::Mpeg4Atom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, DWORD cHeader)
 : Atom(pReader, llOffset, llLength, type, cHeader)
 {
 }
@@ -29,7 +29,7 @@ Mpeg4Atom::ScanChildrenAt(LONGLONG llOffset)
     while (llOffset < m_llLength)
     {
         BYTE hdr[8];
-        long cHeader = 8;
+        DWORD cHeader = 8;
         Read(llOffset, 8, hdr);
         LONGLONG llLength = (DWORD)SwapLong(hdr);
         DWORD type = (DWORD)SwapLong(hdr + 4);
@@ -87,15 +87,19 @@ Mpeg4Movie::Mpeg4Movie(const AtomReaderPtr& pRoot)
         }
 
         // list tracks
-        long idxTrack = 0;
-        for (int i = 0; i < pMovie->ChildCount(); i++)
+        DWORD idxTrack = 0;
+        for (DWORD i = 0; i < pMovie->ChildCount(); i++)
         {
             const AtomPtr& patm = pMovie->Child(i);
             if ((patm->Type() == FOURCC("trak")) ||
                 (patm->Type() == FOURCC("cctk")))
             {
                 MovieTrackPtr pTrack = MovieTrackPtr(new Mpeg4MovieTrack(patm, this, idxTrack++));
+#ifdef _DEBUG
+                if (pTrack->Valid() && pTrack->IsVideo())
+#else
                 if (pTrack->Valid())
+#endif
                 {
                     m_Tracks.push_back(pTrack);
                 }
@@ -107,7 +111,7 @@ Mpeg4Movie::Mpeg4Movie(const AtomReaderPtr& pRoot)
 // ------------------------------------------------------------------
 
 
-Mpeg4MovieTrack::Mpeg4MovieTrack(const AtomPtr& pAtom, Mpeg4Movie* pMovie, long idx)
+Mpeg4MovieTrack::Mpeg4MovieTrack(const AtomPtr& pAtom, Mpeg4Movie* pMovie, DWORD idx)
 : MovieTrack(AtomPtr(), pMovie, idx)
 {
     // check version/flags entry for track header
@@ -149,7 +153,7 @@ Mpeg4MovieTrack::Mpeg4MovieTrack(const AtomPtr& pAtom, Mpeg4Movie* pMovie, long 
                         it->duration = it->duration * UNITS / pMovie->Scale();
                         if (it->offset > 0)
                         {
-                            it->offset = TimesIndex()->TrackToReftime(it->offset);
+                            it->offset = Index()->TrackToReftime(it->offset);
                         }
                         it->sumDurations = sumDurations;
                         sumDurations += it->duration;
@@ -161,7 +165,7 @@ Mpeg4MovieTrack::Mpeg4MovieTrack(const AtomPtr& pAtom, Mpeg4Movie* pMovie, long 
                     EditEntry e;
                     e.offset = 0;
                     e.sumDurations = 0;
-                    e.duration = TimesIndex()->TotalDuration();
+                    e.duration = Index()->TotalDuration();
                     m_Edits.push_back(e);
                 }
             }
@@ -180,8 +184,8 @@ Mpeg4MovieTrack::ParseEDTS(const AtomPtr& patm)
     if (patmELST != NULL)
     {
 		AtomCache pELST = patmELST;
-		long cEdits = SwapLong(pELST + 4);
-		for (long i = 0; i < cEdits; i++)
+		DWORD cEdits = SwapLong(pELST + 4);
+		for (DWORD i = 0; i < cEdits; i++)
         {
 			EditEntry e;
             if (pELST[0] == 0)
@@ -213,7 +217,7 @@ Mpeg4MovieTrack::ParseMDIA(const AtomPtr& patm, REFERENCE_TIME tFirst)
         return false;
     }
     AtomCache pMDHD(patmMDHD);
-    long scale;
+    DWORD scale;
     if (pMDHD[0] == 1)  // version 0 or 1
     {
         scale = SwapLong(pMDHD + 20);
@@ -237,27 +241,16 @@ Mpeg4MovieTrack::ParseMDIA(const AtomPtr& patm, REFERENCE_TIME tFirst)
         return false;
     }
 
-    // initialize index tables
-    m_pSizes = new Mpeg4SampleSizes;
-    if ((!GetTypedPtr(Mpeg4SampleSizes, m_pSizes)->Parse(patmSTBL) || (m_pSizes->SampleCount() <= 0)))
-    {
-        return false;
-    }
-    m_pKeyMap = new Mpeg4KeyMap;
-    if (!GetTypedPtr(Mpeg4KeyMap, m_pKeyMap)->Parse(patmSTBL))
-    {
-        return false;
-    }
-
-    m_pTimes = new Mpeg4SampleTimes;
-    if (!GetTypedPtr(Mpeg4SampleTimes, m_pTimes)->Parse(scale, tFirst, patmSTBL))
+    // initialize index
+    m_pIndex = new Mpeg4TrackIndex();
+    if ((!GetTypedPtr(Mpeg4TrackIndex, m_pIndex)->Parse(scale, tFirst, patmSTBL) || (m_pIndex->SampleCount() <= 0)))
     {
         return false;
     }
 
     // now index is ready, we can calculate average frame duration
     // for the media type
-    REFERENCE_TIME tFrame = Duration() / m_pSizes->SampleCount();
+    REFERENCE_TIME tFrame = Duration() / Index()->SampleCount();
 
     const AtomPtr& pSTSD = patmSTBL->FindChild(FOURCC("stsd"));
     if (!pSTSD || !ParseSTSD(tFrame, pSTSD))
@@ -267,12 +260,12 @@ Mpeg4MovieTrack::ParseMDIA(const AtomPtr& patm, REFERENCE_TIME tFirst)
 
 	// check for old-format uncomp audio
 	if ((GetTypedPtr(Mpeg4ElementaryType, m_pType)->StreamType() == Audio_WAVEFORMATEX) &&
-		(m_pSizes->Size(0) == 1))
+		(Index()->Size(0) == 1))
 	{
 		CMediaType mt;
 		m_pType->GetType(&mt, 0);
 		WAVEFORMATEX* pwfx = (WAVEFORMATEX*)mt.Format();
-		GetTypedPtr(Mpeg4SampleSizes, m_pSizes)->AdjustFixedSize(pwfx->nBlockAlign);
+		GetTypedPtr(Mpeg4TrackIndex, Index())->AdjustFixedSize(pwfx->nBlockAlign);
 		m_bOldFixedAudio = true;
 	}
 
@@ -281,7 +274,7 @@ Mpeg4MovieTrack::ParseMDIA(const AtomPtr& patm, REFERENCE_TIME tFirst)
 		// attempt to normalise the frame rate
 
 		// first average the first few, discarding outliers
-		int cFrames = min(m_pSizes->SampleCount(), 60L);
+		int cFrames = min(Index()->SampleCount(), 60L);
 		REFERENCE_TIME total = 0;
 		int cCounted = 0;
 		// outliers are beyond +/- 20%
@@ -289,7 +282,7 @@ Mpeg4MovieTrack::ParseMDIA(const AtomPtr& patm, REFERENCE_TIME tFirst)
 		REFERENCE_TIME tMax = tFrame * 120 / 100;
 		for (int i = 0; i < cFrames; i++)
 		{
-			REFERENCE_TIME tDur = m_pTimes->Duration(i);
+			REFERENCE_TIME tDur = Index()->Duration(i);
 			if ((tDur > tMin) && (tDur < tMax))
 			{
 				total += tDur;

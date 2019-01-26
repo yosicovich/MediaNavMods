@@ -17,8 +17,13 @@
 #ifndef __VIDEORENDERER_H
 #define __VIDEORENDERER_H
 
+#ifdef _DEBUG
+#define TESTMODE
+#define NO_HIDE
+#else
 //#define TESTMODE
 //#define NO_HIDE
+#endif
 // Forward declarations
 
 class CVideoRenderer;

@@ -207,15 +207,14 @@ public:
     virtual SIZE_T Get(SIZE_T*& pnIndexes) const = 0;
 
     // Times
-    virtual DWORD DTSToSample(LONGLONG tStart) = 0;
+    virtual DWORD DTSToSample(LONGLONG tStart) const = 0;
     virtual SIZE_T Get(REFERENCE_TIME*& pnTimes) const = 0;
-    virtual LONGLONG SampleToCTS(DWORD nSample) = 0;
-    virtual LONGLONG Duration(DWORD nSample) = 0;
-    DWORD CTSToSample(LONGLONG tStart);
-    LONGLONG TotalDuration()    { return m_total; }
+    virtual LONGLONG SampleToCTS(DWORD nSample) const = 0;
+    virtual LONGLONG Duration(DWORD nSample) const = 0;
+    virtual DWORD CTSToSample(LONGLONG tStart) const = 0;
+    LONGLONG TotalDuration() const   { return m_total; }
 
     LONGLONG TrackToReftime(LONGLONG nTrack) const;
-    virtual bool HasCTSTable() const = 0;
     LONGLONG ReftimeToTrack(LONGLONG reftime) const;
 
 protected:

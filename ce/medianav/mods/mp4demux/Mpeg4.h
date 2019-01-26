@@ -34,7 +34,7 @@ public:
     // all the header params are parsed in the "Child" method and passed
     // to the constructor. This means we can use the same class for the outer file
     // container (which does not have a header).
-    Mpeg4Atom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, long cHeader);
+    Mpeg4Atom(AtomReader* pReader, LONGLONG llOffset, LONGLONG llLength, DWORD type, DWORD cHeader);
     // call this if the child items do not start immediately after the header
     // -- llOffset is an offset from HeaderSize
     virtual void ScanChildrenAt(LONGLONG llOffset);
@@ -45,7 +45,7 @@ class Mpeg4Movie;
 class Mpeg4MovieTrack: public MovieTrack
 {
 public:
-    Mpeg4MovieTrack(const AtomPtr& pAtom, Mpeg4Movie* pMovie, long idx);
+    Mpeg4MovieTrack(const AtomPtr& pAtom, Mpeg4Movie* pMovie, DWORD idx);
     virtual REFERENCE_TIME Duration() const;
 
 private:
@@ -67,7 +67,7 @@ public:
         return m_tDuration;
     }
 private:
-    long m_scale;
+    DWORD m_scale;
     LONGLONG m_duration;
     REFERENCE_TIME m_tDuration;
 };

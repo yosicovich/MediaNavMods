@@ -591,12 +591,16 @@ DemuxOutputPin::ThreadProc()
             break;
 
         REFERENCE_TIME tStart, tStop;
+        double seekRate;
+        m_pParser->GetSeekingParams(&tStart, &tStop, &seekRate);
+#ifndef INT_RATE        
         // HOTFIX: Volatile specifier is not really necessary here but it fixes a nasty problem with MainConcept AVC SDK violating x64 calling convention;
         //         MS compiler might choose to keep dRate in XMM6 register and the value would be destroyed by the violating call leading to incorrect 
         //         further streaming (wrong time stamps)
-        volatile DOUBLE dRate;
-        m_pParser->GetSeekingParams(&tStart, &tStop, (DOUBLE*) &dRate);
-
+        volatile DOUBLE dRate = seekRate;
+#else
+        unsigned int dRate = static_cast<unsigned int>(seekRate);
+#endif
         pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: DeliverNewSegment()\r\n");
         DeliverNewSegment(tStart, tStop, dRate);
 
@@ -794,12 +798,13 @@ DemuxOutputPin::ThreadProc()
                     }
 
                     REFERENCE_TIME tSampleStart = tNext - tStart;
+                    REFERENCE_TIME tSampleEnd = tSampleStart + tDur;
+
                     if (tSampleStart < 0)
                     {
                         pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: pSample->SetPreroll(true) tStart=%I64d\r\n", tStart);
                         pSample->SetPreroll(true);
                     }
-                    REFERENCE_TIME tSampleEnd = tSampleStart + tDur;
 
                     // oops. clearly you need to divide by dRate. At double the rate, each frame lasts half as long.
                     tSampleStart = REFERENCE_TIME(tSampleStart / dRate);

@@ -31,6 +31,11 @@ using namespace std;
 #define FOURCC(p)   (DWORD(p[3] | (p[2] << 8) | (p[1] << 16) | (p[0] << 24)))
 
 // byte re-ordering
+inline DWORD SwapLong(const DWORD val)
+{
+    return _byteswap_ulong(val);
+}
+
 inline long SwapLong(const BYTE* pByte)
 {
     return (pByte[0] << 24) |
@@ -39,13 +44,23 @@ inline long SwapLong(const BYTE* pByte)
         pByte[3];
 }
 
+inline ULONGLONG SwapI64(const ULONGLONG val)
+{
+    return _byteswap_uint64(val);
+}
+
 inline LONGLONG SwapI64(const BYTE* pByte)
 {
     return ((LONGLONG)SwapLong(pByte))<< 32 |
         (unsigned long)(SwapLong(pByte + 4));
 }
 
+#ifdef _DEBUG
+#define TESTMODE
+#else
 //#define TESTMODE
+#endif
+
 //#define LOGTOFILE
 #include "utils.h"
 

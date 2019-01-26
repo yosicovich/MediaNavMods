@@ -13,83 +13,141 @@
 
 #include "demuxtypes.h"
 
+#pragma warning(disable: 4200)
+#pragma pack(push,1)
+struct MP4BoxHeader
+{
+    BYTE version;
+    BYTE flags[3];
+};
+// STTS
+struct STTSRec
+{
+    DWORD sample_count;
+    DWORD sample_delta;
+};
+
+struct STTS
+{
+    MP4BoxHeader header;
+    DWORD entry_count;
+    STTSRec recs[0];
+};
+
+// CTTS
+struct CTTSRec
+{
+    DWORD sample_count;
+    DWORD sample_offset;
+};
+
+struct CTTS
+{
+    MP4BoxHeader header;
+    DWORD entry_count;
+    CTTSRec recs[0];
+};
+
+// STSZ
+struct STSZ
+{
+    MP4BoxHeader header;
+    DWORD sample_size;
+    DWORD sample_count;
+    DWORD entry_size[0];
+};
+
+// STSC
+struct STSCRec
+{
+    DWORD first_chunk;
+    DWORD samples_per_chunks;
+    DWORD sample_description_index;
+};
+
+struct STSC
+{
+    MP4BoxHeader header;
+    DWORD entry_count;
+    STSCRec recs[0];
+};
+
+// STCO
+struct STCO
+{
+    MP4BoxHeader header;
+    DWORD entry_count;
+    DWORD chunk_offset[0];
+};
+
+// CO64
+struct CO64
+{
+    MP4BoxHeader header;
+    DWORD entry_count;
+    ULONGLONG chunk_offset[0];
+};
+
+// STSS
+struct STSS
+{
+    MP4BoxHeader header;
+    DWORD entry_count;
+    DWORD sample_number[0];
+};
+
+#pragma pack(pop)
 // currently all index tables are kept in memory. This is
 // typically a few hundred kilobytes. For very large files a
 // more sophisticated scheme might be worth considering?
 
 // index giving count of samples and size of each sample
 // and file location of sample
-class Mpeg4SampleSizes: public SampleSizes
+class Mpeg4TrackIndex: public TrackIndex
 {
 public:
-    Mpeg4SampleSizes();
+    Mpeg4TrackIndex();
 
-    bool Parse(const AtomPtr& patmSTBL);
-    long Size(long nSample) const;
-    LONGLONG Offset(long nSample) const;
+    bool Parse(DWORD scale, LONGLONG CTOffset, const AtomPtr& patmSTBL);
+    DWORD Size(DWORD nSample) const;
+    LONGLONG Offset(DWORD nSample) const;
+
+    DWORD SyncFor(DWORD nSample) const;
+    DWORD Next(DWORD nSample) const;
+    SIZE_T Get(SIZE_T*& pnIndexes) const;
+
+    DWORD CTSToSample(LONGLONG nSample) const;
+    DWORD DTSToSample(LONGLONG tStart) const;
+    SIZE_T Get(REFERENCE_TIME*& pnTimes) const;
+    LONGLONG SampleToCTS(DWORD nSample) const;
+    LONGLONG Duration(DWORD nSample) const;
 
 	// support for old-style uncompressed audio, where fixedsize =1 means 1 sample
-	void AdjustFixedSize(long nBytes);
-private:
-	AtomCache m_pBuffer;
-    long m_nFixedSize;
-    
-    long m_nEntriesSTSC;
-    long m_nChunks;
-    bool m_bCO64;
-	AtomCache m_pSTSC;
-	AtomCache m_pSTCO;
-};
-
-// map of key samples
-class Mpeg4KeyMap: public KeyMap
-{
-public:
-    Mpeg4KeyMap();
-
-    bool Parse(const AtomPtr& patmSTBL);
-    long SyncFor(long nSample) const;
-	long Next(long nSample) const;
-	SIZE_T Get(SIZE_T*& pnIndexes) const;
+	void AdjustFixedSize(DWORD nBytes);
 
 private:
-    AtomCache m_pSTSS;
-    long m_nEntries;
-};
+    DWORD m_nFixedSize;   
+    DWORD m_nMaxSamplePerChunk;
 
-// time and duration of samples
-// -- all times in 100ns units
-class Mpeg4SampleTimes: public SampleTimes
-{
-public:
-    Mpeg4SampleTimes();
-
-	bool Parse(long scale, LONGLONG CTOffset, const AtomPtr& patmSTBL);
-
-    long DTSToSample(LONGLONG tStart);
-	SIZE_T Get(REFERENCE_TIME*& pnTimes) const;
-    LONGLONG SampleToCTS(long nSample);
-    LONGLONG Duration(long nSample);
-    LONGLONG CTSOffset(long nSample) const;
-
-    bool HasCTSTable() const { return m_nCTTS > 0; }
-
-private:
     LONGLONG m_CTOffset;        // CT offset of first sample
+    DWORD m_nFixedDuration;
 
-    AtomCache m_pSTTS;
-    AtomCache m_pCTTS;
+    struct SampleRec
+    {
+        SampleRec(DWORD size)
+            :offset(0), size(size), framesPerSample(0), totalFramesSoFar(0), ctsOffset(0),keyFrameSample(0)
+        {
+        }
 
-    long m_nSTTS;
-    long m_nCTTS;
+        ULONGLONG offset;
+        DWORD size;
+        DWORD framesPerSample;
+        DWORD totalFramesSoFar;
+        DWORD ctsOffset;
+        DWORD keyFrameSample;
+    };
+    typedef std::vector<SampleRec> SamplesArray;
 
-    // Duration, DTSToSample and SampleToCTS need to
-    // add up durations from the start of the table. We
-    // cache the current position to reduce effort
-    long m_nBaseSample;     // sample number at m_idx
-    long m_idx;             // table index corresponding to m_nBaseSample
+    SamplesArray m_samplesArray;
 
-    LONGLONG m_tAtBase;     // total of durations at m_nBaseSample
 };
-
-

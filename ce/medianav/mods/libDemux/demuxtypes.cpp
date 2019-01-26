@@ -167,51 +167,6 @@ TrackIndex::TrackIndex()
   m_total(0)
 {}
 
-DWORD TrackIndex::CTSToSample(LONGLONG tStart)
-{
-    if (!HasCTSTable())
-    {
-        return DTSToSample(tStart);
-    }
-
-    // we have a RLE list of durations and a RLE list of CTS offsets.
-    // maybe start from a DTS time a little earlier, and step forward?
-    LONGLONG pos = tStart;
-    if (tStart > 0)
-    {
-        if (tStart < (UNITS/2))
-        {
-            pos = 0;
-        }
-        else
-        {
-            pos = tStart - (UNITS/2);
-        }
-    }
-    DWORD n = DTSToSample(pos); 
-    for (;;)
-    {
-        LONGLONG cts = SampleToCTS(n);
-        if (cts < 0)
-        {
-            return -1;
-        }
-        LONGLONG dur = Duration(n);
-        if (cts > tStart)
-        {
-            return n;
-        }
-        if ((cts <= tStart) && ((cts + dur) > tStart))
-        {
-            return n;
-        }
-        if (dur == 0)
-        {
-            return -1;
-        }
-        n++;
-    }
-}
 LONGLONG 
 TrackIndex::TrackToReftime(LONGLONG nTrack) const
 {

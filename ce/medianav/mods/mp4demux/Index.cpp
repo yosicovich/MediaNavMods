@@ -15,14 +15,22 @@
 
 // sample count and sizes ------------------------------------------------
 
-Mpeg4SampleSizes::Mpeg4SampleSizes()
-: SampleSizes(),
-  m_nFixedSize(0)
+Mpeg4TrackIndex::Mpeg4TrackIndex()
+: TrackIndex()
+,m_nFixedSize(0)
+,m_nMaxSamplePerChunk(0)
+,m_nFixedDuration(0)
 {}
      
 bool 
-Mpeg4SampleSizes::Parse(const AtomPtr& patmSTBL)
+Mpeg4TrackIndex::Parse(DWORD scale, LONGLONG CTOffset, const AtomPtr& patmSTBL)
 {
+    // scale - track timescale units/sec
+    m_rate = scale;            
+    m_scale = 1;
+
+    m_CTOffset = CTOffset;      // offset to start of first sample in 100ns
+
     // need to locate three inter-related tables
     // stsz, stsc and stco/co64
 
@@ -31,27 +39,26 @@ Mpeg4SampleSizes::Parse(const AtomPtr& patmSTBL)
     {
         return false;
     }
-    m_pBuffer = patmSTSZ;
-    if (m_pBuffer[0] != 0)  // check version 0
+    AtomCache cacheSTSZ = patmSTSZ;
+    const STSZ* pSTSZ = reinterpret_cast<const STSZ *>(*cacheSTSZ);
+    if (pSTSZ->header.version != 0)  // check version 0
     {
         return false;
     }
 
-    m_nFixedSize = SwapLong(m_pBuffer+4);
-    m_nSamples = SwapLong(m_pBuffer+8);
+    m_nFixedSize = SwapLong(pSTSZ->sample_size);
+    m_nSamples = SwapLong(pSTSZ->sample_count);
 
+    m_samplesArray.reserve(m_nSamples);
+
+    // Populate sample sizes and find out the largest one.
     m_nMaxSize = m_nFixedSize;
-    if (m_nFixedSize == 0)
+    for (DWORD  i = 0; i < m_nSamples; i++)
     {
-        // variable size -- need to scan whole table to find largest
-        for (long  i = 0; i < m_nSamples; i++)
-        {
-            long cThis = SwapLong(m_pBuffer + 12 + (i * 4));
-            if (cThis > m_nMaxSize)
-            {
-                m_nMaxSize = cThis;
-            }
-        }
+        DWORD sampleSize = m_nFixedSize ? m_nFixedSize : SwapLong(pSTSZ->entry_size[i]);
+        m_samplesArray.push_back(SampleRec(sampleSize));
+        if(sampleSize > m_nMaxSize)
+            m_nMaxSize = sampleSize;
     }
 
     const AtomPtr& patmSTSC = patmSTBL->FindChild(FOURCC("stsc"));
@@ -59,218 +66,99 @@ Mpeg4SampleSizes::Parse(const AtomPtr& patmSTBL)
     {
         return false;
     }
-    m_pSTSC = patmSTSC;
-    m_nEntriesSTSC = SwapLong(m_pSTSC+4);
-
+    AtomCache cacheSTSC = patmSTSC;
+    const STSC* pSTSC = reinterpret_cast<const STSC *>(*cacheSTSC);
+    DWORD nEntriesSTSC = SwapLong(pSTSC->entry_count);
+    
     AtomPtr& patmSTCO = patmSTBL->FindChild(FOURCC("stco"));
+    bool bCO64;
     if (patmSTCO != NULL)
     {
-        m_bCO64 = false;
+        bCO64 = false;
     } else {
         patmSTCO = patmSTBL->FindChild(FOURCC("co64"));
         if (!patmSTCO)
         {
             return false;
         }
-        m_bCO64 = true;
+        bCO64 = true;
     }
-    m_pSTCO = patmSTCO;
-    m_nChunks = SwapLong(m_pSTCO + 4);
-    return true;
-}
+    AtomCache cacheSTCO = patmSTCO;
+    DWORD nChunks = SwapLong(reinterpret_cast<const STCO*>(*cacheSTCO)->entry_count);
 
-long 
-Mpeg4SampleSizes::Size(long nSample) const
-{
-    long cThis = m_nFixedSize;
-    if ((cThis == 0) && (nSample < m_nSamples))
+    // Populate offsets
+    DWORD nCurSample = 0;
+    for (DWORD  i = 0; i < nEntriesSTSC; i++)
     {
-        cThis = SwapLong(m_pBuffer + 12 + (nSample * 4));
-    }
-    return cThis;
-}
-                 
-LONGLONG 
-Mpeg4SampleSizes::Offset(long nSample) const
-{
-    // !! consider caching prev entry and length of chunk
-    // and just adding on sample size until chunk count reached
+        DWORD first_chunk = SwapLong(pSTSC->recs[i].first_chunk) - 1;
+        DWORD samplesPerChunk = SwapLong(pSTSC->recs[i].samples_per_chunks);
+        DWORD next_first_chunk = i == nEntriesSTSC - 1 ? nChunks : SwapLong(pSTSC->recs[i + 1].first_chunk) - 1;
 
-    // each entry in this table describes a
-    // run of chunks with the same number of samples.
-    // find which entry covers this sample, and
-    // the total samples covered by previous entries
-    long nSampleBase = 0;
-    long nChunkThis = 0, nSamplesPerChunk = 1;
+        if(first_chunk >= nChunks || next_first_chunk > nChunks)
+            return false;
 
-    for (long i = 0; i < m_nEntriesSTSC; i++)
-    {
-        // remember that chunk numbers are 1-based
-
-        nChunkThis = SwapLong(m_pSTSC + 8 + (12 * i)) - 1;
-        nSamplesPerChunk = SwapLong(m_pSTSC + 8 + (12 * i) + 4);
-        
-        long nChunkNext = SwapLong(m_pSTSC + 8 + (12 * i) + 12) - 1;
-        long nSampleBaseNext = nSampleBase + (nChunkNext - nChunkThis)*nSamplesPerChunk;
-        if ((i == m_nEntriesSTSC-1) || (nSample < nSampleBaseNext))
+        for(DWORD u = first_chunk; u < next_first_chunk; ++u)
         {
-            break;
-        } else {
-            nSampleBase = nSampleBaseNext;
+            ULONGLONG chunkOffset = bCO64 ? SwapI64(reinterpret_cast<const CO64*>(*cacheSTCO)->chunk_offset[u]) : SwapLong(reinterpret_cast<const STCO*>(*cacheSTCO)->chunk_offset[u]);
+            for(DWORD j = 0; j < samplesPerChunk; ++j)            
+            {
+                if(nCurSample >= m_nSamples)
+                {
+                    debugPrintf(DBG, L"Mpeg4TrackIndex::Parse: STCO currupted!\r\n");
+                    return false;
+                }
+                m_samplesArray[nCurSample].offset = chunkOffset;
+                chunkOffset+=m_samplesArray[nCurSample].size;
+                ++nCurSample;
+            }
         }
     }
 
-    // found correct entry -- work out chunk number and sample number within chunk
-    long nChunkOffset = (nSample - nSampleBase) / nSamplesPerChunk; // whole chunks 
-    long nSampleOffset = (nSample - nSampleBase) - (nChunkOffset * nSamplesPerChunk);
-    nChunkThis += nChunkOffset;
-
-    // add up sizes of previous samples to get offset into this chunk
-    LONGLONG nByteOffset = 0;
-    if (m_nFixedSize != 0)
+    if(nCurSample != m_nSamples)
     {
-        nByteOffset = nSampleOffset * m_nFixedSize;
-    } else {
-        for (long i = nSample - nSampleOffset; i < nSample; i++)
-        {
-            nByteOffset += Size(i);
-        }
-    }
-
-    // start location of this chunk
-    if (nChunkThis >= m_nChunks)
-    {
-        return 0;
-    }
-    LONGLONG ChunkStart;
-    if (m_bCO64)
-    {
-        ChunkStart = SwapI64(m_pSTCO + 8 + (nChunkThis * 8));
-    } else {
-        ChunkStart = (DWORD)SwapLong(m_pSTCO + 8 + (nChunkThis * 4));
-    }
-    return ChunkStart + nByteOffset;
-}
-
-void 
-Mpeg4SampleSizes::AdjustFixedSize(long nBytes)
-{
-	m_nFixedSize = nBytes;
-
-	// set max buffer size based on contig samples
-	for (long i = 0; i < m_nEntriesSTSC; i++)
-	{
-		long nSamplesPerChunk = SwapLong(m_pSTSC + 8 + (12 * i) + 4);
-		long cThis = nSamplesPerChunk * m_nFixedSize;
-		if (cThis > m_nMaxSize)
-		{
-			m_nMaxSize = cThis;
-		}
-	}
-}
-
-// --- sync sample map --------------------------------
-
-Mpeg4KeyMap::Mpeg4KeyMap()
-: KeyMap(),
-  m_nEntries(0)
-{
-}
-
-bool 
-Mpeg4KeyMap::Parse(const AtomPtr& patmSTBL)
-{
-    const AtomPtr& patmSTSS = patmSTBL->FindChild(FOURCC("stss"));
-    if (!patmSTSS)
-    {
-		// no key map -- so all samples are key
-        return true;
-    }
-    m_pSTSS = patmSTSS;
-    if (m_pSTSS[0] != 0)  // check version 0
-    {
+        debugPrintf(DBG, L"Mpeg4TrackIndex::Parse: STCO or STSC currupted, nCurSample = %u != m_nSamples = %u !\r\n", nCurSample, m_nSamples);
         return false;
     }
 
-    m_nEntries = SwapLong(m_pSTSS+4);
-
-    return true;
-}
-
-long 
-Mpeg4KeyMap::SyncFor(long nSample) const
-{
-    if (m_nEntries == 0)
+    // Populate key samples
+    const AtomPtr& patmSTSS = patmSTBL->FindChild(FOURCC("stss"));
+    if (patmSTSS != NULL)
     {
-        // no table -- all samples are key samples
-        return nSample;
-    }
-
-    // find preceding key
-    long nPrev = 0;
-    for (long i = 0; i < m_nEntries; i++)
-    {
-        long nThis = SwapLong(m_pSTSS + 8 + (i * 4))-1;
-        if (nThis > nSample)
+        AtomCache cacheSTSS = patmSTSS;
+        const STSS* pSTSS = reinterpret_cast<const STSS*>(*cacheSTSS);
+        if (pSTSS->header.version != 0)  // check version 0
         {
-            break;
+            return false;
         }
-        nPrev = nThis;
-    }
-    return nPrev;
-}
 
-long 
-Mpeg4KeyMap::Next(long nSample) const
-{
-    if (m_nEntries == 0)
-    {
-        // no table -- all samples are key samples
-        return nSample + 1;
-    }
-
-    // find next key after nSample
-    for (long i = 0; i < m_nEntries; i++)
-    {
-        long nThis = SwapLong(m_pSTSS + 8 + (i * 4))-1;
-        if (nThis > nSample)
+        DWORD nCurSample = 0;
+        DWORD nCount = SwapLong(pSTSS->entry_count);
+        for(DWORD i = 0; i < nCount; ++i)
         {
-			return nThis;
+            DWORD nKeySample = SwapLong(pSTSS->sample_number[i]) - 1;
+            for(DWORD u=nCurSample; u < nKeySample && u < m_nSamples; ++u)
+            {
+                m_samplesArray[u].keyFrameSample = nCurSample;
+            }
+            
+            nCurSample = nKeySample;
+
+            if(i == nCount - 1)
+            {
+                // The last one
+                for(DWORD u=nCurSample; u < m_nSamples; ++u)
+                {
+                    m_samplesArray[u].keyFrameSample = nCurSample;
+                }
+            }
         }
+    }else
+    {
+        // no key map -- so all samples are key
+        for(DWORD i = 0; i < m_nSamples; ++i)
+            m_samplesArray[i].keyFrameSample = i;
+
     }
-    return 0;
-}
-
-SIZE_T Mpeg4KeyMap::Get(SIZE_T*& pnIndexes) const
-{
-	ASSERT(!pnIndexes);
-	if(m_nEntries)
-	{
-		pnIndexes = (SIZE_T*) CoTaskMemAlloc(m_nEntries * sizeof *pnIndexes);
-		ASSERT(pnIndexes);
-	    for(SIZE_T nEntryIndex = 0; nEntryIndex < (SIZE_T) m_nEntries; nEntryIndex++)
-		{
-	        const SIZE_T nIndex = SwapLong(m_pSTSS + 8 + (nEntryIndex * 4))-1;
-			pnIndexes[nEntryIndex] = nIndex;
-		}
-	}
-	return (SIZE_T) m_nEntries;
-}
-
-// ----- times index ----------------------------------
-
-Mpeg4SampleTimes::Mpeg4SampleTimes()
-: SampleTimes()
-{
-}
-bool 
-Mpeg4SampleTimes::Parse(long scale, LONGLONG CTOffset, const AtomPtr& patmSTBL)
-{
-    // scale - track timescale units/sec
-    m_rate = scale;            
-    m_scale = 1;
-
-    m_CTOffset = CTOffset;      // offset to start of first sample in 100ns
 
     // basic duration table
     const AtomPtr& patmSTTS = patmSTBL->FindChild(FOURCC("stts"));
@@ -278,196 +166,182 @@ Mpeg4SampleTimes::Parse(long scale, LONGLONG CTOffset, const AtomPtr& patmSTBL)
     {
         return false;
     }
-    m_pSTTS = patmSTTS;
-    m_nSTTS = SwapLong(m_pSTTS + 4);
 
-	m_total = 0;
-	for (int i = 0; i < m_nSTTS; i++)
-	{
-        long nEntries = SwapLong(m_pSTTS + 8 + (i * 8));
-        long nDuration = SwapLong(m_pSTTS + 8 + 4 + (i * 8));
-		m_total += (nEntries * nDuration);
-	}
-	m_total = TrackToReftime(m_total);
+    AtomCache cacheSTTS = patmSTTS;
+    const STTS* pStts = reinterpret_cast<const STTS*>(*cacheSTTS);
 
+    DWORD nEntriesSTTS = SwapLong(pStts->entry_count);
+    
+    DWORD total = 0;
+
+    nCurSample = 0;
+    for (DWORD i = 0; i < nEntriesSTTS; i++)
+    {
+        DWORD nEntries = SwapLong(pStts->recs[i].sample_count);
+        DWORD nDuration = SwapLong(pStts->recs[i].sample_delta);
+
+        if(m_nMaxSamplePerChunk < nDuration)
+            m_nMaxSamplePerChunk = nDuration;
+
+        for(DWORD u = 0; u < nEntries; ++u)
+        {
+            if(nCurSample >= m_nSamples)
+            {
+                debugPrintf(DBG, L"Mpeg4TrackIndex::Parse: STTS currupted!\r\n");
+                return false;
+            }
+            m_samplesArray[nCurSample].framesPerSample = nDuration;
+            m_samplesArray[nCurSample++].totalFramesSoFar = total;
+            total += nDuration;
+        }
+    }
+
+    if(nCurSample != m_nSamples)
+    {
+        debugPrintf(DBG, L"Mpeg4TrackIndex::Parse: STTS currupted, nCurSample = %u != m_nSamples = %u !\r\n", nCurSample, m_nSamples);
+        return false;
+    }
+
+    m_total = TrackToReftime(total);
+
+    // Optimization
+    if(SwapLong(pStts->entry_count) == 1 && SwapLong(pStts->recs[0].sample_count) == m_nSamples)
+    {
+        // Fixed duration case;
+        m_nFixedDuration = SwapLong(pStts->recs[0].sample_delta);
+    }
+
+    //TODO: Check whatever we have to build frameSoFar analog using cts offsets or this offset is applied on per sample basis only?
     // optional decode-to-composition offset table
     const AtomPtr& patmCTTS = patmSTBL->FindChild(FOURCC("ctts"));
     if (patmCTTS != NULL)
     {
-        m_pCTTS = patmCTTS;
-        m_nCTTS = SwapLong(m_pCTTS + 4);
-    } else {
-        m_nCTTS = 0;
+        debugPrintf(DBG, L"Mpeg4TrackIndex::Parse: Track decode-to-composition offset table - CTTS!\r\n");
+        AtomCache cacheCTTS = patmCTTS;
+        const CTTS* pCTTS = reinterpret_cast<const CTTS*>(*cacheCTTS);
+        nCurSample = 0;
+        for (DWORD i = 0; i < SwapLong(pCTTS->entry_count); i++)
+        {
+            DWORD nEntries = SwapLong(pCTTS->recs[i].sample_count);
+            DWORD ctsOffset = SwapLong(pCTTS->recs[i].sample_offset);
+            for(DWORD u = 0; u < nEntries; ++u)
+            {
+                if(nCurSample >= m_nSamples)
+                {
+                    debugPrintf(DBG, L"Mpeg4TrackIndex::Parse: CTTS currupted!\r\n");
+                    return false;
+                }
+                m_samplesArray[nCurSample++].ctsOffset = ctsOffset;
+            }
+        }
     }
-
-    // reset cache data
-    m_idx = 0;
-    m_nBaseSample = 0;
-    m_tAtBase = m_CTOffset;
 
     return true;
 }
 
-long 
-Mpeg4SampleTimes::DTSToSample(LONGLONG tStart)
+DWORD 
+Mpeg4TrackIndex::Size(DWORD nSample) const
 {
-    // find the sample containing this composition time
-    // by adding up the durations of individual samples
-    // until we reach it
+    if(nSample >= m_nSamples)
+        nSample = m_nSamples - 1;
 
-    // start at cache position unless we need a time before it
-    if (tStart < m_tAtBase)
-    {
-        m_idx = 0;
-        m_nBaseSample = 0;
-        m_tAtBase = m_CTOffset;
-        if (tStart < m_tAtBase)
-        {
-            return 0;
-        }
-    }
-    for (; m_idx < m_nSTTS; m_idx++)
-    {
-        long nEntries = SwapLong(m_pSTTS + 8 + (m_idx * 8));
-        long nDuration = SwapLong(m_pSTTS + 8 + 4 + (m_idx * 8));
-		if (nDuration == 0)
-		{
-			nDuration = 1;
-		}
-        LONGLONG tLimit = m_tAtBase + TrackToReftime(nEntries * nDuration) + CTSOffset(m_nBaseSample + nEntries);
-        if (tStart < tLimit || m_idx + 1 == m_nSTTS)
-        {
-			LONGLONG trackoffset = ReftimeToTrack(tStart - m_tAtBase);
-            return m_nBaseSample + long(trackoffset / nDuration);
-        }
-        m_tAtBase += TrackToReftime(nEntries * nDuration);
-        m_nBaseSample += nEntries;
-    }
+    return m_samplesArray[nSample].size;
+}
+                 
+LONGLONG 
+Mpeg4TrackIndex::Offset(DWORD nSample) const
+{
+    if(nSample >= m_nSamples)
+        nSample = m_nSamples - 1;
 
-    // should not get here?
+    return m_samplesArray[nSample].offset;
+}
+
+void 
+Mpeg4TrackIndex::AdjustFixedSize(DWORD nBytes)
+{
+	m_nFixedSize = nBytes;
+
+    // set max buffer size based on contig samples
+    if(m_nMaxSize < (m_nMaxSamplePerChunk * m_nFixedSize))
+        m_nMaxSize = m_nMaxSamplePerChunk * m_nFixedSize;
+}
+
+DWORD 
+Mpeg4TrackIndex::SyncFor(DWORD nSample) const
+{
+    if(nSample >= m_nSamples)
+        nSample = m_nSamples - 1;
+
+    return m_samplesArray[nSample].keyFrameSample;
+}
+
+DWORD 
+Mpeg4TrackIndex::Next(DWORD nSample) const
+{
+    for(;nSample < m_nSamples; ++nSample)
+    {
+        if(m_samplesArray[nSample].keyFrameSample == nSample)
+            return nSample;
+    }
+    return m_nSamples - 1; // Or 0?
+}
+
+SIZE_T Mpeg4TrackIndex::Get(SIZE_T*& pnIndexes) const
+{
     return 0;
 }
 
-SIZE_T Mpeg4SampleTimes::Get(REFERENCE_TIME*& pnTimes) const
+DWORD 
+Mpeg4TrackIndex::CTSToSample(LONGLONG tStart) const
 {
-	ASSERT(!pnTimes);
-	SIZE_T nEntryCount = 0; 
-    for(SIZE_T nIndex = 0; nIndex < (SIZE_T) m_nSTTS; nIndex++)
-	{
-        SIZE_T nCurrentEntryCount = (SIZE_T) SwapLong(m_pSTTS + 8 + (nIndex * 8));
-		nEntryCount += nCurrentEntryCount;
-	}
-	if(nEntryCount)
-	{
-		pnTimes = (REFERENCE_TIME*) CoTaskMemAlloc(nEntryCount * sizeof *pnTimes);
-		ASSERT(pnTimes);
-		SIZE_T nEntryIndex = 0;
-		REFERENCE_TIME nBaseTime = 0;
-		for(SIZE_T nIndex = 0; nIndex < (SIZE_T) m_nSTTS; nIndex++)
-		{
-			const BYTE* pSttsEntry = m_pSTTS + 8 + (nIndex * 8);
-			const SIZE_T nCurrentEntryCount = (SIZE_T) SwapLong(pSttsEntry + 0);
-			const SIZE_T nCurrentDuration = (SIZE_T) SwapLong(pSttsEntry + 4);
-			for(SIZE_T nCurrentEntryIndex = 0; nCurrentEntryIndex < nCurrentEntryCount; nCurrentEntryIndex++)
-			{
-				const SIZE_T nSampleIndex = nEntryIndex + nCurrentEntryIndex;
-				const REFERENCE_TIME nSampleTime = nBaseTime + TrackToReftime(nCurrentEntryIndex * nCurrentDuration) + CTSOffset((long) nSampleIndex);
-				pnTimes[nSampleIndex] = nSampleTime;
-			}
-			nEntryIndex += nCurrentEntryCount;
-			nBaseTime += TrackToReftime(nCurrentEntryCount * nCurrentDuration);
-		}
-		ASSERT(nEntryIndex == nEntryCount);
-	} else
-		pnTimes = 0;
-	return nEntryCount;
+    // Does it make sense to use this at all?
+    DWORD frame = static_cast<DWORD>(ReftimeToTrack(tStart - m_CTOffset));
+    DWORD nSample = 0;
+    while(nSample < m_nSamples && (m_samplesArray[nSample].totalFramesSoFar - m_samplesArray[nSample].ctsOffset + m_samplesArray[nSample].framesPerSample) <= frame)
+    {
+        ++nSample;
+    }
+    return nSample;
+}
+
+DWORD 
+Mpeg4TrackIndex::DTSToSample(LONGLONG tStart) const
+{
+    DWORD frame = static_cast<DWORD>(ReftimeToTrack(tStart - m_CTOffset));
+    if(m_nFixedSize)
+        return frame / m_nFixedSize;
+    DWORD nSample = 0;
+    while(nSample < m_nSamples && (m_samplesArray[nSample].totalFramesSoFar + m_samplesArray[nSample].framesPerSample) <= frame)
+    {
+        ++nSample;
+    }
+    return nSample;
+}
+
+SIZE_T Mpeg4TrackIndex::Get(REFERENCE_TIME*& pnTimes) const
+{
+	return 0;
 }
 
 LONGLONG 
-Mpeg4SampleTimes::SampleToCTS(long nSample)
+Mpeg4TrackIndex::SampleToCTS(DWORD nSample) const
 {
-    // calculate CTS for this sample by adding durations
+    if(nSample >= m_nSamples)
+        nSample = m_nSamples - 1;
 
-    // start at cache position unless it is too late
-    if (nSample < m_nBaseSample)
-    {
-        m_idx = 0;
-        m_nBaseSample = 0;
-        m_tAtBase = m_CTOffset;
-    }
-    for (; m_idx < m_nSTTS; m_idx++)
-    {
-        long nEntries = SwapLong(m_pSTTS + 8 + (m_idx * 8));
-        long nDuration = SwapLong(m_pSTTS + 8 + 4 + (m_idx * 8));
-        if (nSample < (m_nBaseSample + nEntries))
-        {
-            LONGLONG tThis = m_tAtBase + TrackToReftime((nSample - m_nBaseSample) * nDuration);
-
-            // allow for CTS Offset
-            tThis += CTSOffset(nSample);
-
-            return tThis;
-        }
-        m_tAtBase += TrackToReftime(nEntries * nDuration);
-        m_nBaseSample += nEntries;
-    }
-
-    // should not get here
-    return 0;
-}
-
-// offset from decode to composition time for this sample
-LONGLONG 
-Mpeg4SampleTimes::CTSOffset(long nSample) const
-{
-    if (!m_nCTTS)
-    {
-        return 0;
-    }
-    long nBase = 0;
-    for (long i = 0; i < m_nCTTS; i++)
-    {
-        long nEntries = SwapLong(m_pCTTS + 8 + (i * 8));
-        if (nSample < (nBase + nEntries))
-        {
-			LONGLONG tOffset = TrackToReftime(SwapLong(m_pCTTS + 8 + 4 + (i * 8)));
-            return tOffset;
-        }
-        nBase += nEntries;
-    }
-    // should not get here
-    return 0;
+    return m_CTOffset + TrackToReftime(m_samplesArray[nSample].totalFramesSoFar + m_samplesArray[nSample].ctsOffset);
 }
 
 LONGLONG 
-Mpeg4SampleTimes::Duration(long nSample)
+Mpeg4TrackIndex::Duration(DWORD nSample) const
 {
-    // the entries in stts give the duration of each sample
-    // as a series of pairs
-    //      < count of samples, duration of these samples>
+    if(nSample >= m_nSamples)
+        nSample = m_nSamples - 1;
 
-    // start at cache position unless too far along
-    // -- nb, we need to sum the durations so that
-    // the updated cache position is shared by SampleToCTS
-    if (nSample < m_nBaseSample)
-    {
-        m_idx = 0;
-        m_nBaseSample = 0;
-        m_tAtBase = m_CTOffset;
-    }
-    for (; m_idx < m_nSTTS; m_idx++)
-    {
-        long nEntries = SwapLong(m_pSTTS + 8 + (m_idx * 8));
-        long nDuration = SwapLong(m_pSTTS + 8 + 4 + (m_idx * 8));
-        LONGLONG tDur = TrackToReftime(nDuration);
-        if (nSample < (m_nBaseSample + nEntries))
-        {
-            // requested sample is within this range
-            return TrackToReftime(nDuration);
-        }
-        m_tAtBase += (nEntries * tDur);
-        m_nBaseSample += nEntries;
-    }
-    // ? should not get here, since all samples should be covered
-    return 0;
+    if(!m_nFixedDuration)
+        return TrackToReftime(m_samplesArray[nSample].framesPerSample);
+    else
+        return TrackToReftime(m_nFixedDuration);
+
 }

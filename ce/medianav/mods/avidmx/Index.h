@@ -32,11 +32,11 @@ public:
     DWORD Next(DWORD nSample) const;
     SIZE_T Get(SIZE_T*& pnIndexes) const;
 
-    DWORD DTSToSample(LONGLONG tStart);
+    DWORD CTSToSample(LONGLONG nSample) const { return DTSToSample(nSample);}
+    DWORD DTSToSample(LONGLONG tStart) const;
     SIZE_T Get(REFERENCE_TIME*& pnTimes) const;
-    LONGLONG SampleToCTS(DWORD nSample);
-    LONGLONG Duration(DWORD nSample);
-    LONGLONG CTSOffset(DWORD nSample) const;
+    LONGLONG SampleToCTS(DWORD nSample) const;
+    LONGLONG Duration(DWORD nSample) const;
 
     bool HasCTSTable() const { return false; }
 
