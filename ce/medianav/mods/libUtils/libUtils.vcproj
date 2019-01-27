@@ -204,6 +204,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SimpleIni.h"
+				>
+			</File>
+			<File
 				RelativePath=".\smartptr.h"
 				>
 			</File>
