@@ -16,6 +16,7 @@
 #include "ElemType.h"
 #include <dvdmedia.h>
 #include <handlers.h>
+#include <mmreg.h>
 #include <audshow.h>
 
 // Debug stuff
@@ -23,14 +24,12 @@
 
 inline WORD Swap2Bytes(USHORT x)
 {
-	return ((x & 0xff) << 8) | ((x >> 8) & 0xff);
+	return _byteswap_ushort(x);
 }
+
 inline DWORD Swap4Bytes(DWORD x)
 {
-	return ((x & 0xff) << 24) |
-		   ((x & 0xff00) << 8) |
-		   ((x & 0xff0000) >> 8) |
-		   ((x >> 24) & 0xff);
+	return _byteswap_ulong(x);
 }
 
 class BigEndianAudioHandler : public NoChangeHandler
@@ -131,6 +130,9 @@ Mpeg4ElementaryType::ParseDescriptor(const AtomPtr& patmESD)
     return true;
 }
 
+#pragma warning(disable: 4200)
+#pragma pack(push,1)
+
 struct QTVideo 
 {
 	BYTE	reserved1[6];		// 0
@@ -155,6 +157,42 @@ struct QTVideo
 	USHORT	colour_table_id;		// ff ff
 };
 
+// ac-3
+struct AC3SampleEntry
+{
+    BYTE  Reserved[6];
+    WORD  Data_reference_index;
+    DWORD Reserved2[2];
+    WORD  ChannelCount;
+    WORD  SampleSize;
+    DWORD Reserved3;
+    WORD  SamplingRate;
+    WORD  Reserved4;
+};
+
+// Fields order is swap since we assume little endian machine but spec. is big endian
+struct AC3SpecificBox
+{
+    union
+    {
+        DWORD value;
+        struct 
+        {
+            DWORD reserved:5;
+            DWORD bit_rate_code:5;
+            DWORD lfeon:1;
+            DWORD acmod:3;
+            DWORD bsmod:3;
+            DWORD bsid:5;
+            DWORD fscod:2;
+        };
+    };
+};
+#pragma pack(pop)
+
+static const WORD AC3SampleRate[4] = {48000, 44100, 32000, 0};
+static const WORD AC3Channels[8] = {2, 1, 2, 3, 3, 4, 4, 5};
+static const DWORD AC3BitRate[32] = {32000, 40000, 48000, 56000, 64000, 80000, 96000, 112000, 128000, 160000, 192000, 224000, 256000, 320000, 384000, 448000, 512000, 576000, 640000};
 
 bool 
 Mpeg4ElementaryType::Parse(REFERENCE_TIME tFrame, const AtomPtr& patm)
@@ -355,6 +393,26 @@ Mpeg4ElementaryType::Parse(REFERENCE_TIME tFrame, const AtomPtr& patm)
 				}
 			}
 		}
+    }else if (patm->Type() == FOURCC("ac-3"))
+    {
+        // AC3 support
+        m_type = Audio_WAVEFORMATEX;
+        m_shortname = "AC3 Audio";
+        cOffset = sizeof(AC3SampleEntry);
+
+        // parse audio sample entry and store in case we don't find a descriptor
+        m_cDecoderSpecific = sizeof(WAVEFORMATEX);
+        m_pDecoderSpecific = new BYTE[m_cDecoderSpecific];
+        WAVEFORMATEX* pwfx = reinterpret_cast<WAVEFORMATEX*>(*m_pDecoderSpecific);
+        const AC3SampleEntry* pAC3SampleEntry = reinterpret_cast<const AC3SampleEntry *>(*pSD);
+        pwfx->cbSize = 0;
+        pwfx->nChannels = Swap2Bytes(pAC3SampleEntry->ChannelCount);
+        pwfx->wBitsPerSample = Swap2Bytes(pAC3SampleEntry->SampleSize);
+        pwfx->nSamplesPerSec = Swap2Bytes(pAC3SampleEntry->SamplingRate);
+        pwfx->nBlockAlign = pwfx->nChannels * pwfx->wBitsPerSample / 8;
+        pwfx->nAvgBytesPerSec = pwfx->nBlockAlign * pwfx->nSamplesPerSec;
+        pwfx->wFormatTag = WAVE_FORMAT_DVM;
+
     } else if ((patm->Type() == FOURCC("lpcm")) ||
                (patm->Type() == FOURCC("alaw")) ||
                (patm->Type() == FOURCC("ulaw")) ||
@@ -487,6 +545,56 @@ Mpeg4ElementaryType::Parse(REFERENCE_TIME tFrame, const AtomPtr& patm)
 				break;
 			}
 		}
+        else if (patmESD->Type() == FOURCC("dac3"))
+        {
+            // ac3 decoder specific.
+            // use this to populate format with correct values.
+            if(m_cDecoderSpecific != sizeof(WAVEFORMATEX))
+            {
+                // What could it be???
+                return false;
+            }
+
+            AtomCache cache_dac3 = patmESD;
+            if(cache_dac3.getDataSize() < 3) // 3 is a real size of AC3SpecificBox. Because of complier types limitation it has size 4.
+            {
+                debugPrintf(DBG, L"Mpeg4ElementaryType::Parse() cache_dac3.getDataSize() < 3\r\n");
+                return false;
+            }
+            WAVEFORMATEX* pWfx = reinterpret_cast<WAVEFORMATEX*>(*m_pDecoderSpecific);
+            DWORD tmp = 0;
+            CopyMemory(&tmp, *cache_dac3, 3);
+
+            AC3SpecificBox ac3Spec;
+            ac3Spec.value = Swap4Bytes(tmp) >> 8;
+
+            if(ac3Spec.bsid > 8) 
+            {
+                debugPrintf(DBG, L"Mpeg4ElementaryType::Parse() ac3Spec.bsid > 8. Most likely we can't play this version!\r\n");
+            }
+            
+            pWfx->nSamplesPerSec = AC3SampleRate[ac3Spec.fscod];
+            if(pWfx->nSamplesPerSec == 0)
+            {
+                debugPrintf(DBG, L"Mpeg4ElementaryType::Parse() pWfx->nSamplesPerSec == 0\r\n");
+                return false;
+            }
+
+            pWfx->nChannels = static_cast<WORD>(AC3Channels[ac3Spec.acmod] + ac3Spec.lfeon);
+
+            DWORD bitrate = AC3BitRate[ac3Spec.bit_rate_code];
+            if(bitrate == 0)
+            {
+                debugPrintf(DBG, L"Mpeg4ElementaryType::Parse() bitrate == 0\r\n");
+                return false;
+            }
+            pWfx->nBlockAlign = static_cast<WORD>(bitrate * 192 / pWfx->nSamplesPerSec); // (bitrate/(nSamplesPerSec/1536)) / 8 . 1536 sample per frame is a constant output value
+            if(pWfx->nSamplesPerSec == 44100)
+                ++pWfx->nBlockAlign; // Turn round down to round up.
+            pWfx->nAvgBytesPerSec = bitrate / 8;
+
+            break;
+        }
 	}
     // check that we have picked up the seq header or other data
     // except for the few formats where it is not needed.
@@ -893,7 +1001,7 @@ Mpeg4ElementaryType::GetType_AAC(CMediaType* pmt, int n) const
     WAVEFORMATEX* pwfx = (WAVEFORMATEX*)pmt->AllocFormatBuffer(sizeof(WAVEFORMATEX) + m_cDecoderSpecific);
     ZeroMemory(pwfx,  sizeof(WAVEFORMATEX));
     pwfx->cbSize = WORD(m_cDecoderSpecific);
-    CopyMemory((pwfx+1),  m_pDecoderSpecific,  m_cDecoderSpecific);
+    CopyMemory((pwfx+1),  *m_pDecoderSpecific,  m_cDecoderSpecific);
 
     // parse decoder-specific info to get rate/channels
     DWORD samplerate = ((m_pDecoderSpecific[0] & 0x7) << 1) + ((m_pDecoderSpecific[1] & 0x80) >> 7);
@@ -907,7 +1015,7 @@ Mpeg4ElementaryType::GetType_AAC(CMediaType* pmt, int n) const
     pwfx->nChannels = (m_pDecoderSpecific[1] & 0x78) >> 3;
     
     debugPrintf(AAC_DEBUG, L"m_pDecoderSpecific:\r\n");
-    debugDump(AAC_DEBUG, &(*m_pDecoderSpecific), m_cDecoderSpecific);
+    debugDump(AAC_DEBUG, *m_pDecoderSpecific, m_cDecoderSpecific);
     return true;
 }
 

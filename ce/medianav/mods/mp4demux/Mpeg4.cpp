@@ -96,7 +96,7 @@ Mpeg4Movie::Mpeg4Movie(const AtomReaderPtr& pRoot)
             {
                 MovieTrackPtr pTrack = MovieTrackPtr(new Mpeg4MovieTrack(patm, this, idxTrack++));
 #ifdef _DEBUG
-                if (pTrack->Valid() && pTrack->IsVideo())
+                if (pTrack->Valid() && !pTrack->IsVideo())
 #else
                 if (pTrack->Valid())
 #endif

@@ -21,7 +21,7 @@
 
 #include "stdafx.h"
 #include "utils.h"
-#//include <pwinuser.h>
+//#include <pwinuser.h>
 
 static void globalEnvInit();
 

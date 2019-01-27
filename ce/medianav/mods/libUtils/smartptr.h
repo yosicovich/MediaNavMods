@@ -276,6 +276,11 @@ public:
         return m_pObject;
     }
 
+    T* operator *() const
+    {
+        return m_pObject;
+    }
+
     // comparison
     bool operator!() const
     {

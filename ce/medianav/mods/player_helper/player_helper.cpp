@@ -55,9 +55,7 @@ static std::vector<std::wstring> g_iniFilesTable;
 static void globalEnvInit()
 {
     // Populate  ini files table in search order
-
-    g_iniFilesTable.push_back(TEXT("\\MD\\mods.ini"));
-    g_iniFilesTable.push_back(TEXT("\\MD\\Storage Card2\\mods.ini"));
+    g_iniFilesTable.push_back(TEXT("\\Storage Card2\\mods.ini"));
 
     for(size_t i = 0; i < g_iniFilesTable.size(); ++i)
     {
@@ -73,12 +71,17 @@ static void globalEnvInit()
     //Video
     g_mediaExts.insert(L".MP4");
     g_mediaExts.insert(L".FLAC");
-    g_mediaExts.insert(L".MKV");
     g_mediaExts.insert(L".AVI");
 
     // Audio
     g_mediaExts.insert(L".M4A");
     g_mediaExts.insert(L".AC3");
+    g_mediaExts.insert(L".OGG");
+    g_mediaExts.insert(L".APE");
+
+#ifndef STABLE_ONLY
+    g_mediaExts.insert(L".MKV");
+#endif
 }
 
 

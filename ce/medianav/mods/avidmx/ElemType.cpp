@@ -17,6 +17,7 @@
 #include <dvdmedia.h>
 #include <handlers.h>
 #include <cassert>
+#include <mmreg.h>
 #include <audshow.h>
 
 // -----------------------------------------------------
@@ -109,6 +110,12 @@ AviElementaryType::Parse(const AVISTREAMHEADER& streamHeader, const AtomPtr& pFo
             m_mediaType.SetSubtype(&MEDIASUBTYPE_AAC_AUDIO);
             m_pHandler = new CoreAACHandler();
             break;
+        case WAVE_FORMAT_EXTENSIBLE:
+            {
+                const WAVEFORMATEXTENSIBLE* pWfxe = reinterpret_cast<const WAVEFORMATEXTENSIBLE*>(*m_format);
+                m_mediaType.SetSubtype(&pWfxe->SubFormat);
+                break;
+            }
         default:
             {
                 FOURCCMap aud(pWfx->wFormatTag);
