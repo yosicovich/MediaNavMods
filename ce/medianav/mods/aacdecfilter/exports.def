@@ -1,0 +1,10 @@
+; exports.def ; declares the exports
+
+LIBRARY         "aacdecfilter.dll"
+
+EXPORTS
+        DllGetClassObject PRIVATE
+        DllCanUnloadNow PRIVATE
+        DllRegisterServer PRIVATE
+        DllUnregisterServer PRIVATE
+

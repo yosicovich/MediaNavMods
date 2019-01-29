@@ -198,12 +198,12 @@ HRESULT AC3DecoderFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
     long inDataSize;
     pIn->GetPointer(&inData);
     inDataSize = pIn->GetActualDataLength();
-    /*// Reset frame buffer in case of seeking.
-    if(pIn->IsDiscontinuity())
+    // Reset frame buffer in case of seeking.
+    if(pIn->IsDiscontinuity() == S_OK)
     {
         debugPrintf(DBG_TRACE, L"AC3DecoderFilter::Transform() discontinuity detected! Reset frame buffer.\r\n");
         m_frameBufferUsed = 0;
-    }*/
+    }
 
     pOut->GetPointer(&buffersState.outBuf);
     buffersState.outBufSize = pOut->GetSize();

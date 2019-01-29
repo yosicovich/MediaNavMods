@@ -63,6 +63,7 @@ static void globalEnvInit()
             break;
     }
 
+    // In order of popularity.
     // Default
     g_mediaExts.insert(L".MP3");
     g_mediaExts.insert(L".WMA");
@@ -70,12 +71,13 @@ static void globalEnvInit()
     // New
     //Video
     g_mediaExts.insert(L".MP4");
-    g_mediaExts.insert(L".FLAC");
     g_mediaExts.insert(L".AVI");
 
     // Audio
     g_mediaExts.insert(L".M4A");
+    g_mediaExts.insert(L".FLAC");
     g_mediaExts.insert(L".AC3");
+    g_mediaExts.insert(L".AAC");
     g_mediaExts.insert(L".OGG");
     g_mediaExts.insert(L".APE");
 
