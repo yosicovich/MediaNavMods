@@ -297,6 +297,10 @@ public:
         }
     }
 
+    bool operator!=(int null) const
+    {
+        return !operator ==(null);
+    }
 
 private:
     void AssignNew()

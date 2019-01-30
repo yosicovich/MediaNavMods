@@ -1,12 +1,5 @@
-// mp4demux.cpp : Defines the entry point for the DLL.
-//
-// Copyright (c) GDCL 2004-6. All Rights Reserved. 
-// You are free to re-use this as the basis for your own filter development,
-// provided you retain this copyright notice in the source.
-// http://www.gdcl.co.uk
-
 #include "stdafx.h"
-#include "transformfilter.h"
+#include "AACDecoderFilter.h"
 
 // --- COM factory table and registration code --------------
 
