@@ -607,8 +607,8 @@ HRESULT CVideoRenderer::CompleteConnect(IPin *pReceivePin)
 	if (m_mtIn.formattype == FORMAT_VideoInfo)
 	{
 		pBMI = &(((VIDEOINFOHEADER*)m_mtIn.pbFormat)->bmiHeader);
-        if(INFO)
-            PrintVideoInfoHeader((VIDEOINFOHEADER*)m_mtIn.pbFormat);
+/*        if(INFO)
+            PrintVideoInfoHeader((VIDEOINFOHEADER*)m_mtIn.pbFormat);*/
 	}
 	else if (m_mtIn.formattype == FORMAT_VideoInfo2)
 	{
