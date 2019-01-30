@@ -76,6 +76,8 @@ private:
     //Debug
     LONGLONG m_dbgMaxFrameProcessTime;
     LONGLONG m_dbgAvgFrameProcessTime;
+    DWORD    m_framesTookLongerThanAvg;
+    DWORD    m_totalFramesProcessed;
 #endif
 
 };

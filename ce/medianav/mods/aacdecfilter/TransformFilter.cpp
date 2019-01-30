@@ -77,6 +77,8 @@ ACCDecoderFilter::ACCDecoderFilter(LPUNKNOWN pUnk, HRESULT* phr, long frameBuffe
 #if DBG > 0
 ,m_dbgMaxFrameProcessTime(0)
 ,m_dbgAvgFrameProcessTime(0)
+,m_framesTookLongerThanAvg(0)
+,m_totalFramesProcessed(0)
 #endif
 {
     if(!m_frameBufferSize)
@@ -129,7 +131,7 @@ ACCDecoderFilter::~ACCDecoderFilter()
     {
         debugPrintf(DBG, L"AACDecoderFilter::~AACDecoderFilter() QueryPerformanceFrequency() failed\r\n");
     }
-    debugPrintf(DBG, L"AACDecoderFilter::~AACDecoderFilter() m_maxOutputBufUsed=%d, avarage frame processing time = %I64d us, max frame processing time = %I64d us\r\n", m_maxOutputBufUsed, m_dbgAvgFrameProcessTime, m_dbgMaxFrameProcessTime);
+    debugPrintf(DBG, L"AACDecoderFilter::~AACDecoderFilter() \r\n\t m_maxOutputBufUsed=%d \r\n\t avarage frame processing time = %I64d us \r\n\t max frame processing time = %I64d us \r\n\t total frames = %u \r\n\t long frames = %u  -  %u%%\r\n", m_maxOutputBufUsed, m_dbgAvgFrameProcessTime, m_dbgMaxFrameProcessTime, m_totalFramesProcessed, m_framesTookLongerThanAvg, m_framesTookLongerThanAvg * 100 / (m_totalFramesProcessed ? m_totalFramesProcessed : 1));
 #else
     debugPrintf(DBG, L"AACDecoderFilter::~AACDecoderFilter() m_maxOutputBufUsed=%d\r\n", m_maxOutputBufUsed);
 #endif
@@ -289,16 +291,20 @@ HRESULT ACCDecoderFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
                     debugPrintf(DBG, L"AACDecoderFilter::Transform() QueryPerformanceCounter() failed at and\r\n");
                 }else
                 {
+                    ++m_totalFramesProcessed;
                     LONGLONG processValue = endTime.QuadPart - startTime.QuadPart;
+                    if(m_dbgAvgFrameProcessTime && processValue * 10 > (m_dbgAvgFrameProcessTime * 12))
+                        ++m_framesTookLongerThanAvg;
+
+                    if(m_dbgAvgFrameProcessTime && m_dbgMaxFrameProcessTime < processValue)
+                        m_dbgMaxFrameProcessTime = processValue;
+
                     if(m_dbgAvgFrameProcessTime == 0)
                         m_dbgAvgFrameProcessTime = processValue;
                     else
                     {
                         m_dbgAvgFrameProcessTime = (m_dbgAvgFrameProcessTime + processValue) / 2;
                     }
-
-                    if(m_dbgMaxFrameProcessTime < processValue)
-                        m_dbgMaxFrameProcessTime = processValue;
                 }
             }
 #endif
@@ -447,7 +453,7 @@ HRESULT ACCDecoderFilter::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROP
     ASSERT(pProperties);
     HRESULT hr = NOERROR;
 
-    pProperties->cBuffers = 4; //1 working and one in advance
+    pProperties->cBuffers = 16; //1 working and one in advance
     pProperties->cbBuffer = bufferSize;
     ASSERT(pProperties->cbBuffer);
 
@@ -462,7 +468,7 @@ HRESULT ACCDecoderFilter::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROP
         return hr;
     }
 
-    ASSERT( Actual.cBuffers == 4 );
+    ASSERT( Actual.cBuffers == 16 );
 
     if (pProperties->cBuffers > Actual.cBuffers ||
         pProperties->cbBuffer > Actual.cbBuffer) 
