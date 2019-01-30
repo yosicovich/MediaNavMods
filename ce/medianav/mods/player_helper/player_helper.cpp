@@ -79,7 +79,12 @@ static void globalEnvInit()
     g_mediaExts.insert(L".AC3");
     g_mediaExts.insert(L".AAC");
     g_mediaExts.insert(L".OGG");
-    g_mediaExts.insert(L".APE");
+    g_mediaExts.insert(L".WAV");
+    //g_mediaExts.insert(L".APE"); // There is no demux filter but losslessdecfilter.dll seems to support decoding!
+
+    // To be implemented
+    //g_mediaExts.insert(L".JPG");
+    //g_mediaExts.insert(L".GIF");
 
 #ifndef STABLE_ONLY
     g_mediaExts.insert(L".MKV");
@@ -118,7 +123,10 @@ PLAYER_HELPER_API bool fixCodecsPath()
     registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{313F1007-5458-4275-8143-E760A1D73D0F}\\InprocServer32", L"", codecsPath + L"aacdecfilter.dll"));
     registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D24C840C-C469-4368-A363-0913B44AEF5C}\\InprocServer32", L"", codecsPath + L"avidmx.dll"));
     registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{692100F0-01C4-4af0-BDC2-C8BA5C5DED01}\\InprocServer32", L"", codecsPath + L"DecodeFilter.dll"));
+    // FLAC
     registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{B380606B-B500-4001-ABA9-635D24D95504}\\InprocServer32", L"", codecsPath + L"losslessdecfilter.dll"));
+    // APE
+    //registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{B380606C-B500-4001-ABA9-635D24D95504}\\InprocServer32", L"", codecsPath + L"losslessdecfilter.dll"));
     registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{025BE2E4-1787-4da4-A585-C5B2B9EEB57C}\\InprocServer32", L"", codecsPath + L"mp4demux.dll"));
     registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D1E456E1-47E5-497a-ABA1-A0C57C3CE5C1}\\InprocServer32", L"", codecsPath + L"speexdecfilter.dll"));
     registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{0ba13ea1-70e5-11db-9690-00e08161165f}\\InprocServer32", L"", codecsPath + L"VideoRenderer.dll"));
