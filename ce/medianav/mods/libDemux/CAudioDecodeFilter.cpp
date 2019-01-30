@@ -242,6 +242,11 @@ HRESULT CAudioDecodeFilter::CheckInputType(const CMediaType *mtIn)
 
     m_frameBufferSize = getFrameBufferSize();
     m_frameBuffer = new BYTE[m_frameBufferSize];
+    if(m_frameBuffer == NULL)
+    {
+        filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::CheckInputType(): new BYTE[m_frameBufferSize] failed - out of memory!\r\n");
+        return E_OUTOFMEMORY;
+    }
 
     filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::CheckInputType(): return S_OK!\r\n");
     return S_OK;
