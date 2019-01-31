@@ -17,9 +17,6 @@ public:
     CAudioDecodeFilter(TCHAR *name, LPUNKNOWN pUnk, HRESULT* phr, const CLSID& clsID);
     virtual ~CAudioDecodeFilter();
 
-    // filter registration tables
-    static const AMOVIESETUP_PIN m_sudPins[];
-
     HRESULT Transform(IMediaSample *pIn, IMediaSample *pOut);
     HRESULT CheckInputType(const CMediaType *mtIn);
     HRESULT CheckTransform(const CMediaType *mtIn, const CMediaType *mtOut);

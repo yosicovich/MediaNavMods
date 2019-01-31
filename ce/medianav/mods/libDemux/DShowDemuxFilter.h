@@ -168,9 +168,6 @@ class DShowDemultiplexor: public CBaseFilter
 public:
     DShowDemultiplexor(LPUNKNOWN pUnk, HRESULT* phr, const CLSID& clsID);
     virtual ~DShowDemultiplexor();
-    // filter registration tables
-    static const AMOVIESETUP_MEDIATYPE m_sudType[];
-    static const AMOVIESETUP_PIN m_sudPin[];
 
     // CBaseFilter methods
     int GetPinCount();

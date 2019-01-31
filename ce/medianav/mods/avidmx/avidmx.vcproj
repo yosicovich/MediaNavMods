@@ -221,11 +221,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\avidmx.cpp"
+				RelativePath=".\AviDemultiplexor.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\DemuxFilter.cpp"
+				RelativePath=".\avidmx.cpp"
 				>
 			</File>
 			<File
@@ -251,7 +251,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\DemuxFilter.h"
+				RelativePath=".\AviDemultiplexor.h"
 				>
 			</File>
 			<File

@@ -16,67 +16,6 @@
 #include <math.h>
 #include "utils.h"
 
-
-// --- registration tables ----------------
-
-// filter registration -- these are the types that our
-// pins accept and produce
-const AMOVIESETUP_MEDIATYPE 
-DShowDemultiplexor::m_sudType[] = 
-{
-    {
-        &MEDIATYPE_Stream,
-        &MEDIASUBTYPE_NULL,
-    },
-    {
-        &MEDIATYPE_Video,
-        &MEDIASUBTYPE_NULL      // wild card
-    },
-    {
-        &MEDIATYPE_Audio,
-        &MEDIASUBTYPE_NULL
-    },
-};
-
-// registration of our pins for auto connect and render operations
-const AMOVIESETUP_PIN 
-DShowDemultiplexor::m_sudPin[] = 
-{
-    {
-        L"Input",           // pin name
-        FALSE,              // is rendered?    
-        FALSE,              // is output?
-        FALSE,              // zero instances allowed?
-        FALSE,              // many instances allowed?
-        &CLSID_NULL,        // connects to filter (for bridge pins)
-        NULL,               // connects to pin (for bridge pins)
-        1,                  // count of registered media types
-        &m_sudType[0]       // list of registered media types    
-    },
-    {
-        L"Video",          // pin name
-        FALSE,              // is rendered?    
-        TRUE,               // is output?
-        FALSE,              // zero instances allowed?
-        FALSE,              // many instances allowed?
-        &CLSID_NULL,        // connects to filter (for bridge pins)
-        NULL,               // connects to pin (for bridge pins)
-        1,                  // count of registered media types
-        &m_sudType[1]       // list of registered media types    
-    },
-    {
-        L"Audio",          // pin name
-        FALSE,              // is rendered?    
-        TRUE,               // is output?
-        FALSE,              // zero instances allowed?
-        FALSE,              // many instances allowed?
-        &CLSID_NULL,        // connects to filter (for bridge pins)
-        NULL,               // connects to pin (for bridge pins)
-        1,                  // count of registered media types
-        &m_sudType[2]       // list of registered media types    
-    },
-};
-
 // ---- construction/destruction and COM support -------------
 
 DShowDemultiplexor::DShowDemultiplexor(LPUNKNOWN pUnk, HRESULT* phr, const CLSID& clsID)

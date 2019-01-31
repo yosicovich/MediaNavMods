@@ -1,5 +1,5 @@
 //
-// DemuxFilter.h
+// Mpeg4Demultiplexor.h
 //
 // Declaration of classes for DirectShow MPEG-4 Demultiplexor filter
 //
@@ -13,6 +13,7 @@
 
 #pragma once
 
+#pragma once
 
 #include "mpeg4.h"
 #include "ElemType.h"
@@ -33,9 +34,6 @@ Mpeg4Demultiplexor: public DShowDemultiplexor
 public:
     // constructor method used by class factory
     static CUnknown* WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT* phr);
-
-    // filter registration tables
-    static const AMOVIESETUP_FILTER m_sudFilter;
 
 protected:
     virtual MoviePtr createMovie(const AtomReaderPtr& pRoot);

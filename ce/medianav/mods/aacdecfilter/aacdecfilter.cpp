@@ -1,5 +1,59 @@
 #include "stdafx.h"
 #include "AACDecoderFilter.h"
+#include <audshow.h>
+
+// --- registration tables ----------------
+// filter registration information. 
+static const AMOVIESETUP_MEDIATYPE filterInSubTypes[] =
+{
+    {
+        &MEDIATYPE_Audio,       // Major type
+        &MEDIASUBTYPE_AAC_AUDIO // Minor type
+    },
+    {
+        &MEDIATYPE_Audio,       // Major type
+        &MEDIASUBTYPE_AAC       // Minor type
+    }
+};
+
+static const AMOVIESETUP_MEDIATYPE filterOutSubTypes =
+{
+    &MEDIATYPE_Audio,       // Major type
+    &MEDIASUBTYPE_NULL      // Minor type
+};
+
+static const AMOVIESETUP_PIN filterPins[] =
+{
+    { L"Input",             // Pins string name
+    FALSE,                // Is it rendered
+    FALSE,                // Is it an output
+    FALSE,                // Are we allowed none
+    FALSE,                // And allowed many
+    &CLSID_NULL,          // Connects to filter
+    NULL,                 // Connects to pin
+    2,                    // Number of types
+    filterInSubTypes          // Pin information
+    },
+    { L"Output",            // Pins string name
+    FALSE,                // Is it rendered
+    TRUE,                 // Is it an output
+    FALSE,                // Are we allowed none
+    FALSE,                // And allowed many
+    &CLSID_NULL,          // Connects to filter
+    NULL,                 // Connects to pin
+    1,                    // Number of types
+    &filterOutSubTypes          // Pin information
+    }
+};
+
+static const AMOVIESETUP_FILTER filter = 
+{
+    &__uuidof(ACCDecoderFilter),  // filter clsid
+    L"AAC decoder",   // filter name
+    MERIT_NORMAL,     // ie default for auto graph building
+    2,                // count of registered pins
+    filterPins        // list of pins to register
+};
 
 // --- COM factory table and registration code --------------
 
@@ -8,11 +62,11 @@
 CFactoryTemplate g_Templates[] = {
     // one entry for each CoCreate-able object
     {
-        ACCDecoderFilter::m_sudFilter.strName,
-        ACCDecoderFilter::m_sudFilter.clsID,
+        filter.strName,
+        filter.clsID,
         ACCDecoderFilter::CreateInstance,
         NULL,
-        &ACCDecoderFilter::m_sudFilter
+        &filter
     },
 };
 

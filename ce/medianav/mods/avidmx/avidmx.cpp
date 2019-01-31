@@ -6,7 +6,78 @@
 // http://www.gdcl.co.uk
 
 #include "stdafx.h"
-#include "demuxfilter.h"
+#include "AviDemultiplexor.h"
+
+// --- registration tables ----------------
+
+// filter registration -- these are the types that our
+// pins accept and produce
+static const AMOVIESETUP_MEDIATYPE filterInputSubTypes =
+{
+    &MEDIATYPE_Stream,      // Major type
+    &MEDIASUBTYPE_NULL      // Minor type
+};
+
+static const AMOVIESETUP_MEDIATYPE filterVideoSubTypes =
+{
+    &MEDIATYPE_Video,       // Major type
+    &MEDIASUBTYPE_NULL      // Minor type
+};
+
+static const AMOVIESETUP_MEDIATYPE filterAudioSubTypes =
+{
+    &MEDIATYPE_Audio,       // Major type
+    &MEDIASUBTYPE_NULL      // Minor type
+};
+
+
+// registration of our pins for auto connect and render operations
+static const AMOVIESETUP_PIN filterPins[] = 
+{
+    {
+            L"Input",           // pin name
+            FALSE,              // is rendered?    
+            FALSE,              // is output?
+            FALSE,              // zero instances allowed?
+            FALSE,              // many instances allowed?
+            &CLSID_NULL,        // connects to filter (for bridge pins)
+            NULL,               // connects to pin (for bridge pins)
+            1,                  // count of registered media types
+            &filterInputSubTypes// list of registered media types    
+    },
+    {
+            L"Video",           // pin name
+            FALSE,              // is rendered?    
+            TRUE,               // is output?
+            FALSE,              // zero instances allowed?
+            FALSE,              // many instances allowed?
+            &CLSID_NULL,        // connects to filter (for bridge pins)
+            NULL,               // connects to pin (for bridge pins)
+            1,                  // count of registered media types
+            &filterVideoSubTypes// list of registered media types    
+    },
+    {
+            L"Audio",           // pin name
+            FALSE,              // is rendered?    
+            TRUE,               // is output?
+            FALSE,              // zero instances allowed?
+            FALSE,              // many instances allowed?
+            &CLSID_NULL,        // connects to filter (for bridge pins)
+            NULL,               // connects to pin (for bridge pins)
+            1,                  // count of registered media types
+            &filterAudioSubTypes// list of registered media types    
+    },
+};
+
+// filter registration information. 
+const AMOVIESETUP_FILTER filter = 
+{
+    &__uuidof(AviDemultiplexor),  // filter clsid
+    L"AVI Demultiplexor",   // filter name
+    MERIT_NORMAL,           // ie default for auto graph building
+    3,                      // count of registered pins
+    filterPins              // list of pins to register
+};
 
 // --- COM factory table and registration code --------------
 
@@ -15,11 +86,11 @@
 CFactoryTemplate g_Templates[] = {
     // one entry for each CoCreate-able object
     {
-        AviDemultiplexor::m_sudFilter.strName,
-        AviDemultiplexor::m_sudFilter.clsID,
+        filter.strName,
+        filter.clsID,
         AviDemultiplexor::CreateInstance,
         NULL,
-        &AviDemultiplexor::m_sudFilter
+        &filter
     },
 };
 

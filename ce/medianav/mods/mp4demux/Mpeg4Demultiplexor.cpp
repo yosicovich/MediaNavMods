@@ -1,5 +1,5 @@
 //
-// DemuxFilter.cpp
+// Mpeg4Demultiplexor.cpp
 // 
 // Implementation of classes for DirectShow Mpeg-4 Demultiplexor filter
 //
@@ -12,22 +12,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
-#include "DemuxFilter.h"
-
-// --- registration tables ----------------
-
-// filter registration information. 
-const AMOVIESETUP_FILTER 
-Mpeg4Demultiplexor::m_sudFilter = 
-{
-    &__uuidof(Mpeg4Demultiplexor),  // filter clsid
-    L"Mpeg-4 Demultiplexor",        // filter name
-    MERIT_NORMAL,                   // ie default for auto graph building
-    3,                              // count of registered pins
-    DShowDemultiplexor::m_sudPin    // list of pins to register
-};
-
-// ---- construction/destruction and COM support -------------
+#include "Mpeg4Demultiplexor.h"
 
 // the class factory calls this to create the filter
 //static 
@@ -38,7 +23,7 @@ Mpeg4Demultiplexor::CreateInstance(LPUNKNOWN pUnk, HRESULT* phr)
 }
 
 Mpeg4Demultiplexor::Mpeg4Demultiplexor(LPUNKNOWN pUnk, HRESULT* phr)
-:DShowDemultiplexor(pUnk, phr, *m_sudFilter.clsID)
+:DShowDemultiplexor(pUnk, phr, __uuidof(Mpeg4Demultiplexor))
 {
     setAlwaysSeekToKeyFrame(Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, TEXT("\\SOFTWARE\\Microsoft\\DirectX\\DirectShow\\MP4Demux"), TEXT("KeyFrameSeeking"), true));
 }

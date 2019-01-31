@@ -6,25 +6,10 @@
 #include <audshow.h>
 #include <libao/audio_out_internal.h>
 
-// --- registration tables ----------------
-
-// filter registration information. 
-const AMOVIESETUP_FILTER 
-AC3DecoderFilter::m_sudFilter = 
-{
-    &__uuidof(AC3DecoderFilter),  // filter clsid
-    L"AC3 decoder",   // filter name
-    MERIT_NORMAL,                   // ie default for auto graph building
-    3,                              // count of registered pins
-    CAudioDecodeFilter::m_sudPins    // list of pins to register
-};
-
 // Configuration
 static const int cOutBufferTimeS = 1; // Buffer length in seconds
 static const int cSampleSizePerChannel = 2; //sizeof(short); 
 static const int cAC3OneChannelOutBlockSize = 256 * cSampleSizePerChannel;//256(samples per channel) * size of sample
-
-// ---- construction/destruction and COM support -------------
 
 // the class factory calls this to create the filter
 //static 
@@ -35,7 +20,7 @@ AC3DecoderFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT* phr)
 }
 
 AC3DecoderFilter::AC3DecoderFilter(LPUNKNOWN pUnk, HRESULT* phr)
-:CAudioDecodeFilter(NAME("AC3DecoderFilter"), pUnk, phr, *m_sudFilter.clsID)
+:CAudioDecodeFilter(NAME("AC3DecoderFilter"), pUnk, phr, __uuidof(AC3DecoderFilter))
 ,m_a52State(NULL)
 ,m_maxChannels(0)
 ,m_a52OneOutBlockSize(0)

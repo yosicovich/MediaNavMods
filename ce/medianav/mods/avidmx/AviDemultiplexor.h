@@ -1,21 +1,12 @@
 //
-// DemuxFilter.h
-//
-// Declaration of classes for DirectShow MPEG-4 Demultiplexor filter
-//
-// Geraint Davies, April 2004
-//
-// Copyright (c) GDCL 2004-6. All Rights Reserved. 
-// You are free to re-use this as the basis for your own filter development,
-// provided you retain this copyright notice in the source.
-// http://www.gdcl.co.uk
-//////////////////////////////////////////////////////////////////////
+// AviDemultiplexor.h
 
 #pragma once
 
-
 #include "Avi.h"
 #include "ElemType.h"
+#pragma once
+
 #include "DShowDemuxFilter.h"
 //
 // Partially derived from GDCL sample MPEG-4 parser filter
@@ -33,9 +24,6 @@ AviDemultiplexor: public DShowDemultiplexor
 public:
     // constructor method used by class factory
     static CUnknown* WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT* phr);
-
-    // filter registration tables
-    static const AMOVIESETUP_FILTER m_sudFilter;
 
 protected:
     virtual MoviePtr createMovie(const AtomReaderPtr& pRoot);

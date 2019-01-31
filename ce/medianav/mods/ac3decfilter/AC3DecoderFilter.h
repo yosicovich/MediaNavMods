@@ -3,7 +3,6 @@
 
 #pragma once
 
-
 #include "StdAfx.h"
 #include "a52.h"
 #include <CAudioDecodeFilter.h>
@@ -14,8 +13,6 @@ AC3DecoderFilter: public CAudioDecodeFilter
 public:
     DECLARE_IUNKNOWN;
     virtual ~AC3DecoderFilter();
-    // filter registration tables
-    static const AMOVIESETUP_FILTER m_sudFilter;
     // constructor method used by class factory
     static CUnknown* WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT* phr);
 

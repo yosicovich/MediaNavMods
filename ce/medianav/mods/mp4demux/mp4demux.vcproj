@@ -217,10 +217,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\DemuxFilter.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\ElemType.cpp"
 				>
 			</File>
@@ -237,6 +233,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Mpeg4Demultiplexor.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\StdAfx.cpp"
 				>
 			</File>
@@ -247,10 +247,6 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\DemuxFilter.h"
-				>
-			</File>
-			<File
 				RelativePath=".\ElemType.h"
 				>
 			</File>
@@ -260,6 +256,10 @@
 			</File>
 			<File
 				RelativePath=".\Mpeg4.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Mpeg4Demultiplexor.h"
 				>
 			</File>
 			<File

@@ -5,24 +5,12 @@
 #include "AACDecoderFilter.h"
 #include <audshow.h>
 
-// --- registration tables ----------------
-const AMOVIESETUP_FILTER 
-ACCDecoderFilter::m_sudFilter = 
-{
-    &__uuidof(ACCDecoderFilter),  // filter clsid
-    L"AAC decoder",   // filter name
-    MERIT_NORMAL,                   // ie default for auto graph building
-    3,                              // count of registered pins
-    CAudioDecodeFilter::m_sudPins    // list of pins to register
-};
-
 // Configuration
 static const int cOutBufferTimeS = 1; // Buffer length in seconds
 static const int cSampleSizePerChannel = 2; //sizeof(short); 
 static const int cAACOneChannelOutFrameSize = 1024 * cSampleSizePerChannel;//256(samples per channel) * size of sample
 static const int cMaxChannels = 6; // make this higher to support files with more channels
 
-// ---- construction/destruction and COM support -------------
 // the class factory calls this to create the filter
 //static 
 CUnknown* WINAPI 
@@ -32,7 +20,7 @@ ACCDecoderFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT* phr)
 }
 
 ACCDecoderFilter::ACCDecoderFilter(LPUNKNOWN pUnk, HRESULT* phr)
-:CAudioDecodeFilter(NAME("ACCDecoderFilter"), pUnk, phr, *m_sudFilter.clsID)
+:CAudioDecodeFilter(NAME("ACCDecoderFilter"), pUnk, phr, __uuidof(ACCDecoderFilter))
 ,m_hDecoder(NULL)
 ,m_decoderReady(false)
 ,m_streamingMode(true)
