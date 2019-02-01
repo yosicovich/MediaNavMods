@@ -1,4 +1,5 @@
 #pragma once
+#include <windows.h>
 
 void DbgSetDebugLevel(int module, int level);
 void DbgDebugPrint(int module, int level, const wchar_t *format, ...);
