@@ -1,0 +1,6 @@
+LIBRARY	"CmnDLL"
+
+EXPORTS
+        DbgSetDebugLevel @10
+        DbgDebugPrint @2
+        IpcPostMsg @16
