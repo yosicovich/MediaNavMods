@@ -483,7 +483,11 @@ bool File::isReadable(const char *file)
 
 #endif
 #else
-    return GetFileAttributesA(file) != INVALID_FILE_ATTRIBUTES;
+#ifdef UNICODE
+    return GetFileAttributes( String(file).toCWString()) != INVALID_FILE_ATTRIBUTES;
+#else
+    return GetFileAttributes( file ) != INVALID_FILE_ATTRIBUTES;
+#endif
 #endif
 
 }
@@ -502,7 +506,11 @@ bool File::isWritable(const char *file)
 
 #endif
 #else
-    return GetFileAttributesA(file) != INVALID_FILE_ATTRIBUTES;
+#ifdef UNICODE
+    return GetFileAttributes( String(file).toCWString()) != INVALID_FILE_ATTRIBUTES;
+#else
+    return GetFileAttributes( file ) != INVALID_FILE_ATTRIBUTES;
+#endif
 #endif
 }
 
