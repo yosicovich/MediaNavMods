@@ -1,0 +1,45 @@
+zlib for WindowsCE Rel.1.1.4
+============================
+ (C) 1995-2002 Jean-loup Gailly and Mark Adler
+ (C) 2000-2002 Tenik Co.,Ltd.
+
+ Porting for WindowsCE by Tenik Co.,Ltd.(Kazuo Adachi)
+
+
+Introduction
+============
+This software is zlib 1.1.4 ported to Microsoft WindowsCE 2.0 and above.
+zlib 1.1.4 is a general purpose data compression library.
+See README, a document of original zlib 1.1.4.
+
+Copyright notice
+================
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+See README, a document of original zlib 1.1.4, for conditions of use and
+distribution.
+
+Files
+=====
+
+ README     - this file
+ READMEJ    - readme file(in Japanese)
+ zlibce.def - module definition file to make DLLs
+ zlib.diff  - GNU patch file for source code
+ winmain.c  - entry point and call main() for WindowsCE
+
+ evc3/      - project files for 'eMbedded Visual C++ 3.0'
+              target is WindowsCE 2.11[H/PC Pro,Palm size PC]
+                              and 3.0 [H/PC 2000,PocketPC,PocketPC2002]
+ evc4/      - project files for 'eMbedded Visual C++ 4.0'
+              target is WindowsCE.NET
+ vcce/      - project files for 'WindowsCE Toolkit for Visual C++ 6.0'
+              target is WindowsCE 2.0/2.1/2.11
+
+Author
+======
+Tenik Co.,Ltd.
+Kazuo Adachi
+adachi@tenik.co.jp

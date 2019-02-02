@@ -1,0 +1,1167 @@
+diff -acr zlib/deflate.c zlibce/deflate.c
+*** zlib/deflate.c	Tue Mar 12 00:00:39 2002
+--- zlibce/deflate.c	Tue Mar 19 21:09:08 2002
+***************
+*** 921,926 ****
+--- 921,930 ----
+  #endif /* ASMV */
+  
+  #ifdef DEBUG
++ #ifdef _WIN32_WCE
++ /* Windows CE is not support DEBUG version's zlib */
++ #  define check_match(s, start, match, length)
++ #else
+  /* ===========================================================================
+   * Check that the match at match_start is indeed a match.
+   */
+***************
+*** 944,949 ****
+--- 948,954 ----
+          do { putc(s->window[start++], stderr); } while (--length != 0);
+      }
+  }
++ #endif
+  #else
+  #  define check_match(s, start, match, length)
+  #endif
+diff -acr zlib/example.c zlibce/example.c
+*** zlib/example.c	Mon Mar 11 22:16:01 2002
+--- zlibce/example.c	Thu Jul 27 12:04:46 2000
+***************
+*** 1,11 ****
+  /* example.c -- usage example of the zlib compression library
+!  * Copyright (C) 1995-2002 Jean-loup Gailly.
+   * For conditions of distribution and use, see copyright notice in zlib.h 
+   */
+  
+  /* @(#) $Id: zlib.diff,v 1.1.1.1 2002/10/30 02:03:50 adachi Exp $ */
+  
+  #include <stdio.h>
+  #include "zlib.h"
+  
+  #ifdef STDC
+--- 1,19 ----
+  /* example.c -- usage example of the zlib compression library
+!  * Copyright (C) 1995-1998 Jean-loup Gailly.
+!  * Copyright (C) 2000      Tenik Co.,Ltd.
+   * For conditions of distribution and use, see copyright notice in zlib.h 
+   */
+  
+  /* @(#) $Id: zlib.diff,v 1.1.1.1 2002/10/30 02:03:50 adachi Exp $ */
+  
++ #if defined(_WIN32_WCE)
++ #if _WIN32_WCE < 211
++ #error (f|w)printf functions is not support old WindowsCE.
++ #endif
++ #include <windows.h>
++ #else
+  #include <stdio.h>
++ #endif
+  #include "zlib.h"
+  
+  #ifdef STDC
+***************
+*** 21,26 ****
+--- 29,43 ----
+  #  define TESTFILE "foo.gz"
+  #endif
+  
++ #if defined(_WIN32_WCE)
++ #define calloc(x,y) malloc((x)*(y))
++ #undef  stderr
++ #define stderr  stdout
++ #define F_NULL  INVALID_HANDLE_VALUE
++ #else
++ #define F_NULL  NULL
++ #endif
++ 
+  #define CHECK_ERR(err, msg) { \
+      if (err != Z_OK) { \
+          fprintf(stderr, "%s error: %d\n", msg, err); \
+***************
+*** 96,102 ****
+      z_off_t pos;
+  
+      file = gzopen(out, "wb");
+!     if (file == NULL) {
+          fprintf(stderr, "gzopen error\n");
+          exit(1);
+      }
+--- 113,119 ----
+      z_off_t pos;
+  
+      file = gzopen(out, "wb");
+!     if (file == F_NULL) {
+          fprintf(stderr, "gzopen error\n");
+          exit(1);
+      }
+***************
+*** 113,119 ****
+      gzclose(file);
+  
+      file = gzopen(in, "rb");
+!     if (file == NULL) {
+          fprintf(stderr, "gzopen error\n");
+      }
+      strcpy((char*)uncompr, "garbage");
+--- 130,136 ----
+      gzclose(file);
+  
+      file = gzopen(in, "rb");
+!     if (file == F_NULL) {
+          fprintf(stderr, "gzopen error\n");
+      }
+      strcpy((char*)uncompr, "garbage");
+diff -acr zlib/gzio.c zlibce/gzio.c
+*** zlib/gzio.c	Mon Mar 11 22:16:01 2002
+--- zlibce/gzio.c	Fri Jul 05 17:29:28 2002
+***************
+*** 1,5 ****
+--- 1,6 ----
+  /* gzio.c -- IO on .gz files
+   * Copyright (C) 1995-2002 Jean-loup Gailly.
++  * Copyright (C) 2000-2002 Tenik Co.,Ltd.(for WindowsCE)
+   * For conditions of distribution and use, see copyright notice in zlib.h
+   *
+   * Compile this file with -DNO_DEFLATE to avoid the compression code.
+***************
+*** 7,13 ****
+--- 8,18 ----
+  
+  /* @(#) $Id: zlib.diff,v 1.1.1.1 2002/10/30 02:03:50 adachi Exp $ */
+  
++ #ifdef _WIN32_WCE
++ #include <windows.h>
++ #else
+  #include <stdio.h>
++ #endif
+  
+  #include "zutil.h"
+  
+***************
+*** 41,47 ****
+--- 46,56 ----
+      z_stream stream;
+      int      z_err;   /* error code for last stream operation */
+      int      z_eof;   /* set if end of input file */
++ #ifdef _WIN32_WCE
++     HANDLE   file;    /* .gz file */
++ #else
+      FILE     *file;   /* .gz file */
++ #endif
+      Byte     *inbuf;  /* input buffer */
+      Byte     *outbuf; /* output buffer */
+      uLong    crc;     /* crc32 of uncompressed data */
+***************
+*** 58,64 ****
+--- 67,77 ----
+  local int    get_byte     OF((gz_stream *s));
+  local void   check_header OF((gz_stream *s));
+  local int    destroy      OF((gz_stream *s));
++ #ifdef _WIN32_WCE
++ local void   putLong      OF((HANDLE file, uLong x));
++ #else
+  local void   putLong      OF((FILE *file, uLong x));
++ #endif
+  local uLong  getLong      OF((gz_stream *s));
+  
+  /* ===========================================================================
+***************
+*** 82,87 ****
+--- 95,105 ----
+      gz_stream *s;
+      char fmode[80]; /* copy of mode, without the compression level */
+      char *m = fmode;
++ #ifdef _WIN32_WCE
++     char cbuff[10];
++     DWORD size;
++     TCHAR file[MAX_PATH];
++ #endif
+  
+      if (!path || !mode) return Z_NULL;
+  
+***************
+*** 94,100 ****
+--- 112,122 ----
+      s->stream.next_in = s->inbuf = Z_NULL;
+      s->stream.next_out = s->outbuf = Z_NULL;
+      s->stream.avail_in = s->stream.avail_out = 0;
++ #ifdef _WIN32_WCE
++     s->file = INVALID_HANDLE_VALUE;
++ #else
+      s->file = NULL;
++ #endif
+      s->z_err = Z_OK;
+      s->z_eof = 0;
+      s->crc = crc32(0L, Z_NULL, 0);
+***************
+*** 152,168 ****
+--- 174,218 ----
+      }
+      s->stream.avail_out = Z_BUFSIZE;
+  
++ #ifdef _WIN32_WCE
++     SetLastError(NO_ERROR);
++     if ((HANDLE)fd == INVALID_HANDLE_VALUE) {
++         MultiByteToWideChar(CP_ACP, 0, path, -1, file, MAX_PATH);
++         s->file = CreateFile(file, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, 0, NULL);
++     } else {
++         s->file = (HANDLE)fd;
++     }
++ #else
+      errno = 0;
+      s->file = fd < 0 ? F_OPEN(path, fmode) : (FILE*)fdopen(fd, fmode);
++ #endif
+  
++ #ifdef _WIN32_WCE
++     if (s->file == INVALID_HANDLE_VALUE) {
++ #else
+      if (s->file == NULL) {
++ #endif
+          return destroy(s), (gzFile)Z_NULL;
+      }
+      if (s->mode == 'w') {
+          /* Write a very simple .gz header:
+           */
++ #ifdef _WIN32_WCE
++         cbuff[0] = gz_magic[0];
++         cbuff[1] = gz_magic[1];
++         cbuff[2] = Z_DEFLATED;
++         cbuff[3] = 0; /*flags*/
++         cbuff[4] = 0;
++         cbuff[5] = 0;
++         cbuff[6] = 0;
++         cbuff[7] = 0; /*time*/;
++         cbuff[8] = 0; /*xflags*/;
++         cbuff[9] = OS_CODE;
++         WriteFile(s->file, cbuff, 10, &size, NULL);
++ #else
+          fprintf(s->file, "%c%c%c%c%c%c%c%c%c%c", gz_magic[0], gz_magic[1],
+               Z_DEFLATED, 0 /*flags*/, 0,0,0,0 /*time*/, 0 /*xflags*/, OS_CODE);
++ #endif
+  	s->startpos = 10L;
+  	/* We use 10L instead of ftell(s->file) to because ftell causes an
+           * fflush on some systems. This version of the library doesn't use
+***************
+*** 171,177 ****
+--- 221,231 ----
+           */
+      } else {
+  	check_header(s); /* skip the .gz header */
++ #ifdef _WIN32_WCE
++         s->startpos = (SetFilePointer(s->file, 0, NULL, FILE_CURRENT) - s->stream.avail_in);
++ #else
+  	s->startpos = (ftell(s->file) - s->stream.avail_in);
++ #endif
+      }
+      
+      return (gzFile)s;
+***************
+*** 197,204 ****
+--- 251,263 ----
+  {
+      char name[20];
+  
++ #ifdef _WIN32_WCE
++     if ((HANDLE)fd == INVALID_HANDLE_VALUE) return (gzFile)Z_NULL;
++     strcpy(name, "<gzdopen>"); /* for debugging */
++ #else
+      if (fd < 0) return (gzFile)Z_NULL;
+      sprintf(name, "<fd:%d>", fd); /* for debugging */
++ #endif
+  
+      return gz_open (name, mode, fd);
+  }
+***************
+*** 212,217 ****
+--- 271,279 ----
+      int strategy;
+  {
+      gz_stream *s = (gz_stream*)file;
++ #ifdef _WIN32_WCE
++     DWORD size;
++ #endif
+  
+      if (s == NULL || s->mode != 'w') return Z_STREAM_ERROR;
+  
+***************
+*** 219,225 ****
+--- 281,291 ----
+      if (s->stream.avail_out == 0) {
+  
+  	s->stream.next_out = s->outbuf;
++ #ifdef _WIN32_WCE
++         if (!WriteFile(s->file, s->outbuf, Z_BUFSIZE, &size, NULL) || size != Z_BUFSIZE) {
++ #else
+  	if (fwrite(s->outbuf, 1, Z_BUFSIZE, s->file) != Z_BUFSIZE) {
++ #endif
+  	    s->z_err = Z_ERRNO;
+  	}
+  	s->stream.avail_out = Z_BUFSIZE;
+***************
+*** 238,243 ****
+--- 304,319 ----
+  {
+      if (s->z_eof) return EOF;
+      if (s->stream.avail_in == 0) {
++ #ifdef _WIN32_WCE
++         SetLastError(NO_ERROR);
++         if (!ReadFile(s->file, s->inbuf, Z_BUFSIZE, &s->stream.avail_in, NULL)) {
++             s->z_err = Z_ERRNO;
++         }
++         if (s->stream.avail_in == 0) {
++             s->z_eof = 1;
++             return -1;
++         }
++ #else
+  	errno = 0;
+  	s->stream.avail_in = fread(s->inbuf, 1, Z_BUFSIZE, s->file);
+  	if (s->stream.avail_in == 0) {
+***************
+*** 245,250 ****
+--- 321,327 ----
+  	    if (ferror(s->file)) s->z_err = Z_ERRNO;
+  	    return EOF;
+  	}
++ #endif
+  	s->stream.next_in = s->inbuf;
+      }
+      s->stream.avail_in--;
+***************
+*** 333,342 ****
+--- 410,423 ----
+  	    err = inflateEnd(&(s->stream));
+  	}
+      }
++ #ifdef _WIN32_WCE
++     if (s->file != NULL && !CloseHandle(s->file)) {
++ #else
+      if (s->file != NULL && fclose(s->file)) {
+  #ifdef ESPIPE
+  	if (errno != ESPIPE) /* fclose is broken for pipes in HP/UX */
+  #endif
++ #endif
+  	    err = Z_ERRNO;
+      }
+      if (s->z_err < 0) err = s->z_err;
+***************
+*** 360,365 ****
+--- 441,449 ----
+      gz_stream *s = (gz_stream*)file;
+      Bytef *start = (Bytef*)buf; /* starting point for crc computation */
+      Byte  *next_out; /* == stream.next_out but not forced far (for MSDOS) */
++ #ifdef _WIN32_WCE
++     DWORD size;
++ #endif
+  
+      if (s == NULL || s->mode != 'r') return Z_STREAM_ERROR;
+  
+***************
+*** 385,392 ****
+--- 469,482 ----
+  		s->stream.avail_in  -= n;
+  	    }
+  	    if (s->stream.avail_out > 0) {
++ #ifdef _WIN32_WCE
++                 if (ReadFile(s->file, next_out, s->stream.avail_out, &size, NULL)) {
++                     s->stream.avail_out -= size;
++                 }
++ #else
+  		s->stream.avail_out -= fread(next_out, 1, s->stream.avail_out,
+  					     s->file);
++ #endif
+  	    }
+  	    len -= s->stream.avail_out;
+  	    s->stream.total_in  += (uLong)len;
+***************
+*** 396,401 ****
+--- 486,502 ----
+  	}
+          if (s->stream.avail_in == 0 && !s->z_eof) {
+  
++ #ifdef _WIN32_WCE
++             SetLastError(NO_ERROR);
++             if (!ReadFile(s->file, s->inbuf, Z_BUFSIZE, &s->stream.avail_in, NULL)) {
++                 s->z_eof = 1;
++                 s->z_err = Z_ERRNO;
++                 break;
++             }
++             if (s->stream.avail_in == 0) {
++                 s->z_eof = 1;
++             }
++ #else
+              errno = 0;
+              s->stream.avail_in = fread(s->inbuf, 1, Z_BUFSIZE, s->file);
+              if (s->stream.avail_in == 0) {
+***************
+*** 405,410 ****
+--- 506,512 ----
+  		    break;
+  		}
+              }
++ #endif
+              s->stream.next_in = s->inbuf;
+          }
+          s->z_err = inflate(&(s->stream), Z_NO_FLUSH);
+***************
+*** 489,494 ****
+--- 591,599 ----
+      unsigned len;
+  {
+      gz_stream *s = (gz_stream*)file;
++ #ifdef _WIN32_WCE
++     DWORD size;
++ #endif
+  
+      if (s == NULL || s->mode != 'w') return Z_STREAM_ERROR;
+  
+***************
+*** 500,506 ****
+--- 605,615 ----
+          if (s->stream.avail_out == 0) {
+  
+              s->stream.next_out = s->outbuf;
++ #ifdef _WIN32_WCE
++             if (!WriteFile(s->file, s->outbuf, Z_BUFSIZE, &size, NULL) || size != Z_BUFSIZE) {
++ #else
+              if (fwrite(s->outbuf, 1, Z_BUFSIZE, s->file) != Z_BUFSIZE) {
++ #endif
+                  s->z_err = Z_ERRNO;
+                  break;
+              }
+***************
+*** 519,524 ****
+--- 628,667 ----
+     control of the format string, as in fprintf. gzprintf returns the number of
+     uncompressed bytes actually written (0 in case of error).
+  */
++ #ifdef _WIN32_WCE
++ #include <stdarg.h>
++ 
++ int ZEXPORTVA gzprintf (gzFile file, const char *format, /* args */ ...)
++ {
++     char buf[Z_PRINTF_BUFSIZE];
++     va_list va;
++     int len;
++     TCHAR form[Z_PRINTF_BUFSIZE];
++     TCHAR tbuf[Z_PRINTF_BUFSIZE];
++     int n;
++ 
++     va_start(va, format);
++     MultiByteToWideChar(CP_ACP, 0, format, -1, form, Z_PRINTF_BUFSIZE);
++     len = lstrlen(form);
++     for ( n = 0; n < len; n++ ) {
++         if ( TEXT('%') == form[n] ) {
++             n++;
++             if ( TEXT('c') == form[n] ) {
++                 form[n] = TEXT('C');
++             } else if ( TEXT('s') == form[n] ) {
++                 form[n] = TEXT('S');
++             }
++         }
++     }
++     (void)vswprintf(tbuf, form, va);
++     va_end(va);
++     WideCharToMultiByte(CP_ACP, 0, tbuf, -1, buf, Z_PRINTF_BUFSIZE, NULL, NULL);
++     len = strlen(buf); /* some *sprintf don't return the nb of bytes written */
++     if (len <= 0) return 0;
++ 
++     return gzwrite(file, buf, (unsigned)len);
++ }
++ #else
+  #ifdef STDC
+  #include <stdarg.h>
+  
+***************
+*** 565,570 ****
+--- 708,714 ----
+      return gzwrite(file, buf, len);
+  }
+  #endif
++ #endif
+  
+  /* ===========================================================================
+        Writes c, converted to an unsigned char, into the compressed file.
+***************
+*** 604,609 ****
+--- 748,756 ----
+      uInt len;
+      int done = 0;
+      gz_stream *s = (gz_stream*)file;
++ #ifdef _WIN32_WCE
++     DWORD size;
++ #endif
+  
+      if (s == NULL || s->mode != 'w') return Z_STREAM_ERROR;
+  
+***************
+*** 613,619 ****
+--- 760,770 ----
+          len = Z_BUFSIZE - s->stream.avail_out;
+  
+          if (len != 0) {
++ #ifdef _WIN32_WCE
++             if (!WriteFile(s->file, s->outbuf, len, &size, NULL) || (uInt)size != len) {
++ #else
+              if ((uInt)fwrite(s->outbuf, 1, len, s->file) != len) {
++ #endif
+                  s->z_err = Z_ERRNO;
+                  return Z_ERRNO;
+              }
+***************
+*** 644,650 ****
+--- 795,804 ----
+      int err = do_flush (file, flush);
+  
+      if (err) return err;
++ #ifdef _WIN32_WCE
++ #else
+      fflush(s->file);
++ #endif
+      return  s->z_err == Z_STREAM_END ? Z_OK : s->z_err;
+  }
+  #endif /* NO_DEFLATE */
+***************
+*** 707,713 ****
+--- 861,871 ----
+  	/* map to fseek */
+  	s->stream.avail_in = 0;
+  	s->stream.next_in = s->inbuf;
++ #ifdef _WIN32_WCE
++         if (SetFilePointer(s->file, offset, NULL, FILE_BEGIN) == 0xFFFFFFFF) return -1L;
++ #else
+          if (fseek(s->file, offset, SEEK_SET) < 0) return -1L;
++ #endif
+  
+  	s->stream.total_in = s->stream.total_out = (uLong)offset;
+  	return offset;
+***************
+*** 752,763 ****
+--- 910,929 ----
+      s->crc = crc32(0L, Z_NULL, 0);
+  	
+      if (s->startpos == 0) { /* not a compressed file */
++ #ifdef _WIN32_WCE
++         SetFilePointer(s->file, 0, NULL, FILE_BEGIN);
++ #else
+  	rewind(s->file);
++ #endif
+  	return 0;
+      }
+  
+      (void) inflateReset(&s->stream);
++ #ifdef _WIN32_WCE
++     return SetFilePointer(s->file, s->startpos, NULL, FILE_BEGIN);
++ #else
+      return fseek(s->file, s->startpos, SEEK_SET);
++ #endif
+  }
+  
+  /* ===========================================================================
+***************
+*** 786,791 ****
+--- 952,972 ----
+  /* ===========================================================================
+     Outputs a long in LSB order to the given file
+  */
++ #ifdef _WIN32_WCE
++ local void putLong (file, x)
++     HANDLE file;
++     uLong x;
++ {
++     int n;
++     char ch[1];
++     DWORD size;
++     for (n = 0; n < 4; n++) {
++         ch[0] = (int)(x & 0xff);
++         WriteFile(file, ch, 1, &size, NULL);
++         x >>= 8;
++     }
++ }
++ #else
+  local void putLong (file, x)
+      FILE *file;
+      uLong x;
+***************
+*** 796,801 ****
+--- 977,983 ----
+          x >>= 8;
+      }
+  }
++ #endif
+  
+  /* ===========================================================================
+     Reads a long in LSB order from the given gz_stream. Sets z_err in case
+***************
+*** 862,868 ****
+--- 1044,1054 ----
+      *errnum = s->z_err;
+      if (*errnum == Z_OK) return (const char*)"";
+  
++ #ifdef _WIN32_WCE
++     m =  (char*)(*errnum == Z_ERRNO ? zstrerror(GetLastError()) : s->stream.msg);
++ #else
+      m =  (char*)(*errnum == Z_ERRNO ? zstrerror(errno) : s->stream.msg);
++ #endif
+  
+      if (m == NULL || *m == '\0') m = (char*)ERR_MSG(s->z_err);
+  
+diff -acr zlib/maketree.c zlibce/maketree.c
+*** zlib/maketree.c	Mon Mar 11 22:56:12 2002
+--- zlibce/maketree.c	Tue Jun 16 20:27:00 1998
+***************
+*** 1,5 ****
+  /* maketree.c -- make inffixed.h table for decoding fixed codes
+!  * Copyright (C) 1995-2002 Mark Adler
+   * For conditions of distribution and use, see copyright notice in zlib.h 
+   */
+  
+--- 1,5 ----
+  /* maketree.c -- make inffixed.h table for decoding fixed codes
+!  * Copyright (C) 1998 Mark Adler
+   * For conditions of distribution and use, see copyright notice in zlib.h 
+   */
+  
+diff -acr zlib/minigzip.c zlibce/minigzip.c
+*** zlib/minigzip.c	Mon Mar 11 22:16:01 2002
+--- zlibce/minigzip.c	Thu Jul 27 12:04:46 2000
+***************
+*** 1,5 ****
+  /* minigzip.c -- simulate gzip using the zlib compression library
+!  * Copyright (C) 1995-2002 Jean-loup Gailly.
+   * For conditions of distribution and use, see copyright notice in zlib.h 
+   */
+  
+--- 1,6 ----
+  /* minigzip.c -- simulate gzip using the zlib compression library
+!  * Copyright (C) 1995-1998 Jean-loup Gailly.
+!  * Copyright (C) 2000      Tenik Co.,Ltd.
+   * For conditions of distribution and use, see copyright notice in zlib.h 
+   */
+  
+***************
+*** 15,21 ****
+--- 16,30 ----
+  
+  /* @(#) $Id: zlib.diff,v 1.1.1.1 2002/10/30 02:03:50 adachi Exp $ */
+  
++ #if defined(_WIN32_WCE)
++ #if _WIN32_WCE < 211
++ #error (f|w)printf functions is not support old WindowsCE.
++ #endif
++ #undef USE_MMAP
++ #include <windows.h>
++ #else
+  #include <stdio.h>
++ #endif
+  #include "zlib.h"
+  
+  #ifdef STDC
+***************
+*** 31,37 ****
+  #  include <sys/stat.h>
+  #endif
+  
+! #if defined(MSDOS) || defined(OS2) || defined(WIN32)
+  #  include <fcntl.h>
+  #  include <io.h>
+  #  define SET_BINARY_MODE(file) setmode(fileno(file), O_BINARY)
+--- 40,46 ----
+  #  include <sys/stat.h>
+  #endif
+  
+! #if (defined(MSDOS) || defined(OS2) || defined(WIN32)) && !defined(_WIN32_WCE)
+  #  include <fcntl.h>
+  #  include <io.h>
+  #  define SET_BINARY_MODE(file) setmode(fileno(file), O_BINARY)
+***************
+*** 71,84 ****
+  #  define local
+  #endif
+  
+  char *prog;
+  
+  void error            OF((const char *msg));
+! void gz_compress      OF((FILE   *in, gzFile out));
+  #ifdef USE_MMAP
+! int  gz_compress_mmap OF((FILE   *in, gzFile out));
+  #endif
+! void gz_uncompress    OF((gzFile in, FILE   *out));
+  void file_compress    OF((char  *file, char *mode));
+  void file_uncompress  OF((char  *file));
+  int  main             OF((int argc, char *argv[]));
+--- 80,103 ----
+  #  define local
+  #endif
+  
++ #if defined(_WIN32_WCE)
++ #undef  stderr
++ #define stderr  stdout
++ #define F_FILE  HANDLE
++ #define F_NULL  INVALID_HANDLE_VALUE
++ #else
++ #define F_FILE  FILE*
++ #define F_NULL  NULL
++ #endif
++ 
+  char *prog;
+  
+  void error            OF((const char *msg));
+! void gz_compress      OF((F_FILE in, gzFile out));
+  #ifdef USE_MMAP
+! int  gz_compress_mmap OF((F_FILE in, gzFile out));
+  #endif
+! void gz_uncompress    OF((gzFile in, F_FILE out));
+  void file_compress    OF((char  *file, char *mode));
+  void file_uncompress  OF((char  *file));
+  int  main             OF((int argc, char *argv[]));
+***************
+*** 93,104 ****
+      exit(1);
+  }
+  
+  /* ===========================================================================
+   * Compress input to output then close both files.
+   */
+  
+  void gz_compress(in, out)
+!     FILE   *in;
+      gzFile out;
+  {
+      local char buf[BUFLEN];
+--- 112,160 ----
+      exit(1);
+  }
+  
++ #if defined(_WIN32_WCE)
++ void perror(msg)
++     const char *msg;
++ {
++     DWORD dwError;
++     LPVOID lpMsgBuf;
++ 
++     dwError = GetLastError();
++     if ( FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
++         FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_HMODULE |
++         FORMAT_MESSAGE_IGNORE_INSERTS,
++         NULL,
++         dwError,
++         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
++         (LPTSTR) &lpMsgBuf,
++         0,
++         NULL) )
++     {
++         wprintf(TEXT("%S: %s\n"), msg, (LPTSTR)lpMsgBuf);
++         LocalFree(lpMsgBuf);
++     }
++     else
++     {
++         wprintf(TEXT("%S: Error #%d\n"), msg, dwError);
++     }
++ }
++ 
++ int unlink(filename)
++     const char *filename;
++ {
++     TCHAR path[MAX_PATH];
++ 
++     MultiByteToWideChar(CP_ACP, 0, filename, -1, path, MAX_PATH);
++     return DeleteFile(path);
++ }
++ #endif
++ 
+  /* ===========================================================================
+   * Compress input to output then close both files.
+   */
+  
+  void gz_compress(in, out)
+!     F_FILE in;
+      gzFile out;
+  {
+      local char buf[BUFLEN];
+***************
+*** 112,119 ****
+--- 168,179 ----
+      if (gz_compress_mmap(in, out) == Z_OK) return;
+  #endif
+      for (;;) {
++ #if defined(_WIN32_WCE)
++         if (!ReadFile(in, buf, sizeof(buf), &len, NULL)) {
++ #else
+          len = fread(buf, 1, sizeof(buf), in);
+          if (ferror(in)) {
++ #endif
+              perror("fread");
+              exit(1);
+          }
+***************
+*** 121,127 ****
+--- 181,191 ----
+  
+          if (gzwrite(out, buf, (unsigned)len) != len) error(gzerror(out, &err));
+      }
++ #if defined(_WIN32_WCE)
++     CloseHandle(in);
++ #else
+      fclose(in);
++ #endif
+      if (gzclose(out) != Z_OK) error("failed gzclose");
+  }
+  
+***************
+*** 131,137 ****
+   * if success, Z_ERRNO otherwise.
+   */
+  int gz_compress_mmap(in, out)
+!     FILE   *in;
+      gzFile out;
+  {
+      int len;
+--- 195,201 ----
+   * if success, Z_ERRNO otherwise.
+   */
+  int gz_compress_mmap(in, out)
+!     F_FILE in;
+      gzFile out;
+  {
+      int len;
+***************
+*** 167,188 ****
+   */
+  void gz_uncompress(in, out)
+      gzFile in;
+!     FILE   *out;
+  {
+      local char buf[BUFLEN];
+      int len;
+      int err;
+  
+      for (;;) {
+          len = gzread(in, buf, sizeof(buf));
+          if (len < 0) error (gzerror(in, &err));
+          if (len == 0) break;
+  
+          if ((int)fwrite(buf, 1, (unsigned)len, out) != len) {
+  	    error("failed fwrite");
+  	}
+      }
+      if (fclose(out)) error("failed fclose");
+  
+      if (gzclose(in) != Z_OK) error("failed gzclose");
+  }
+--- 231,263 ----
+   */
+  void gz_uncompress(in, out)
+      gzFile in;
+!     F_FILE out;
+  {
+      local char buf[BUFLEN];
+      int len;
+      int err;
++ #if defined(_WIN32_WCE)
++     int size;
++ #endif
+  
+      for (;;) {
+          len = gzread(in, buf, sizeof(buf));
+          if (len < 0) error (gzerror(in, &err));
+          if (len == 0) break;
+  
++ #if defined(_WIN32_WCE)
++         if (!WriteFile(out, buf, (unsigned)len, &size, NULL) || size != len) {
++ #else
+          if ((int)fwrite(buf, 1, (unsigned)len, out) != len) {
++ #endif
+  	    error("failed fwrite");
+  	}
+      }
++ #if defined(_WIN32_WCE)
++     if (!CloseHandle(out)) error("failed fclose");
++ #else
+      if (fclose(out)) error("failed fclose");
++ #endif
+  
+      if (gzclose(in) != Z_OK) error("failed gzclose");
+  }
+***************
+*** 197,215 ****
+      char  *mode;
+  {
+      local char outfile[MAX_NAME_LEN];
+!     FILE  *in;
+      gzFile out;
+  
+      strcpy(outfile, file);
+      strcat(outfile, GZ_SUFFIX);
+  
+      in = fopen(file, "rb");
+!     if (in == NULL) {
+          perror(file);
+          exit(1);
+      }
+      out = gzopen(outfile, mode);
+!     if (out == NULL) {
+          fprintf(stderr, "%s: can't gzopen %s\n", prog, outfile);
+          exit(1);
+      }
+--- 272,298 ----
+      char  *mode;
+  {
+      local char outfile[MAX_NAME_LEN];
+!     F_FILE in;
+      gzFile out;
++ #if defined(_WIN32_WCE)
++     TCHAR path[MAX_PATH];
++ #endif
+  
+      strcpy(outfile, file);
+      strcat(outfile, GZ_SUFFIX);
+  
++ #if defined(_WIN32_WCE)
++     MultiByteToWideChar(CP_ACP, 0, file, -1, path, MAX_PATH);
++     in = CreateFile(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
++ #else
+      in = fopen(file, "rb");
+! #endif
+!     if (in == F_NULL) {
+          perror(file);
+          exit(1);
+      }
+      out = gzopen(outfile, mode);
+!     if (out == F_NULL) {
+          fprintf(stderr, "%s: can't gzopen %s\n", prog, outfile);
+          exit(1);
+      }
+***************
+*** 227,235 ****
+  {
+      local char buf[MAX_NAME_LEN];
+      char *infile, *outfile;
+!     FILE  *out;
+      gzFile in;
+      int len = strlen(file);
+  
+      strcpy(buf, file);
+  
+--- 310,321 ----
+  {
+      local char buf[MAX_NAME_LEN];
+      char *infile, *outfile;
+!     F_FILE out;
+      gzFile in;
+      int len = strlen(file);
++ #if defined(_WIN32_WCE)
++     TCHAR path[MAX_PATH];
++ #endif
+  
+      strcpy(buf, file);
+  
+***************
+*** 243,254 ****
+          strcat(infile, GZ_SUFFIX);
+      }
+      in = gzopen(infile, "rb");
+!     if (in == NULL) {
+          fprintf(stderr, "%s: can't gzopen %s\n", prog, infile);
+          exit(1);
+      }
+      out = fopen(outfile, "wb");
+!     if (out == NULL) {
+          perror(file);
+          exit(1);
+      }
+--- 329,345 ----
+          strcat(infile, GZ_SUFFIX);
+      }
+      in = gzopen(infile, "rb");
+!     if (in == F_NULL) {
+          fprintf(stderr, "%s: can't gzopen %s\n", prog, infile);
+          exit(1);
+      }
++ #if defined(_WIN32_WCE)
++     MultiByteToWideChar(CP_ACP, 0, outfile, -1, path, MAX_PATH);
++     out = CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
++ #else
+      out = fopen(outfile, "wb");
+! #endif
+!     if (out == F_NULL) {
+          perror(file);
+          exit(1);
+      }
+***************
+*** 272,278 ****
+--- 363,371 ----
+      char *argv[];
+  {
+      int uncompr = 0;
++ #if !defined(_WIN32_WCE)
+      gzFile file;
++ #endif
+      char outmode[20];
+  
+      strcpy(outmode, "wb6 ");
+***************
+*** 295,300 ****
+--- 388,400 ----
+        argc--, argv++;
+      }
+      if (argc == 0) {
++ #if defined(_WIN32_WCE)
++         wprintf(TEXT("Usage:  minigzip [-d] [-f] [-h] [-1 to -9] [files...]\n"));
++         wprintf(TEXT("  -d : decompress\n"));
++         wprintf(TEXT("  -f : compress with Z_FILTERED\n"));
++         wprintf(TEXT("  -h : compress with Z_HUFFMAN_ONLY\n"));
++         wprintf(TEXT("  -1 to -9 : compression level\n"));
++ #else
+          SET_BINARY_MODE(stdin);
+          SET_BINARY_MODE(stdout);
+          if (uncompr) {
+***************
+*** 306,311 ****
+--- 406,412 ----
+              if (file == NULL) error("can't gzdopen stdout");
+              gz_compress(stdin, file);
+          }
++ #endif
+      } else {
+          do {
+              if (uncompr) {
+diff -acr zlib/trees.c zlibce/trees.c
+*** zlib/trees.c	Mon Mar 11 22:16:01 2002
+--- zlibce/trees.c	Tue Mar 19 21:09:44 2002
+***************
+*** 168,176 ****
+--- 168,182 ----
+     /* Send a code of the given tree. c and tree must not have side effects */
+  
+  #else /* DEBUG */
++ #ifdef _WIN32_WCE
++ /* Windows CE is not support DEBUG version's zlib */
++ #  define send_code(s, c, tree) send_bits(s, tree[c].Code, tree[c].Len)
++ 
++ #else
+  #  define send_code(s, c, tree) \
+       { if (z_verbose>2) fprintf(stderr,"\ncd %3d ",(c)); \
+         send_bits(s, tree[c].Code, tree[c].Len); }
++ #endif
+  #endif
+  
+  /* ===========================================================================
+diff -acr zlib/zconf.h zlibce/zconf.h
+*** zlib/zconf.h	Mon Mar 11 22:16:01 2002
+--- zlibce/zconf.h	Tue Mar 19 21:10:20 2002
+***************
+*** 96,101 ****
+--- 96,106 ----
+  #  define NEED_DUMMY_RETURN
+  #endif
+  
++ /* Windows CE is not have errno.h file: */
++ #if defined(_WIN32_WCE) && !defined(NO_ERRNO_H)
++ #  define NO_ERRNO_H
++ #endif
++ 
+  
+  /* Maximum value for memLevel in deflateInit2 */
+  #ifndef MAX_MEM_LEVEL
+***************
+*** 162,168 ****
+  
+  /* Compile with -DZLIB_DLL for Windows DLL support */
+  #if defined(ZLIB_DLL)
+! #  if defined(_WINDOWS) || defined(WINDOWS)
+  #    ifdef FAR
+  #      undef FAR
+  #    endif
+--- 167,173 ----
+  
+  /* Compile with -DZLIB_DLL for Windows DLL support */
+  #if defined(ZLIB_DLL)
+! #  if defined(_WINDOWS) || defined(WINDOWS) || defined(_WIN32_WCE)
+  #    ifdef FAR
+  #      undef FAR
+  #    endif
+diff -acr zlib/zutil.c zlibce/zutil.c
+*** zlib/zutil.c	Mon Mar 11 22:16:01 2002
+--- zlibce/zutil.c	Tue Mar 19 21:10:58 2002
+***************
+*** 32,37 ****
+--- 32,40 ----
+  }
+  
+  #ifdef DEBUG
++ #ifdef _WIN32_WCE
++ /* Windows CE is not support DEBUG version's zlib */
++ #else
+  
+  #  ifndef verbose
+  #    define verbose 0
+***************
+*** 45,50 ****
+--- 48,54 ----
+      exit(1);
+  }
+  #endif
++ #endif
+  
+  /* exported to allow conversion of error code to string for compress() and
+   * uncompress()
+***************
+*** 211,217 ****
+--- 215,225 ----
+      unsigned size;
+  {
+      if (opaque) items += size - size; /* make compiler happy */
++ #ifdef _WIN32_WCE
++     return (voidpf)malloc(items * size);
++ #else
+      return (voidpf)calloc(items, size);
++ #endif
+  }
+  
+  void  zcfree (opaque, ptr)
+diff -acr zlib/zutil.h zlibce/zutil.h
+*** zlib/zutil.h	Mon Mar 11 22:16:01 2002
+--- zlibce/zutil.h	Tue Mar 19 21:11:36 2002
+***************
+*** 16,22 ****
+--- 16,26 ----
+  #include "zlib.h"
+  
+  #ifdef STDC
++ #ifdef _WIN32_WCE
++ #  include <malloc.h>
++ #else
+  #  include <stddef.h>
++ #endif
+  #  include <string.h>
+  #  include <stdlib.h>
+  #endif
+***************
+*** 188,193 ****
+--- 192,206 ----
+  
+  /* Diagnostic functions */
+  #ifdef DEBUG
++ #ifdef _WIN32_WCE
++ /* Windows CE is not support DEBUG version's zlib */
++ #  define Assert(cond,msg)
++ #  define Trace(x)
++ #  define Tracev(x)
++ #  define Tracevv(x)
++ #  define Tracec(c,x)
++ #  define Tracecv(c,x)
++ #else
+  #  include <stdio.h>
+     extern int z_verbose;
+     extern void z_error    OF((char *m));
+***************
+*** 197,202 ****
+--- 210,216 ----
+  #  define Tracevv(x) {if (z_verbose>1) fprintf x ;}
+  #  define Tracec(c,x) {if (z_verbose>0 && (c)) fprintf x ;}
+  #  define Tracecv(c,x) {if (z_verbose>1 && (c)) fprintf x ;}
++ #endif
+  #else
+  #  define Assert(cond,msg)
+  #  define Trace(x)
