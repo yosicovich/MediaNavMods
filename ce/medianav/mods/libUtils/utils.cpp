@@ -3,6 +3,7 @@
 #include <cctype>
 #include <algorithm>
 #include <cassert>
+#include <exception>
 #include <stdarg.h>
 
 
@@ -190,40 +191,9 @@ void toUpper(std::wstring& str)
 }
 
 SystemWideUniqueInstance::SystemWideUniqueInstance(const std::wstring& name)
-    :isUnique_(false)
+:lock_(name.c_str())
+,isUnique_(lock_.WaitLock(0))
 {
-    hMutex_ = CreateMutex(NULL, FALSE, name.c_str());
-    
-    if(hMutex_ == NULL)
-    {
-        logPrintf(L"Unable to CREATE mutex: name %s\r\n", name.c_str());
-        return;
-    }
-    if(WaitForSingleObject(hMutex_, 0) != WAIT_OBJECT_0)
-    {
-        if(!CloseHandle(hMutex_))
-        {
-            logPrintf(L"Unable to CLOSE mutex: name %s\r\n", name.c_str());
-        }
-        hMutex_ = NULL;
-        return;
-    }
-    isUnique_ = true;
-}
-
-SystemWideUniqueInstance::~SystemWideUniqueInstance()
-{
-    if(hMutex_ != NULL )
-    {
-        if(!ReleaseMutex(hMutex_))
-        {
-            logPrintf(L"Unable to RELEASE mutex\r\n");
-        }
-        if(!CloseHandle(hMutex_))
-        {
-            logPrintf(L"Unable to CLOSE mutex\r\n");
-        }
-    }
 }
 
 bool SystemWideUniqueInstance::isUnique()
@@ -244,7 +214,7 @@ void FileLogger::writeLog(const wchar_t* fmt, va_list args)
     SYSTEMTIME lt;
     GetLocalTime(&lt);
 
-    CLockHolder lock(m_lock);
+    CLockHolder<CLock> lock(m_lock);
     if(!m_file)
     {
         m_file = _wfopen(m_fileName.c_str(), L"ab");
@@ -330,5 +300,39 @@ bool checkRectCompleteCovered(HWND hWnd, RECT rect, const std::set<HWND>& skipWi
     DeleteObject(selfRgn);
     return rgnType == NULLREGION;
 }
+
+// CSharedLock
+CSharedLock::CSharedLock(const wchar_t* name)
+:m_hMutex(NULL)
+{
+    m_hMutex = CreateMutex(NULL, FALSE, name);
+
+    if(m_hMutex == NULL)
+    {
+        throw std::exception("Unable to CREATE mutex");
+    }
+}
+
+CSharedLock::~CSharedLock()
+{
+    Unlock();
+    CloseHandle(m_hMutex);
+}
+
+void CSharedLock::Lock()
+{
+    WaitLock(INFINITE);
+}
+
+bool CSharedLock::WaitLock(DWORD timeoutMs)
+{
+    return WaitForSingleObject(m_hMutex, timeoutMs) == WAIT_OBJECT_0;
+}
+
+void CSharedLock::Unlock()
+{
+    ReleaseMutex(m_hMutex);
+}
+
 }; //namespace Utils
 

@@ -16,3 +16,38 @@ bool IpcPostMsg(int src, int dst, int cmd, int extraSize/* max 4*/, const void* 
 {
     return false;
 }
+
+IpcMsg* IpcGetMsg(IpcMsg* ipcMsg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    return ipcMsg;
+}
+
+hShmMem MSHM_Dll_CreateShmClassObj()
+{
+    return NULL;
+}
+
+void MSHM_Dll_DestroyShmClassObj(hShmMem hHandle)
+{
+
+}
+
+void MSHM_Dll_Write(hShmMem hHandle, const void* pBuffer, DWORD writePos, DWORD size)
+{
+
+}
+
+void MSHM_Dll_Read(hShmMem hHandle, void* pBuffer, DWORD readPos, DWORD size)
+{
+
+}
+
+bool MSHM_Dll_MakeMappingReadWrite(hShmMem hHandle, const wchar_t* sName, DWORD areaSize, HANDLE hFile)
+{
+    return false;
+}
+
+bool MSHM_Dll_MakeMappingReadOnly(hShmMem hHandle, const wchar_t* sName, HANDLE hFile)
+{
+    return false;
+}

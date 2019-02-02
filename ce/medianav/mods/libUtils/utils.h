@@ -32,17 +32,6 @@ namespace Utils
         static std::vector<std::wstring> getSubKeys(HKEY hRootKey, const std::wstring& subKey);
     };
 
-    class SystemWideUniqueInstance
-    {
-    public:
-        SystemWideUniqueInstance(const std::wstring& name);
-        virtual ~SystemWideUniqueInstance();
-        bool isUnique();
-    private:
-        HANDLE hMutex_;
-        bool isUnique_;
-    };
-
     class CLock
     {
     public:
@@ -72,7 +61,23 @@ namespace Utils
         CRITICAL_SECTION m_CritSec;
     };
 
-    class CLockHolder
+    class CSharedLock
+    {
+    public:
+        CSharedLock(const wchar_t* name) ;
+        ~CSharedLock() ;
+
+        void Lock() ;
+        bool WaitLock(DWORD timeoutMs);
+        void Unlock();
+    private:
+        CSharedLock(const CSharedLock &refLock);
+        CSharedLock &operator=(const CSharedLock &refLock);
+
+        HANDLE m_hMutex;
+    };
+
+    template <typename CLock> class CLockHolder
     {
     public:
         CLockHolder(CLock& lock)
@@ -91,6 +96,16 @@ namespace Utils
         CLockHolder &operator=(const CLockHolder &refLockHolder);
 
         CLock& m_lock;
+    };
+
+    class SystemWideUniqueInstance
+    {
+    public:
+        SystemWideUniqueInstance(const std::wstring& name);
+        bool isUnique();
+    private:
+        CSharedLock lock_;
+        bool isUnique_;
     };
 
     class FileLogger

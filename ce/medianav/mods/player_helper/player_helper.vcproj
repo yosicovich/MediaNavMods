@@ -102,7 +102,7 @@
 				ForceDirty="-1"
 				RemoteDirectory=""
 				RegisterOutput="0"
-				AdditionalFiles="modstest.exe|$(SolutionDir)\$(PlatformName)\$(ConfigurationName)|%CSIDL_PROGRAM_FILES%\player_helper|0"
+				AdditionalFiles="modstest.exe|$(SolutionDir)\$(PlatformName)\$(ConfigurationName)|\MD\vtest|0"
 			/>
 			<DebuggerTool
 			/>

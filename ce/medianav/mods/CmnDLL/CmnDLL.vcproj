@@ -97,7 +97,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="\MD\"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>

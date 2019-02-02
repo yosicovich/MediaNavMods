@@ -4,3 +4,10 @@ EXPORTS
         DbgSetDebugLevel @10
         DbgDebugPrint @2
         IpcPostMsg @16
+        IpcGetMsg @12
+        MSHM_Dll_CreateShmClassObj @30
+        MSHM_Dll_DestroyShmClassObj @31
+        MSHM_Dll_MakeMappingReadOnly @32
+        MSHM_Dll_MakeMappingReadWrite @33
+        MSHM_Dll_Read @34
+        MSHM_Dll_Write @35
