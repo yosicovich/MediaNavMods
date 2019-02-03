@@ -199,7 +199,9 @@ bool getTags(USBPlayerStatus& info)
     TagLib::String filePath(info.m_path);
     filePath += info.m_fileName;
 
-    readFileInfo(filePath.toCWString(), info);
+    if(!readFileInfo(filePath.toCWString(), info))
+        return false;
+
     // Cache info
     g_cachedInfo = info;
     return true;
