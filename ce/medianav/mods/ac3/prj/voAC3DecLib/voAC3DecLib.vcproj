@@ -112,6 +112,7 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="../../inc;../../glue/Include"
 				PreprocessorDefinitions="_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
+				EnableFunctionLevelLinking="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -246,9 +247,12 @@
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
 				Optimization="3"
+				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="../../inc;../../glue/Include"
 				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
+				EnableFunctionLevelLinking="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

@@ -42,12 +42,11 @@
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\player_helper;..\libUtils"
-				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;_DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;DEBUG;_WINDOWS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;STANDARDSHELL_UI_MODEL"
+				AdditionalIncludeDirectories="..\player_helper;..\libUtils;..\CmnDLL;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\toolkit&quot;"
+				PreprocessorDefinitions="TAGLIB_STATIC;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;DEBUG;_WINDOWS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;STANDARDSHELL_UI_MODEL"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
 				TreatWChar_tAsBuiltInType="false"
-				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
 			/>
@@ -66,9 +65,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,6.00 /machine:MIPS"
-				AdditionalDependencies="toolhelp.lib"
+				AdditionalDependencies="toolhelp.lib zlibce.lib taglib.lib"
 				OutputFile="$(OutDir)/modstest.exe"
 				LinkIncremental="2"
+				AdditionalLibraryDirectories="$(SolutionDir)\..\thirdparty\$(PlatformName)\$(ConfigurationName)"
 				DelayLoadDLLs="$(NOINHERIT)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/modstest.pdb"
@@ -97,9 +97,9 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="\MD\vtest"
 				RegisterOutput="0"
-				AdditionalFiles="player_helper.dll|$(SolutionDir)\$(PlatformName)\$(ConfigurationName)|%CSIDL_PROGRAM_FILES%\modstest|0"
+				AdditionalFiles="player_helper.dll|$(SolutionDir)\$(PlatformName)\$(ConfigurationName)|\MD\vtest|0;CmnDLL.dll|C:\dev\workspace|\MD\vtest|0"
 			/>
 			<DebuggerTool
 			/>
@@ -131,11 +131,12 @@
 				ExecutionBucket="7"
 				Optimization="2"
 				FavorSizeOrSpeed="2"
-				AdditionalIncludeDirectories="..\player_helper;..\libUtils"
+				WholeProgramOptimization="true"
+				AdditionalIncludeDirectories="..\player_helper;..\libUtils;..\CmnDLL;$(SolutionDir)\..\thirdparty\"
 				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_WINDOWS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;STANDARDSHELL_UI_MODEL"
 				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="true"
 				TreatWChar_tAsBuiltInType="false"
-				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				DebugInformationFormat="3"
 			/>
@@ -165,6 +166,7 @@
 				StackCommitSize="4096"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				LinkTimeCodeGeneration="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>
