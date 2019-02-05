@@ -141,10 +141,13 @@ static void startOnce()
 
     // 2. Load from ini
     const CSimpleIniW::TKeyVal* startIni = g_iniFile.GetSection(TEXT("RunOnStart"));
-    for(CSimpleIniW::TKeyVal::const_iterator it = startIni->begin(); it != startIni->end(); ++it)
+    if(startIni)
     {
-        startPorcesses.push_back(StartProcessEntry(it->first.pItem, it->second));
-        debugPrintf(DBG, TEXT("startOnce(): Add from ini : process %s, with command line - %s\r\n"), it->first.pItem, it->second);
+        for(CSimpleIniW::TKeyVal::const_iterator it = startIni->begin(); it != startIni->end(); ++it)
+        {
+            startPorcesses.push_back(StartProcessEntry(it->first.pItem, it->second));
+            debugPrintf(DBG, TEXT("startOnce(): Add from ini : process %s, with command line - %s\r\n"), it->first.pItem, it->second);
+        }
     }
 
     // Run
@@ -261,6 +264,7 @@ BOOL CALLBACK EnumWindowsProc(_In_ HWND   hwnd, _In_ LPARAM lParam)
 PLAYER_HELPER_API void test()
 {
     globalEnvInit();
+    startOnce();
     fixCodecsPath();
     return;
     EnumWindows(EnumWindowsProc, 0);
