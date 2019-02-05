@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="voAC3DecTest"
-	ProjectGUID="{DD1BD8D1-5851-4612-ADD3-70F9949F1586}"
-	RootNamespace="voAC3DecTest"
+	Name="voAC3DecLib"
+	ProjectGUID="{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}"
+	RootNamespace="voAC3DecLib"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -23,7 +23,7 @@
 			Name="Debug|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			CharacterSet="1"
 			>
 			<Tool
@@ -44,8 +44,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../glue/Include;../../../glue/Common"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_UNICODE;UNICODE"
+				AdditionalIncludeDirectories="../../inc;../../glue/Include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_UNICODE;UNICODE"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
 				BufferSecurityCheck="false"
@@ -66,24 +66,11 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/voAC3DecTest.exe"
-				LinkIncremental="2"
-				DelayLoadDLLs="$(NOINHERIT)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/voAC3DecTest.pdb"
-				SubSystem="0"
-				StackReserveSize="65536"
-				StackCommitSize="4096"
-				EntryPointSymbol=""
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)/voAC3DecLib.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -95,17 +82,14 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|DbAu13xx (MIPSII)"
-			OutputDirectory="$(SolutionDir)DbAu13xx (MIPSII)\$(ConfigurationName)"
-			IntermediateDirectory="DbAu13xx (MIPSII)\$(ConfigurationName)"
-			ConfigurationType="1"
+			OutputDirectory="$(SolutionDir)\$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="4"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -126,8 +110,8 @@
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../glue/Include;../../../glue/Common"
-				PreprocessorDefinitions="_CONSOLE;DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
+				AdditionalIncludeDirectories="../../inc;../../glue/Include"
+				PreprocessorDefinitions="_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
 				EnableFunctionLevelLinking="true"
 				DebugInformationFormat="3"
 			/>
@@ -141,12 +125,8 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
+				Name="VCLibrarianTool"
 				AdditionalOptions=" /subsystem:windowsce,6.00 /machine:MIPS"
-				AdditionalDependencies="&quot;$(SolutionDir)DbAu13xx (MIPSII)\$(ConfigurationName)\voAC3DecLib.lib&quot;"
-				GenerateDebugInformation="true"
-				SubSystem="8"
-				EntryPointSymbol="mainWCRTStartup"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -179,8 +159,9 @@
 			Name="Release|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			CharacterSet="1"
+			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -200,13 +181,13 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories="../../../glue/Include;../../../glue/Common"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_UNICODE;UNICODE"
+				AdditionalIncludeDirectories="../../inc;../../glue/Include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_UNICODE;UNICODE"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				DebugInformationFormat="3"
+				DebugInformationFormat="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -221,26 +202,12 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/voAC3DecTest.exe"
-				LinkIncremental="1"
-				DelayLoadDLLs="$(NOINHERIT)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/voAC3DecTest.pdb"
-				SubSystem="0"
-				StackReserveSize="65536"
-				StackCommitSize="4096"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				EntryPointSymbol=""
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
+				Name="VCLibrarianTool"
+				OutputFile="..\..\..\..\..\..\Bin\WinPC\yyAC3DecLib.lib"
+				AdditionalLibraryDirectories=""
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -252,17 +219,14 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|DbAu13xx (MIPSII)"
-			OutputDirectory="$(SolutionDir)DbAu13xx (MIPSII)\$(ConfigurationName)"
-			IntermediateDirectory="DbAu13xx (MIPSII)\$(ConfigurationName)"
-			ConfigurationType="1"
+			OutputDirectory="$(SolutionDir)\$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="4"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -286,8 +250,8 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="../../../glue/Include;../../../glue/Common"
-				PreprocessorDefinitions="_CONSOLE;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;_CONSOLE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
+				AdditionalIncludeDirectories="../../inc;../../glue/Include"
+				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
 				EnableFunctionLevelLinking="true"
 			/>
 			<Tool
@@ -300,10 +264,8 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
+				Name="VCLibrarianTool"
 				AdditionalOptions=" /subsystem:windowsce,6.00 /machine:MIPS"
-				LinkTimeCodeGeneration="1"
-				EntryPointSymbol="mainWCRTStartup"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -342,19 +304,211 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\glue\Common\cmnMemory.c"
+				RelativePath="..\..\src\c_src\ac3_dec.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\test\voAC3_D_SAMPLE.c"
+				RelativePath="..\..\src\c_src\ac3_dec_init.c"
 				>
 			</File>
+			<File
+				RelativePath="..\..\src\c_src\ac3_info.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\ac3d_tab.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\bsi_d.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\cifft.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\crc_calc.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\crc_tab.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\dolbytab.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\downmix.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\dsp_misc.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\idctsc.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\mants_d.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\matrix_d.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\mem_align.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\stream.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\unpmants.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\upk_subs.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\voAC3Dec.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\window_d.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\c_src\xdcall.c"
+				>
+			</File>
+			<Filter
+				Name="asm"
+				>
+				<File
+					RelativePath="..\..\src\asm\armv6\cifft_asm.s"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\asm\armv6\crc_calc_asm.s"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\asm\armv6\downmix_asm.s"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\asm\armv6\idctsc_asm.s"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\asm\armv6\upk_subs_asm.s"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\asm\armv6\window_d_asm.s"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath="..\..\inc\ac3_dec_init.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\ac3d_com.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\ac3d_equ.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\ac3d_fix.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\ac3d_sim.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\ac3d_sip.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\ac3i_sip.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\crc_com.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\crc_equ.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\crc_sim.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\crc_sip.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\dolbycom.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\dolbyequ.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\dolbysim.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\dolbysip.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\mem_align.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\stream.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\usr_com.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\usr_equ.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\usr_sim.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\vo_ac3_ghdr.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\vo_ac3_var.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
@@ -362,6 +516,10 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
+		<File
+			RelativePath=".\ReadMe.txt"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="a52dec"
-	ProjectGUID="{CF79F719-346D-4638-BE7F-5F18D70A2CC1}"
-	RootNamespace="a52dec"
+	Name="liba52"
+	ProjectGUID="{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}"
+	RootNamespace="liba52"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>
@@ -22,7 +22,7 @@
 			Name="Release|Win32"
 			OutputDirectory=".\Release"
 			IntermediateDirectory=".\Release"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -42,19 +42,17 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\Release/a52dec.tlb"
-				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories=".,../include,../src"
-				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;NDEBUG;WIN32;_CONSOLE;HAVE_CONFIG_H"
+				AdditionalIncludeDirectories=".,../include"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_LIB;ARCH_X86"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/a52dec.pch"
+				PrecompiledHeaderFile=".\Release/liba52.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
@@ -73,22 +71,12 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib"
-				OutputFile=".\Release/a52dec.exe"
-				LinkIncremental="1"
+				Name="VCLibrarianTool"
+				OutputFile=".\Release\liba52.lib"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/a52dec.pdb"
-				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -96,13 +84,10 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/a52dec.bsc"
+				OutputFile=".\Release/liba52.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -110,13 +95,14 @@
 		</Configuration>
 		<Configuration
 			Name="Release|DbAu13xx (MIPSII)"
-			OutputDirectory="DbAu13xx (MIPSII)\$(ConfigurationName)"
-			IntermediateDirectory="DbAu13xx (MIPSII)\$(ConfigurationName)"
-			ConfigurationType="1"
+			OutputDirectory="$(SolutionDir)\$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
+			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -133,8 +119,6 @@
 			<Tool
 				Name="VCMIDLTool"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/a52dec.tlb"
-				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
@@ -142,16 +126,12 @@
 				Optimization="3"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
-				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories=".,../include,../src"
-				PreprocessorDefinitions="_CONSOLE;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;_CONSOLE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;HAVE_CONFIG_H"
+				AdditionalIncludeDirectories=".,../include"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;HAVE_CONFIG_H"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/a52dec.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				PrecompiledHeaderFile=".\Release/liba52.pch"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 			/>
@@ -167,17 +147,9 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				OutputFile=".\Release/a52dec.exe"
-				LinkIncremental="1"
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)/liba52.lib"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/a52dec.pdb"
-				SubSystem="8"
-				LinkTimeCodeGeneration="1"
-				EntryPointSymbol="mainWCRTStartup"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -188,7 +160,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/a52dec.bsc"
+				OutputFile=".\Release/liba52.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -212,7 +184,7 @@
 			Name="Debug|Win32"
 			OutputDirectory=".\Debug"
 			IntermediateDirectory=".\Debug"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -232,20 +204,19 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\Debug/a52dec.tlb"
-				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".,../include,../src"
-				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;_DEBUG;WIN32;_CONSOLE;HAVE_CONFIG_H"
+				AdditionalIncludeDirectories=".,../include"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_LIB;ARCH_X86"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
-				PrecompiledHeaderFile=".\Debug/a52dec.pch"
+				PrecompiledHeaderFile=".\Debug/liba52.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
+				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="4"
 			/>
@@ -261,23 +232,12 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib"
-				OutputFile=".\Debug/a52dec.exe"
-				LinkIncremental="2"
+				Name="VCLibrarianTool"
+				OutputFile=".\Debug\liba52.lib"
 				SuppressStartupBanner="true"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/a52dec.pdb"
-				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -285,13 +245,10 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/a52dec.bsc"
+				OutputFile=".\Debug/liba52.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -299,9 +256,9 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|DbAu13xx (MIPSII)"
-			OutputDirectory="DbAu13xx (MIPSII)\$(ConfigurationName)"
-			IntermediateDirectory="DbAu13xx (MIPSII)\$(ConfigurationName)"
-			ConfigurationType="1"
+			OutputDirectory="$(SolutionDir)\$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -322,20 +279,17 @@
 			<Tool
 				Name="VCMIDLTool"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/a52dec.tlb"
-				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
 				Optimization="0"
-				AdditionalIncludeDirectories=".,../include,../src"
-				PreprocessorDefinitions="_CONSOLE;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;_CONSOLE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;HAVE_CONFIG_H"
+				AdditionalIncludeDirectories=".,../include"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
 				RuntimeLibrary="1"
-				PrecompiledHeaderFile=".\Debug/a52dec.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				EnableFunctionLevelLinking="true"
+				PrecompiledHeaderFile=".\Debug/liba52.pch"
+				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
@@ -351,17 +305,9 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				OutputFile=".\Debug/a52dec.exe"
-				LinkIncremental="2"
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)/liba52.lib"
 				SuppressStartupBanner="true"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/a52dec.pdb"
-				SubSystem="8"
-				EntryPointSymbol="mainWCRTStartup"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -372,7 +318,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/a52dec.bsc"
+				OutputFile=".\Debug/liba52.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -401,7 +347,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\src\a52dec.c"
+				RelativePath="..\liba52\bit_allocate.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -441,7 +387,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\getopt.c"
+				RelativePath="..\liba52\bitstream.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -481,7 +427,99 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\gettimeofday.c"
+				RelativePath="..\liba52\cpu_accel.c"
+				>
+			</File>
+			<File
+				RelativePath="..\liba52\cpu_state.c"
+				>
+			</File>
+			<File
+				RelativePath="..\liba52\crc.c"
+				>
+			</File>
+			<File
+				RelativePath="..\liba52\downmix.c"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|DbAu13xx (MIPSII)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|DbAu13xx (MIPSII)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\liba52\imdct.c"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|DbAu13xx (MIPSII)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|DbAu13xx (MIPSII)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\liba52\parse.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -526,14 +564,21 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="..\src\getopt.h"
+				RelativePath="..\include\a52.h"
 				>
 			</File>
-		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
-			>
+			<File
+				RelativePath="..\liba52\a52_internal.h"
+				>
+			</File>
+			<File
+				RelativePath="..\liba52\bitstream.h"
+				>
+			</File>
+			<File
+				RelativePath="..\liba52\tables.h"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>
