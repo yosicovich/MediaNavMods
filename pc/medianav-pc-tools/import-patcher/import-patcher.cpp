@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
     //patchRVC(std::string(argv[1]) + "\\RVC.dll", std::string(argv[2]) + "\\RVC.dll");
     patchMicomManager(std::string(argv[1]) + "\\MicomManager.exe", std::string(argv[2]) + "\\MicomManager.exe");
 
-    printf("Successfully patched!");
+    printf("Successfully patched!\r\n");
     return 0;
 
     PEFile pe(argv[1]);
@@ -73,22 +73,22 @@ void patchAppMain(const std::string& srcFile, const std::string& dstFile)
     {
         {
             MIPSTableCallWithPadding call(0x0001D398, 0x0001D3BC, pe.getImportFunctionVA("player_helper.dll", "extCheckMediaFilesExtList"));
-            pe.patchSection(0x0001D398, call.getData(), call.getDataSize());
+            pe.patch(call);
         }
 
         {
             MIPSTableCallWithPadding call(0x00021BF0, 0x00021C14, pe.getImportFunctionVA("player_helper.dll", "extCheckMediaFilesExtList"));
-            pe.patchSection(0x00021BF0, call.getData(), call.getDataSize());
+            pe.patch(call);
         }
 
         {
             MIPSTableCallWithPadding call(0x000492A0, 0x000492CC, pe.getImportFunctionVA("player_helper.dll", "extCheckMediaFilesExtList"));
-            pe.patchSection(0x000492A0, call.getData(), call.getDataSize());
+            pe.patch(call);
         }
 
         {
             MIPSTableCallWithPadding call(0x0004C01C, 0x0004C040, pe.getImportFunctionVA("player_helper.dll", "extCheckMediaFilesExtList"));
-            pe.patchSection(0x0004C01C, call.getData(), call.getDataSize());
+            pe.patch(call);
         }
     }
 
@@ -105,7 +105,22 @@ void patchAppMain(const std::string& srcFile, const std::string& dstFile)
         pe.patchSection(0x00104B0B, &patch, sizeof(BYTE));
     }
 
+    // GUI test
+ /*   {
+        BYTE patch = 0xB4;
+        pe.patchSection(0x22860, &patch, sizeof(BYTE));
+        pe.patchSection(0x00023176, &patch, sizeof(BYTE));
+        WORD wPatch = 550;
+        pe.patchSection(0x000228F4, &patch, sizeof(WORD));
+        
 
+    }*/
+    // TEST2
+    {
+//        BYTE patch = 0x16;
+//        pe.patchSection(0x0012F80B, &patch, sizeof(BYTE));
+
+    }
     pe.saveToFile(dstFile.c_str());
 }
 
@@ -127,7 +142,7 @@ void patchMgrUsb(const std::string& srcFile, const std::string& dstFile)
     {
         {
             MIPSTableCallWithPadding call(0x000164C0, 0x000164CC, pe.getImportFunctionVA("player_helper.dll", "extCheckMediaFileMatch"));
-            pe.patchSection(0x000164C0, call.getData(), call.getDataSize());
+            pe.patch(call);
 
             DWORD cmd = 0x02002025; // move $a0, $s0
             pe.patchSection(0x000164CC, &cmd, sizeof(DWORD));
@@ -135,22 +150,39 @@ void patchMgrUsb(const std::string& srcFile, const std::string& dstFile)
 
         {
             MIPSTableCallWithPadding call(0x00013C38, 0x00013C48, pe.getImportFunctionVA("player_helper.dll", "extCheckMediaFileMatch2"));
-            pe.patchSection(0x00013C38, call.getData(), call.getDataSize());
+            pe.patch(call);
 
             DWORD cmd = 0x27A40038; // addiu   $a0, $sp, 0x270+var_238
             pe.patchSection(0x00013C48, &cmd, sizeof(DWORD));
         }
     }
 
-    /*
-    // Enable full debug output
+    
     {
+
+        // Fix faulty device removal detection on EC_COMPELTE param2 not null basis
+        MIPSNop nopFill(0x00011C5C, 0x00011C64);
+        pe.patch(nopFill);
+    }
+
+
+    // Enable full debug output
+    /*{
         BYTE patch = 0x00;
         pe.patchSection(0x00023D4A, &patch, sizeof(BYTE));
         pe.patchSection(0x000235C6, &patch, sizeof(BYTE));
 
+    }*/
+    
+    // Redirect messages to USBTags
+    {
+        wchar_t* usbTags = L"MgrTag\0";
+        // Patch IpcPostMsg table
+		pe.patchSection(0x0002F48C, usbTags, 7 * 2);
+		// Path SendMessageTimeout
+		pe.patchSection(0x0002A5FC, usbTags, 7 * 2);
+
     }
-    */
     pe.saveToFile(dstFile.c_str());
 }
 

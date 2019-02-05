@@ -16,6 +16,7 @@
 #include "PEFile.h"
 #include <math.h>
 #include <algorithm>
+#include <utility>
 //==============================================================================
 #define DEBUG_ENABLED true;
 #ifdef DEBUG_ENABLED
@@ -49,6 +50,8 @@ void PEFile::init() {
 	peMemory = NULL;
     newImports.clear();
     importTable.clear();
+    relocationTable.clear();
+    rebuildRelocations = false;
     memset(sections, 0, sizeof(sections));
     memset(sectionTable, 0, sizeof(sectionTable));
 }
@@ -203,13 +206,73 @@ bool PEFile::readImportTable() {
 	return true;
 }
 //==============================================================================
+bool PEFile::readRelocationTable() {
+    DWORD tableRVA = peHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress;
+    DWORD tableOffset = rvaToOffset(tableRVA);
+    DWORD tableEndOffset = peHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size + tableOffset;
+
+    if (tableOffset == 0) {
+        return false;
+    }
+
+    relocationTable.clear();
+
+    while (tableOffset < tableEndOffset)
+    {
+        
+        PIMAGE_BASE_RELOCATION pSegmentHeader =(PIMAGE_BASE_RELOCATION)(peMemory + tableOffset);
+        DWORD segmentVA = rvaToVA(pSegmentHeader->VirtualAddress);
+        RelocationsSegmentData& segment = relocationTable[segmentVA] ;
+        int itemsCount = (pSegmentHeader->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(WORD);
+
+        WORD *pRelocItems = (WORD *)((DWORD)pSegmentHeader + sizeof(IMAGE_BASE_RELOCATION));
+
+        for (int i = 0; i < itemsCount; ++i)
+        { 
+            BYTE relocType = pRelocItems[i] >> cRelocationOffsetBits;
+            if (relocType == IMAGE_REL_BASED_ABSOLUTE)
+                continue; // Skip it.
+            DWORD va = segmentVA + getRelocationSegmentOffset(pRelocItems[i]);
+            //segment.push_back(RelocationRecord(va, relocType));
+            RelocationRecord rec(relocType, &(pRelocItems[i]));
+            std::pair<RelocationsSegmentData::iterator, bool>& pair = segment.insert(std::make_pair(va, rec));
+            if (!pair.second)
+            {
+                printf("Warning!!! Duplicate relocation record %08X, %d - %08X, %d\r\n", pSegmentHeader->VirtualAddress + (pRelocItems[i] & (((WORD)1 << 12) - 1)), (DWORD)relocType, pair.first->first - segmentVA + pSegmentHeader->VirtualAddress, pair.first->second.pRelocType->recType);
+                /*if (pair.first->second.RelocType.recType != relocType)
+                {
+                    if((0//relocType == IMAGE_REL_BASED_HIGH
+                        || relocType == IMAGE_REL_BASED_LOW
+                        || relocType == IMAGE_REL_BASED_HIGHLOW
+                        || relocType == IMAGE_REL_BASED_HIGHADJ
+                        || relocType == IMAGE_REL_BASED_MIPS_JMPADDR
+                        || relocType == IMAGE_REL_BASED_MIPS_JMPADDR16)
+
+                        && (0//pair.first->second == IMAGE_REL_BASED_HIGH
+                        || pair.first->second == IMAGE_REL_BASED_LOW
+                        || pair.first->second == IMAGE_REL_BASED_HIGHLOW
+                        || pair.first->second == IMAGE_REL_BASED_HIGHADJ
+                        || pair.first->second == IMAGE_REL_BASED_MIPS_JMPADDR
+                        || pair.first->second == IMAGE_REL_BASED_MIPS_JMPADDR16))
+                        printf("BAD!!!\r\n");
+                }*/
+            }
+            i += rec.pRelocType->slots - 1;
+        }
+        tableOffset += pSegmentHeader->SizeOfBlock;
+    }
+
+    return true;
+}
+//==============================================================================
 bool PEFile::loadFromFile(const char* filePath) {
 	unloadFile();
 
 	return readFileData(filePath) &&
 		   readHeaders() &&
 		   readBody() &&
-		   readImportTable();
+		   readImportTable()
+           && readRelocationTable();
 }
 //==============================================================================
 bool PEFile::loadFromMemory(char* memoryAddress) {
@@ -225,6 +288,9 @@ bool PEFile::loadFromMemory(char* memoryAddress) {
 bool PEFile::saveToFile(const char* filePath) {
 	commit();
 	buildImportTable();
+    if (!buildRelocationTable())
+        return false;
+
 
 	// create the output file
 	HANDLE fileHandle = CreateFile(filePath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -311,6 +377,69 @@ void PEFile::buildImportTable() {
 	peHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size = sectionTable[index].SizeOfRawData;
 	peHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress = 0;
 	peHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].Size = 0;
+}
+//==============================================================================
+bool PEFile::buildRelocationTable() {
+
+    DWORD tableRVA = peHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress;
+    DWORD tableOffset = rvaToOffset(tableRVA);
+
+    if (tableOffset == 0)
+    {
+        printf("There is no relocation table exists\r\n");
+        return true;
+    }
+
+    /*if(!rebuildRelocations)
+        return true;*/
+
+    // rebuild relocation data
+    size_t newSize = 0;
+    for (auto segment : relocationTable)
+    {
+        size_t segmentSize = sizeof(IMAGE_BASE_RELOCATION);
+        for (auto rec : segment.second)
+        {
+            if (rec.second.pRelocType->isAbsolute())
+                continue; // Skip absolute relocations since theya re useless
+            segmentSize += rec.second.pRelocType->slots * sizeof(WORD);
+        }
+
+        newSize += alignNumber(segmentSize, sizeof(DWORD)); // 32bit alignment
+    }
+
+    if (alignNumber(newSize, peHeaders.OptionalHeader.FileAlignment) > alignNumber(peHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size, peHeaders.OptionalHeader.FileAlignment))
+    {
+        printf("Rebuild relocation data: Update relocations don't fit to original segment and extension is not supported!: newSize %d,  origSize %d\r\n", newSize, peHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size);
+        return false;
+    }
+
+    // Clear
+    memset((void*)(peMemory + tableOffset), 0, alignNumber(peHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size, peHeaders.OptionalHeader.FileAlignment));
+
+    for (auto segment : relocationTable)
+    {
+        PIMAGE_BASE_RELOCATION pSegmentHeader = (PIMAGE_BASE_RELOCATION)(peMemory + tableOffset);
+        pSegmentHeader->VirtualAddress = vaToRVA(segment.first);
+        pSegmentHeader->SizeOfBlock = sizeof(IMAGE_BASE_RELOCATION);
+
+        WORD *pRelocItems = (WORD *)((DWORD)pSegmentHeader + sizeof(IMAGE_BASE_RELOCATION));
+
+        int i = 0;
+        for (auto rec : segment.second)
+        {
+            if (rec.second.pRelocType->isAbsolute())
+                continue; // Skip absolute relocations since theya re useless
+            rec.second.pRelocType->fillSlot(rec.first, pRelocItems);
+            pRelocItems += rec.second.pRelocType->slots;
+            pSegmentHeader->SizeOfBlock += rec.second.pRelocType->slots * sizeof(WORD);
+        }
+
+        pSegmentHeader->SizeOfBlock = alignNumber(pSegmentHeader->SizeOfBlock, sizeof(DWORD));
+        tableOffset += pSegmentHeader->SizeOfBlock;
+    }
+
+    return true;
 }
 //==============================================================================
 char* PEFile::buildNewImports(DWORD baseRVA) {
@@ -441,12 +570,14 @@ void PEFile::addImport(const std::string& dllName, std::vector<std::string> func
 }
 //==============================================================================
 DWORD PEFile::alignNumber(DWORD number, DWORD alignment) {
-	return (DWORD)(ceil(number / (alignment + 0.0)) * alignment);
+    if ((number & (alignment - 1)) == 0)
+        return number;
+    return (number & ~(alignment - 1)) + alignment;
 }
 
 DWORD PEFile::vaToOffset(DWORD va)
 {
-    return rvaToOffset(va - peHeaders.OptionalHeader.ImageBase);
+    return rvaToOffset(vaToRVA(va));
 }
 
 //==============================================================================
@@ -469,6 +600,16 @@ DWORD PEFile::offsetToRVA(DWORD offset) {
 	}
 	return 0;
 }
+DWORD PEFile::rvaToVA(DWORD rva)
+{
+    return rva + peHeaders.OptionalHeader.ImageBase;
+}
+
+DWORD PEFile::vaToRVA(DWORD va)
+{
+    return va - peHeaders.OptionalHeader.ImageBase;
+}
+
 //==============================================================================
 void PEFile::commit() {
 	fixReservedData();
@@ -558,6 +699,39 @@ bool PEFile::patchSection(DWORD va, const void* patchBuf, size_t size)
     if (offset == 0)
         return false;
     memcpy(&peMemory[offset], patchBuf, size);
+    return true;
+}
+
+bool PEFile::patch(const PatchCase& patchCase)
+{
+    if (!patchSection(patchCase.getApplyVA(), patchCase.getData(), patchCase.getDataSize()))
+        return false;
+
+    const NewRelocationsData& newRelocations = patchCase.getNewRelocations();
+    const DeleteRelocationsData& deletedRelocations = patchCase.getDeleteRelocations();
+    rebuildRelocations |= (newRelocations.size() > 0) | (deletedRelocations.size() > 0);
+    
+    // Process deleted records
+    for (const auto VA : deletedRelocations)
+    {
+        DWORD segmentBaseVA = getRelocationSegmentBase(VA);
+        RelocationsSegmentData& segment = relocationTable[segmentBaseVA];
+        segment.erase(VA);
+    }
+
+    // Process new records
+    for (const auto newReloc : newRelocations)
+    {
+        DWORD segmentBaseVA = getRelocationSegmentBase(newReloc.first);
+        RelocationsSegmentData& segment = relocationTable[segmentBaseVA];
+        auto pair = segment.insert(newReloc);
+        if (!pair.second)
+        {
+            printf("Apply new relocations: Relocation for the same VA already exists!!! VA %08X\r\n", newReloc.first);
+            return false;
+        }
+    }
+
     return true;
 }
 
