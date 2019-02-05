@@ -8,6 +8,11 @@ CAudioDecodeFilter::CAudioDecodeFilter(TCHAR *name, LPUNKNOWN pUnk, HRESULT* phr
 ,m_frameBufferUsed(0)
 ,m_frameBufferSize(0)
 ,m_outBufferAlignment(1)
+,m_outJoinCount(1)
+,m_outJoinCur(0)
+,m_joinBufferUsed(0)
+,m_joinBufferSize(0)
+,m_doTimeSet(false)
 #if ADECODE_PERF > 0
 ,m_maxOutputBufUsed(0)
 ,m_dbgMaxFrameProcessTime(0)
@@ -47,17 +52,50 @@ HRESULT CAudioDecodeFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
     DWORD inDataSize;
     pIn->GetPointer(&inData);
     inDataSize = pIn->GetActualDataLength();
+
+    pOut->GetPointer(&buffersState.outBuf);
+    buffersState.outBufSize = pOut->GetSize();
+
     bool discontinuity = false;
     // Reset frame buffer in case of seeking.
     if(pIn->IsDiscontinuity() == S_OK)
     {
         filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() discontinuity detected! Reset frame buffer.\r\n");
         m_frameBufferUsed = 0;
+        m_outJoinCur = 0;
         discontinuity = true;
     }
 
-    pOut->GetPointer(&buffersState.outBuf);
-    buffersState.outBufSize = pOut->GetSize();
+    if(m_outJoinCur == 0)
+    {
+        REFERENCE_TIME tStop;
+        m_doTimeSet = true;
+        if(pOut->GetTime(&m_joinStart, &tStop) != S_OK)
+        {
+            filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::Transform() pOut->GetTime() failed!\r\n");
+            m_doTimeSet = false;
+        }
+        m_joinBufferUsed = 0;
+    }
+
+    if(m_outJoinCur == m_outJoinCount - 1) // The last one.
+    {
+        if(m_joinBufferUsed)
+        {
+            if(buffersState.outBufSize < m_joinBufferUsed)
+            {
+                filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() buffersState.outBufSize < m_joinBufferUsed - mis configuration?\r\n");
+                return E_UNEXPECTED;
+            }
+            memcpy(buffersState.outBuf, *m_joinBuffer, m_joinBufferUsed);
+            buffersState.outBuf += m_joinBufferUsed;
+            buffersState.outBufSize -= m_joinBufferUsed;
+        }
+    }else
+    {
+        buffersState.outBuf = *m_joinBuffer + m_joinBufferUsed;
+        buffersState.outBufSize = m_joinBufferSize - m_joinBufferUsed;
+    }
 
     while(inDataSize)
     {
@@ -131,9 +169,10 @@ HRESULT CAudioDecodeFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
 
         if(frameProcessResult == E_UNEXPECTED)
         {
-            // Something definitely went REALLY wrong! Let the system known.
+            // Something definitely went REALLY wrong! Let the system know.
             filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() decodeOneFrame() == E_UNEXPECTED. Let the system known and expect no further calls.\r\n");
             m_frameBufferUsed = 0;
+            m_outJoinCur = 0;
             return E_UNEXPECTED;
         }
 
@@ -168,6 +207,12 @@ HRESULT CAudioDecodeFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
         if(frameProcessResult == VFW_E_BUFFER_OVERFLOW)
         {
             filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() decodeOneFrame() == VFW_E_BUFFER_OVERFLOW. No more output space!\r\n");
+            if(m_outJoinCur != m_outJoinCount - 1)
+            {
+                // Discard all the out data
+                m_outJoinCur = 0;
+                return S_FALSE; // Force to skip the sample.
+            }
             break;
         }else if(frameProcessResult == VFW_E_BUFFER_UNDERFLOW)
         {
@@ -177,20 +222,42 @@ HRESULT CAudioDecodeFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
             }else
             {
                 filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() decodeOneFrame() == VFW_E_BUFFER_UNDERFLOW and no frame buffering is used. STOP!!!\r\n");
+                m_outJoinCur = 0;
                 return E_UNEXPECTED;
             }
         }
     }
 
-    DWORD usedBuffer = pOut->GetSize() - buffersState.outBufSize;
+    ++m_outJoinCur;
+    if(m_outJoinCur == m_outJoinCount)
+    {
+        m_outJoinCur = 0;
+        DWORD usedBuffer = pOut->GetSize() - buffersState.outBufSize;
 #if ADECODE_PERF > 0
-    if(m_maxOutputBufUsed < usedBuffer)
-        m_maxOutputBufUsed = usedBuffer;
+        if(m_maxOutputBufUsed < usedBuffer)
+            m_maxOutputBufUsed = usedBuffer;
 #endif
-    pOut->SetActualDataLength(usedBuffer);
+        pOut->SetActualDataLength(usedBuffer);
+        if(m_doTimeSet)
+        {
+            REFERENCE_TIME tStart;
+            REFERENCE_TIME tStop;
+            if(pOut->GetTime(&tStart, &tStop) != S_OK)
+            {
+                filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() pOut->GetTime(&tStart, &tStop) failed!\r\n");
+                return E_UNEXPECTED;
+            }
+            pOut->SetTime(&m_joinStart, &tStop);
+        }
+        filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::Transform() return S_OK\r\n");
+        return S_OK;
+    }else
+    {
+        m_joinBufferUsed = m_joinBufferSize - buffersState.outBufSize;
+        filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::Transform() return S_FALSE\r\n");
+        return S_FALSE;
+    }
 
-    filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::Transform() return S_OK\r\n");
-    return S_OK;
 }
 
 HRESULT CAudioDecodeFilter::CheckInputType(const CMediaType *mtIn)
@@ -268,6 +335,12 @@ HRESULT CAudioDecodeFilter::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PR
         return E_UNEXPECTED;
     }
 
+    if(outBufferDesc.joinCount == 0)
+    {
+        filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::DecideBufferSize() outBufferDesc.joinCount == 0 - mis-configuration!!!\r\n");
+        return E_UNEXPECTED;
+    }
+
     size_t bufferSize = outBufferDesc.bufferSize;
 
     // Make buffer frame aligned.
@@ -280,6 +353,22 @@ HRESULT CAudioDecodeFilter::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PR
 
     if( bufferSize % m_outBufferAlignment > 0)
         bufferSize += m_outBufferAlignment - (bufferSize % m_outBufferAlignment);
+
+    m_outJoinCount = outBufferDesc.joinCount;
+    bufferSize *= m_outJoinCount;
+
+    if(m_outJoinCount > 1)
+    {
+        m_joinBuffer = new BYTE[bufferSize];
+        m_joinBufferSize = bufferSize;
+    }else
+    {
+        m_joinBuffer = NULL;
+        m_joinBufferSize = 0;
+    }
+    m_joinBufferUsed = 0;
+    m_outJoinCur = 0;
+    
 
     ASSERT(pAlloc);
     ASSERT(pProperties);
@@ -313,7 +402,7 @@ HRESULT CAudioDecodeFilter::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PR
     {
         return E_FAIL;
     }
-    filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::DecideBufferSize() return S_OK \t\r\n size=%d (requested = %d) \t\r\n count=%d \r\n", Actual.cbBuffer, pProperties->cbBuffer, Actual.cBuffers);
+    filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::DecideBufferSize() return S_OK \t\r\n size=%d (requested = %d with join = %d) \t\r\n count=%d \r\n", Actual.cbBuffer, pProperties->cbBuffer, m_outJoinCount, Actual.cBuffers);
     return S_OK;
 }
 

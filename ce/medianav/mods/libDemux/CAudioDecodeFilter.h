@@ -48,17 +48,20 @@ protected:
         :alignment(0)
         ,buffersCount(0)
         ,bufferSize(0)
+        ,joinCount(1)
         {
         }
-        OutBufferDesc(DWORD alignment, BYTE buffersCount, DWORD bufferSize)
+        OutBufferDesc(DWORD alignment, BYTE buffersCount, DWORD bufferSize, DWORD joinCount = 1)
             :alignment(alignment)
             ,buffersCount(buffersCount)
             ,bufferSize(bufferSize)
+            ,joinCount(joinCount)
         {
         }
         DWORD alignment;
         BYTE  buffersCount;
         DWORD bufferSize;
+        DWORD joinCount;
     };
 
     // Output data
@@ -79,6 +82,16 @@ private:
 
     // Output data
     DWORD m_outBufferAlignment;
+
+    // Output buffering
+    DWORD m_outJoinCount;
+    DWORD m_outJoinCur;
+
+    smart_array<BYTE> m_joinBuffer;
+    DWORD m_joinBufferUsed;
+    DWORD m_joinBufferSize;
+    REFERENCE_TIME m_joinStart;
+    bool m_doTimeSet;
 
 #if ADECODE_PERF > 0
     // Misc
