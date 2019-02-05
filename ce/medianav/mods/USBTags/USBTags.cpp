@@ -181,7 +181,7 @@ void processIpcMsg(const IpcMsg& ipcMsg, bool sendMsg)
                 break;
             }
          default:
-             debugPrintf(DBG, L"USBTag: src=%d, cmd=%d, extraSize=%d, extra=%d, sendMsg=%s\r\n", ipcMsg.src, ipcMsg.cmd, ipcMsg.extraSize, ipcMsg.extra, sendMsg ? L"TRUE" : L"FALSE");
+             debugPrintf(DBG, L"USBTags: src=%d, cmd=%d, extraSize=%d, extra=%d, sendMsg=%s\r\n", ipcMsg.src, ipcMsg.cmd, ipcMsg.extraSize, ipcMsg.extra, sendMsg ? L"TRUE" : L"FALSE");
             break;
     }
 
@@ -232,11 +232,13 @@ bool readFileInfo(const wchar_t* fileName, USBPlayerStatus& info)
                     TagLib::MP4::Tag *mp4Tag = dynamic_cast<TagLib::MP4::Tag *>(f.tag());
                     if(mp4Tag != NULL)
                     {
+                        debugPrintf(DBG, L"USBTags: readFileInfo mp4Tag != NULL\r\n")
                         TagLib::MP4::ItemListMap itemsListMap = mp4Tag->itemListMap();
                         TagLib::MP4::Item coverItem = itemsListMap["covr"];
                         TagLib::MP4::CoverArtList coverArtList = coverItem.toCoverArtList();
                         if (!coverArtList.isEmpty()) 
                         {
+                            debugPrintf(DBG, L"USBTags: readFileInfo !coverArtList.isEmpty()\r\n")
                             TagLib::MP4::CoverArt coverArt = coverArtList.front();
                             info.m_hImgHandle = createPictureBitmap(coverArt.data().data(), coverArt.data().size(), coverWidth, coverHeight);
                         }
@@ -322,6 +324,10 @@ bool readFileInfo(const wchar_t* fileName, USBPlayerStatus& info)
                 }
             } while (false);
         }
+
+        if(info.m_hImgHandle)
+            debugPrintf(DBG, L"USBTags: readFileInfo Image created\r\n")
+
         return true;
     }
     catch (...)

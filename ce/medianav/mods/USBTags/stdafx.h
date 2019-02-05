@@ -63,7 +63,6 @@
 //#define TESTMODE
 #endif
 
-//#define LOGTOFILE
 #include "utils.h"
 
 #ifdef TESTMODE
