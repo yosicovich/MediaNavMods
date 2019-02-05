@@ -17,6 +17,11 @@ bool IpcPostMsg(int src, int dst, int cmd, int extraSize/* max 4*/, const void* 
     return false;
 }
 
+bool IpcSendMsg(int src, int dst, int cmd, int extraSize, const void* pExtra)
+{
+    return false;
+}
+
 IpcMsg* IpcGetMsg(IpcMsg* ipcMsg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     return ipcMsg;

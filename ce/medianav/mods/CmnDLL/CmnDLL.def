@@ -4,6 +4,7 @@ EXPORTS
         DbgSetDebugLevel @10
         DbgDebugPrint @2
         IpcPostMsg @16
+        IpcSendMsg @17
         IpcGetMsg @12
         MSHM_Dll_CreateShmClassObj @30
         MSHM_Dll_DestroyShmClassObj @31
