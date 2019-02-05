@@ -5,6 +5,17 @@
 #include "modstest.h"
 #include "player_helper.h"
 #include "SystemMeter.h"
+#include <medianav.h>
+#include <CmnDLL.h>
+#include <fileref.h>
+#include <tag.h>
+#include <mp4tag.h>
+
+#include <wingdi.h>
+#include <windowsx.h>
+#include <imaging.h>
+#include <imgguids.h>
+#include <utils.h>
 
 #define MAX_LOADSTRING 100
 
@@ -17,7 +28,154 @@ ATOM			MyRegisterClass(HINSTANCE, LPTSTR);
 BOOL			InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
-Utils::SystemMeter* g_systemMeter;
+
+HBITMAP createPictureBitmap(const void* data, size_t dataSize, int width, int height)
+{
+    static Utils::OleInitializer oleInitializer;
+
+    HBITMAP hBitmap = NULL;
+
+    IImagingFactory *pFactory = NULL;
+    IImage *pImage = NULL;
+    HDC memHdc = NULL;
+    ImageInfo imageInfo;
+    bool imageOk = false;
+    do 
+    {
+        if(CoCreateInstance(CLSID_ImagingFactory, NULL, CLSCTX_INPROC_SERVER,  IID_IImagingFactory , (void**)&pFactory) != S_OK)
+            break;
+        if(pFactory->CreateImageFromBuffer(data, dataSize, BufferDisposalFlagNone, &pImage) != S_OK)
+            break;
+
+        if(pImage->GetImageInfo(&imageInfo) != S_OK)
+            break;
+
+        memHdc = CreateCompatibleDC(NULL);
+
+        BITMAPINFO bitmapInfo;
+        memset(&bitmapInfo, 0 ,sizeof(BITMAPINFO));
+        bitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+        bitmapInfo.bmiHeader.biPlanes = 1;
+        bitmapInfo.bmiHeader.biBitCount = 24;
+        bitmapInfo.bmiHeader.biWidth = width;
+        bitmapInfo.bmiHeader.biHeight = height;
+
+        void* pdibData;
+        hBitmap = CreateDIBSection(memHdc, &bitmapInfo, DIB_RGB_COLORS, &pdibData, NULL, 0);
+
+        if(!hBitmap)
+            break;
+
+        RECT rect;
+        SetRect(&rect, 0, 0, width, height);
+        HGDIOBJ oldObj = SelectObject(memHdc, hBitmap);
+        if(pImage->Draw(memHdc, &rect, NULL) != S_OK)
+            break;
+        imageOk = true;
+        SelectObject(memHdc,oldObj);
+    } while (false);
+
+    if(memHdc)
+        DeleteDC(memHdc);
+
+    if(pImage)
+        pImage->Release();
+
+    if(pFactory)
+        pFactory->Release();
+
+    if(!imageOk)
+    {
+        if(hBitmap)
+            DeleteBitmap(hBitmap);
+        return NULL;
+    }
+
+    return hBitmap;
+}
+static HBITMAP hBitmap = NULL;
+void tagTest()
+{
+    // flac, mp4, asf, mp3
+    TagLib::FileRef f("\\MD\\picture-test.m4a");
+    TagLib::Tag* tag = f.tag();
+    TagLib::MP4::Tag *mp4Tag = dynamic_cast<TagLib::MP4::Tag *>(tag);
+    if(mp4Tag != NULL)
+    {
+        TagLib::MP4::ItemListMap itemsListMap = mp4Tag->itemListMap();
+        TagLib::MP4::Item coverItem = itemsListMap["covr"];
+        TagLib::MP4::CoverArtList coverArtList = coverItem.toCoverArtList();
+        if (!coverArtList.isEmpty()) 
+        {
+            TagLib::MP4::CoverArt coverArt = coverArtList.front();
+            hBitmap = createPictureBitmap(coverArt.data().data(), coverArt.data().size(), 287, 287);
+        }        //mp4Tag->
+    }
+    TagLib::String artist = f.tag()->artist(); // artist == "Frank Zappa"
+    TagLib::String album = f.tag()->album(); // artist == "Frank Zappa"
+    TagLib::String song = f.tag()->title(); // artist == "Frank Zappa"
+    printf("Artist: %s\r\nAlbum: %s\r\nSong: %s\r\n", artist.toCString(), album.toCString(), song.toCString());
+    /*f.tag()->setAlbum("Fillmore East");
+    f.save();
+    TagLib::FileRef g("Free City Rhymes.ogg");
+    TagLib::String album = g.tag()->album(); // album == "NYC Ghosts & Flowers"
+    g.tag()->setTrack(1);
+    g.save();*/
+
+}
+void smallTest()
+{
+    IpcPostMsg(0x05, 0x04, 0x64, 0, NULL);
+    return;
+    DWORD dataSize = 0xA46;
+    HANDLE hMutex = CreateMutex(NULL, FALSE, L"ShmMxMgrUsbAppMain");
+    if(!hMutex)
+        return;
+    if(WaitForSingleObject(hMutex, 1000) != WAIT_OBJECT_0)
+    {
+        CloseHandle(hMutex);
+        return;
+    }
+    // We own mutex now.
+    HANDLE hMap = CreateFileMapping(NULL, NULL, PAGE_READWRITE , 0, dataSize, L"ShmFmMgrUsbAppMain");
+    if(!hMap)
+    {
+        ReleaseMutex(hMutex);
+        CloseHandle(hMutex);
+        return;
+    }
+    LPVOID pData = MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+    if(!pData)
+    {
+        CloseHandle(hMap);
+        ReleaseMutex(hMutex);
+        CloseHandle(hMutex);
+        return;
+    }
+    ReleaseMutex(hMutex);
+
+//    debugDump(1, pData, 0xA46);
+    HANDLE hFile = CreateFile(L"\\MD\\tagdump.bin", GENERIC_WRITE , FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if(hFile)
+    {
+        DWORD bytesWritten;
+        WriteFile(hFile,pData, dataSize, &bytesWritten, NULL);
+        CloseHandle(hFile);
+    }
+    MediaNav::USBPlayerStatus *pMedia = reinterpret_cast<MediaNav::USBPlayerStatus *>(pData);
+    memcpy(pMedia->m_song, L"TEST", 8);
+    IpcPostMsg(0x05, 0x15, 0x64, 0, NULL);
+    /*pMedia->m_durHour = 2;
+    pMedia->m_curHour = 1;
+    pMedia->m_curMin = 2;
+    pMedia->m_curSec = 3;*/
+    WaitForSingleObject(hMutex, INFINITE);
+    UnmapViewOfFile(pData);
+    CloseHandle(hMap);
+    ReleaseMutex(hMutex);
+    CloseHandle(hMutex);
+
+}
 
 int WINAPI WinMain(HINSTANCE hInstance,
                    HINSTANCE hPrevInstance,
@@ -25,6 +183,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
                    int       nCmdShow)
 {
     //test();
+    //smallTest();
+    //tagTest();
+    //return 0;
     
     MSG msg;
 	// Perform application initialization:
@@ -45,6 +206,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			DispatchMessage(&msg);
 		}
 	}
+    if(hBitmap)
+        DeleteBitmap(hBitmap);
 
 	return (int) msg.wParam;
 }
@@ -126,13 +289,9 @@ typedef void (*TDbgSetDebugLevel)(int module, int level);
 typedef void (*TDbgDebugPrint)(int module, int level, const wchar_t *format, ...);
 void doDebugOn()
 {
-	HINSTANCE hInst = LoadLibrary(L"\\Storage Card\\System\\CmnDLL.dll");
-	TDbgSetDebugLevel DbgSetDebugLevel = (TDbgSetDebugLevel)GetProcAddress(hInst, L"DbgSetDebugLevel");
-	TDbgDebugPrint DbgDebugPrint = (TDbgDebugPrint)GetProcAddress(hInst, L"DbgDebugPrint");
     for(int i = 0; i< 0x2a; ++i)
         DbgSetDebugLevel(i, 3);
     DbgDebugPrint(0x17, 3, L"MODTEST %s\r\n", L"SUPER");
-    FreeLibrary(hInst);
 }
 
 //
@@ -203,7 +362,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
         case WM_INITDIALOG:
-            g_systemMeter = new Utils::SystemMeter();
             RECT rectChild, rectParent;
             int DlgWidth, DlgHeight;	// dialog width and height in pixel units
             int NewPosX, NewPosY;
@@ -223,7 +381,8 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 SetWindowPos(hDlg, 0, NewPosX, NewPosY,
                     0, 0, SWP_NOZORDER | SWP_NOSIZE);
             }
-            SetTimer(hDlg, WM_USER+100, 1000, NULL);
+
+
             return (INT_PTR)TRUE;
 
         case WM_COMMAND:
@@ -236,17 +395,22 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
         case WM_CLOSE:
             EndDialog(hDlg, message);
-            KillTimer(hDlg, WM_USER+100);
-            delete g_systemMeter;
             return TRUE;
-        case WM_TIMER:
-            if(wParam == WM_USER+100)
+        case WM_ERASEBKGND:
+            if(hBitmap)
             {
-                wchar_t loadStr[50];
-                swprintf_s(loadStr, 50, L"CPU: %d%%, Mem: %d%%", g_systemMeter->getCPULoad(), g_systemMeter->getMemoryStatus().dwMemoryLoad);
-                SetWindowText(GetDlgItem(hDlg, IDC_STATIC_LOAD), loadStr);
+                HDC hdc, memDC;
+                hdc = (HDC)wParam;
+                memDC = CreateCompatibleDC(hdc);
+                SelectObject(memDC, hBitmap);
+                {
+                    // paint button bitmap
+                    BitBlt(hdc, 0, 0, 287, 287, memDC, 0, 0, SRCCOPY);
+                }
+                DeleteDC(memDC);
+                return TRUE;
             }
-
+            break;
 
     }
     return (INT_PTR)FALSE;
