@@ -17,6 +17,7 @@ using namespace Utils;
 static bool g_inited = false;
 static BOOL testBool = false;
 static CSimpleIni g_iniFile;
+static Utils::SystemWideUniqueInstance g_onceChecker(L"PlayerHelperOnce");
 
 BOOL APIENTRY DllMain( HANDLE hModule, 
                        DWORD  ul_reason_for_call, 
@@ -36,6 +37,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
         {
             globalEnvInit();
             fixCodecsPath();
+            startOnce();
             g_inited = true;
         }
         break;
@@ -56,6 +58,7 @@ static void globalEnvInit()
 {
     // Populate  ini files table in search order
     g_iniFilesTable.push_back(TEXT("\\Storage Card2\\mods.ini"));
+    g_iniFilesTable.push_back(TEXT("\\Storage Card\\System\\mods\\mods.ini"));
 
     for(size_t i = 0; i < g_iniFilesTable.size(); ++i)
     {
@@ -91,8 +94,74 @@ static void globalEnvInit()
 #endif
 }
 
+// Start once
+struct StartProcessEntry
+{
+    std::wstring filePath;
+    std::wstring arguments;
+    StartProcessEntry(const std::wstring& filePath, const std::wstring& arguments)
+        :filePath(filePath)
+        ,arguments(arguments)
+    {
 
+    }
+};
+typedef std::vector<StartProcessEntry> StartProcesses;
 
+static void startOnce()
+{
+    // Run the code below only once
+    if(!g_onceChecker.isUnique())
+        return;
+
+    StartProcesses startPorcesses;
+    
+    long waitForMD = g_iniFile.GetLongValue(TEXT("Debug"), TEXT("WaitForMD"), 0);
+    if(waitForMD)
+    {
+        debugPrintf(DBG, TEXT("startOnce(): Detect MD for %d seconds\r\n"), waitForMD);
+        DWORD endTime = GetTickCount() + waitForMD * 1000;
+        while(GetTickCount() <= endTime)
+        {
+            if(checkMDPresent())
+            {
+                debugPrintf(DBG, TEXT("startOnce(): MD detected\r\n"));
+                break;
+            }
+            Sleep(100);
+        }
+    }
+    // Populate
+
+    // 1. Default once
+    if(!g_iniFile.GetBoolValue(TEXT("Debug"), TEXT("NoDefaultStarts"), false) && (!g_iniFile.GetBoolValue(TEXT("Debug"), TEXT("NoDefaultStartsWithMD"), false) || !checkMDPresent()))
+    {
+        startPorcesses.push_back(StartProcessEntry(TEXT("\\Storage Card\\System\\mods\\USBTags.exe"), TEXT("")));
+    }
+
+    // 2. Load from ini
+    const CSimpleIniW::TKeyVal* startIni = g_iniFile.GetSection(TEXT("RunOnStart"));
+    for(CSimpleIniW::TKeyVal::const_iterator it = startIni->begin(); it != startIni->end(); ++it)
+    {
+        startPorcesses.push_back(StartProcessEntry(it->first.pItem, it->second));
+        debugPrintf(DBG, TEXT("startOnce(): Add from ini : process %s, with command line - %s\r\n"), it->first.pItem, it->second);
+    }
+
+    // Run
+    for(StartProcesses::const_iterator it = startPorcesses.begin(); it != startPorcesses.end(); ++it)
+    {
+        if(CreateProcess(it->filePath.c_str(), it->arguments.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, NULL, NULL) == FALSE)
+            debugPrintf(DBG, TEXT("startOnce(): Unable to start process %s, with command line - %s\r\n"), it->filePath.c_str(), it->arguments.c_str());
+    }
+
+}
+
+bool checkMDPresent()
+{
+    return GetFileAttributes(TEXT("MD")) != INVALID_FILE_ATTRIBUTES;
+}
+
+// Fix codec paths
 struct RegistryEntry
 {
     HKEY rootKey;
@@ -105,7 +174,7 @@ struct RegistryEntry
     }
 };
 
-typedef std::vector<RegistryEntry> RegistryMap;
+typedef std::vector<RegistryEntry> RegistryData;
 
 PLAYER_HELPER_API bool fixCodecsPath()
 {
@@ -113,30 +182,30 @@ PLAYER_HELPER_API bool fixCodecsPath()
     if(RegistryAccessor::getString(HKEY_CLASSES_ROOT, L"\\CLSID\\{0ba13ea1-70e5-11db-9690-00e08161165f}\\InprocServer32", L"", L"") != L"VideoRenderer.dll")
         return true;// Paths are already adjusted.
     
-    RegistryMap registryPathMap;
+    RegistryData registryPathInfo;
 
-    std::wstring codecsPath = g_iniFile.GetValue(TEXT("Video"), TEXT("CodecsPath"), TEXT("\\Storage Card\\system\\mods\\codecs\\"));
+    std::wstring codecsPath = g_iniFile.GetValue(TEXT("Player"), TEXT("CodecsPath"), TEXT("\\Storage Card\\System\\mods\\codecs\\"));
     if(codecsPath.length() > 0 && codecsPath.at(codecsPath.length() - 1) != L'\\')
         codecsPath += L'\\';
 
-    registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{1F3F5741-A9EE-4bd9-B64E-99C5534B3817}\\InprocServer32", L"", codecsPath + L"ac3decfilter.dll"));
-    registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{313F1007-5458-4275-8143-E760A1D73D0F}\\InprocServer32", L"", codecsPath + L"aacdecfilter.dll"));
-    registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D24C840C-C469-4368-A363-0913B44AEF5C}\\InprocServer32", L"", codecsPath + L"avidmx.dll"));
-    registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{692100F0-01C4-4af0-BDC2-C8BA5C5DED01}\\InprocServer32", L"", codecsPath + L"DecodeFilter.dll"));
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{1F3F5741-A9EE-4bd9-B64E-99C5534B3817}\\InprocServer32", L"", codecsPath + L"ac3decfilter.dll"));
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{313F1007-5458-4275-8143-E760A1D73D0F}\\InprocServer32", L"", codecsPath + L"aacdecfilter.dll"));
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D24C840C-C469-4368-A363-0913B44AEF5C}\\InprocServer32", L"", codecsPath + L"avidmx.dll"));
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{692100F0-01C4-4af0-BDC2-C8BA5C5DED01}\\InprocServer32", L"", codecsPath + L"DecodeFilter.dll"));
     // FLAC
-    registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{B380606B-B500-4001-ABA9-635D24D95504}\\InprocServer32", L"", codecsPath + L"losslessdecfilter.dll"));
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{B380606B-B500-4001-ABA9-635D24D95504}\\InprocServer32", L"", codecsPath + L"losslessdecfilter.dll"));
     // APE
-    //registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{B380606C-B500-4001-ABA9-635D24D95504}\\InprocServer32", L"", codecsPath + L"losslessdecfilter.dll"));
-    registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{025BE2E4-1787-4da4-A585-C5B2B9EEB57C}\\InprocServer32", L"", codecsPath + L"mp4demux.dll"));
-    registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D1E456E1-47E5-497a-ABA1-A0C57C3CE5C1}\\InprocServer32", L"", codecsPath + L"speexdecfilter.dll"));
-    registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{0ba13ea1-70e5-11db-9690-00e08161165f}\\InprocServer32", L"", codecsPath + L"VideoRenderer.dll"));
-    registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D1E456E1-47E5-497a-ABA1-A0C57C3CE5C0}\\InprocServer32", L"", codecsPath + L"vorbisdecfilter.dll"));
+    //registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{B380606C-B500-4001-ABA9-635D24D95504}\\InprocServer32", L"", codecsPath + L"losslessdecfilter.dll"));
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{025BE2E4-1787-4da4-A585-C5B2B9EEB57C}\\InprocServer32", L"", codecsPath + L"mp4demux.dll"));
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D1E456E1-47E5-497a-ABA1-A0C57C3CE5C1}\\InprocServer32", L"", codecsPath + L"speexdecfilter.dll"));
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{0ba13ea1-70e5-11db-9690-00e08161165f}\\InprocServer32", L"", codecsPath + L"VideoRenderer.dll"));
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D1E456E1-47E5-497a-ABA1-A0C57C3CE5C0}\\InprocServer32", L"", codecsPath + L"vorbisdecfilter.dll"));
 #ifndef STABLE_ONLY
-    registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{3E4DCA25-347E-4678-B22A-6F4CC68FF2A8}\\InprocServer32", L"", codecsPath + L"audiocorefilter.dll"));
-    registryPathMap.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{9EBFDAAE-0963-4b5a-8B2E-EDB9B943820B}\\InprocServer32", L"", codecsPath + L"matroskafilter.dll"));
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{3E4DCA25-347E-4678-B22A-6F4CC68FF2A8}\\InprocServer32", L"", codecsPath + L"audiocorefilter.dll"));
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{9EBFDAAE-0963-4b5a-8B2E-EDB9B943820B}\\InprocServer32", L"", codecsPath + L"matroskafilter.dll"));
 #endif
 
-    for(RegistryMap::const_iterator it = registryPathMap.begin(); it != registryPathMap.end(); ++it)
+    for(RegistryData::const_iterator it = registryPathInfo.begin(); it != registryPathInfo.end(); ++it)
     {
         if(!RegistryAccessor::setString(it->rootKey, it->path, it->name, it->value))
         {

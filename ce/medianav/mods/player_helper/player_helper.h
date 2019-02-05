@@ -10,20 +10,13 @@
 #define PLAYER_HELPER_API __declspec(dllimport)
 #endif
 
-//#define TESTMODE
-#define STABLE_ONLY
-
-#ifdef TESTMODE
-#ifdef STABLE_ONLY
-#undef STABLE_ONLY
-#endif
-#endif
-
 #include "stdafx.h"
 #include "utils.h"
 //#include <pwinuser.h>
 
 static void globalEnvInit();
+static void startOnce();
+bool checkMDPresent();
 
 
 PLAYER_HELPER_API bool fixCodecsPath();

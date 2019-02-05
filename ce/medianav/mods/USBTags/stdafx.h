@@ -60,7 +60,7 @@
 #ifdef _DEBUG
 #define TESTMODE
 #else
-#define TESTMODE
+//#define TESTMODE
 #endif
 
 //#define LOGTOFILE

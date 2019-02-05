@@ -11,7 +11,9 @@ namespace MediaNav
 #pragma warning(disable: 4200)
 #pragma pack(push,1)
 
-    typedef wchar_t MediaInfoStr[0x104];
+    static const int MediaInfoStringLenght = 0x104;
+
+    typedef wchar_t MediaInfoStr[MediaInfoStringLenght];
     struct PlayerTimeData
     {
         BYTE m_curMin;
@@ -39,7 +41,7 @@ namespace MediaNav
         DWORD m_playItemIndex;
         PlayerConfig m_playerConfig;
         DWORD m_state; // 2,3 - paused, stopped;? 1 - run
-        HANDLE m_hImgHandle;
+        HBITMAP m_hImgHandle;
         DWORD m_reserved;
     };
 #pragma pack(pop)
@@ -56,7 +58,10 @@ namespace MediaNav
     enum MgrUSBCommand
     {
         MgrUSB_PlayStatusResume = 0x64,
-        MgrUSB_PlayStatusUpdate = 0x65
+        MgrUSB_PlayStatusUpdate = 0x65,
+        MgrUSB_PlayStatusStateChange = 0x66,
+        MgrUSB_PlayStatusSetCoverImage = 0x67,
+        MgrUSB_IDM_MUSB_INDEXING_COMPLETE = 0x6A
     };
 
     class CSharedMemory

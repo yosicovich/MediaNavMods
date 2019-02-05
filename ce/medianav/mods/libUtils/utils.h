@@ -132,6 +132,16 @@ namespace Utils
         FILE* m_file;
     };
 
+    class OleInitializer
+    {
+    public:
+        OleInitializer();
+        virtual ~OleInitializer();
+    private:
+        static int m_useCount;
+        static CLock m_accessLock;
+    };
+
     DWORD getCurrentProcessImageBase();
     DWORD getCurrentProcessCodeBase();
     void toUpper(std::wstring& str);

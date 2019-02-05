@@ -46,4 +46,24 @@
 
 #include <altcecrt.h>
 
+#ifdef _DEBUG
+#define TESTMODE
+#else
+//#define TESTMODE
+#define STABLE_ONLY
+#endif
+
+#ifdef TESTMODE
+#ifdef STABLE_ONLY
+#undef STABLE_ONLY
+#endif
+#endif
+
+#ifdef TESTMODE
+#define DBG 1
+#else
+#define DBG 0
+#endif
+
+
 // TODO: reference additional headers your program requires here

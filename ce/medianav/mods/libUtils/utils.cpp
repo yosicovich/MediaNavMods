@@ -229,6 +229,32 @@ void FileLogger::writeLog(const wchar_t* fmt, va_list args)
     fflush(m_file);
 }
 
+int OleInitializer::m_useCount = 0;
+CLock OleInitializer::m_accessLock;
+
+OleInitializer::OleInitializer()
+{
+    CLockHolder<CLock>  lock(m_accessLock);
+    if(!m_useCount++)
+    {
+        if(CoInitializeEx(NULL, COINIT_MULTITHREADED) != S_OK)
+        {
+            --m_useCount;
+            exit(-1); // it is fatal if OLE is required.
+            return;
+        }
+    }
+}
+
+OleInitializer::~OleInitializer()
+{
+    CLockHolder<CLock>  lock(m_accessLock);
+    if(!--m_useCount)
+    {
+        CoUninitialize();
+    }
+}
+
 void dumpBinary(const void* buf, size_t size)
 {
     for(size_t i = 0; i < size; ++i)
