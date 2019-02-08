@@ -11,6 +11,7 @@
 #include "db13xx.h"
 #include <set>
 #include "SimpleIni.h"
+#include <pwindbas.h>
 
 using namespace Utils;
 
@@ -157,6 +158,21 @@ static void startOnce()
             debugPrintf(DBG, TEXT("startOnce(): Unable to start process %s, with command line - %s\r\n"), it->filePath.c_str(), it->arguments.c_str());
     }
 
+
+    // Quick access to ActiveSync
+#ifdef TESTMODE
+    RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, L"LGE\\SystemInfo", L"TEST_MODE", true);
+    RegistryAccessor::setString(HKEY_CURRENT_USER, L"ControlPanel\\Comm", L"Cnct", L"`Default USB`");
+    RegistryAccessor::setBool(HKEY_CURRENT_USER, L"ControlPanel\\Comm", L"AutoCnct", true);
+
+    // Increase storage memory
+    DWORD storage, ram, pageSize;
+    static const DWORD cStarageSizeMB = 16;
+    if(GetSystemMemoryDivision(&storage, &ram, &pageSize))
+    {
+        SetSystemMemoryDivision(16*1024*1024 / pageSize);
+    }
+#endif
 }
 
 bool checkMDPresent()
