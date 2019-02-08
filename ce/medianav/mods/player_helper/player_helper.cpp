@@ -170,7 +170,7 @@ static void startOnce()
     static const DWORD cStarageSizeMB = 16;
     if(GetSystemMemoryDivision(&storage, &ram, &pageSize))
     {
-        SetSystemMemoryDivision(16*1024*1024 / pageSize);
+        SetSystemMemoryDivision(cStarageSizeMB*1024*1024 / pageSize);
     }
 #endif
 }
