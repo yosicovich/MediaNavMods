@@ -7,6 +7,7 @@
 #include <iostream> 
 #include <fstream>
 #include <sstream>
+#include <vector>
 #include <Winuser.h>
 #include "Wingdi.h"
 #include <time.h> 
@@ -30,6 +31,38 @@ enum DateFormat
     DateFormat_YMD = 1,
     DateFormat_MDY = 2
 };
+
+struct ExeEntry
+{
+    std::wstring filePath;
+    std::wstring arguments;
+    ExeEntry(const std::wstring& filePath, const std::wstring& arguments)
+        :filePath(filePath)
+        ,arguments(arguments)
+    {
+
+    }
+};
+typedef std::vector<ExeEntry> ExeEntries;
+enum CloseAction
+{
+    CloseAction_CLOSE = 0,
+    CloseAction_KILL = 1
+};
+
+struct CloseEntry
+{
+    std::wstring filePath;
+    CloseAction method;
+    CloseEntry(const std::wstring& filePath, CloseAction method)
+        :filePath(filePath)
+        ,method(method)
+    {
+
+    }
+};
+typedef std::vector<CloseEntry> CloseEntries;
+
 DateFormat dateFormat = DateFormat_DMY;
 
 // Global Variables:
@@ -44,11 +77,15 @@ CSimpleIni ini = NULL;
 DWORD dwOldTime = 0;
 DWORD dwTimeElapsed = 0;
 std::wstring iniPath;
-std::wstring exePath;
 TCHAR FirstName[MAX_PATH];
 
 std::wstring gButtonText;
 HFONT gTextFont = NULL;
+ExeEntries exeEntries;
+ExeEntries longTapEntries;
+
+CloseEntries tapCloseEntries;
+CloseEntries longTapCloseEntries;
 
 // Forward declarations of functions included in this code module:
 ATOM			MyRegisterClass(HINSTANCE, LPTSTR);
@@ -58,6 +95,8 @@ VOID CALLBACK TimerProc(  HWND     , UINT     ,  UINT_PTR ,  DWORD    );
 bool printDate(HWND hWnd, bool forceRepaint = false);
 void printCPULoad();
 int readConfig(HWND hWnd);
+void readTapConfig();
+
 int RunApplication(HINSTANCE hInstance);
 
 HWND gWnd;
@@ -299,6 +338,44 @@ bool WindowIDFilterValueFunc(const std::wstring& str, unsigned short& val)
     return true;
 }
 
+static void readExeConfig(ExeEntries& entries, const wchar_t* sSection)
+{
+    const CSimpleIniW::TKeyVal* exeIni = ini.GetSection(sSection);
+    if(exeIni)
+    {
+        for(CSimpleIniW::TKeyVal::const_iterator it = exeIni->begin(); it != exeIni->end(); ++it)
+        {
+            entries.push_back(ExeEntry(it->first.pItem, it->second));
+        }
+    }
+}
+
+static void readCloseConfig(CloseEntries& entries, const wchar_t* sSection)
+{
+    const CSimpleIniW::TKeyVal* exeIni = ini.GetSection(sSection);
+    if(exeIni)
+    {
+        for(CSimpleIniW::TKeyVal::const_iterator it = exeIni->begin(); it != exeIni->end(); ++it)
+        {
+            entries.push_back(CloseEntry(it->first.pItem, _wcsicmp(TEXT("kill"), it->second) == 0 ? CloseAction_KILL:  CloseAction_CLOSE));
+        }
+    }
+}
+
+static void readTapConfig()
+{
+    std::wstring exePath = ini.GetValue(L"Raccourci", L"exe", L"");
+    if(!exePath.empty())
+        exeEntries.push_back(ExeEntry(exePath, L""));
+
+    readExeConfig(exeEntries, TEXT("StartOnTap"));
+    readCloseConfig(tapCloseEntries, TEXT("CloseOnTap"));
+
+    // LongTap
+    readExeConfig(longTapEntries, TEXT("StartOnLongTap"));
+    readCloseConfig(longTapCloseEntries, TEXT("CloseOnLongTap"));
+}
+
 int readConfig(HWND hWnd)
 {
     // get ini path
@@ -384,8 +461,8 @@ int readConfig(HWND hWnd)
         gButtonText = ini.GetValue(L"Text", L"ButtonText", L"");
     } while (false);
 
-    // Action command
-    exePath = ini.GetValue(L"Raccourci", L"exe", L"");
+    // Action commands
+    readTapConfig();
 
     // Picture
     hBitmapBtn = LoadPicture(ini.GetValue(_T("Raccourci"), _T("bmp"), defBmpPath.c_str()), bmHasAlpha, bmWidth, bmHeight);
@@ -475,7 +552,42 @@ void checkShowState()
 }
 static inline bool drawPressedState()
 {
-    return pressedLBtn && !exePath.empty();
+    return pressedLBtn && (!exeEntries.empty() || !longTapEntries.empty() || !tapCloseEntries.empty() || !longTapCloseEntries.empty());
+}
+
+static void startOne(const std::wstring& path, const std::wstring& args)
+{
+    if (!IsProcessExist(path)) {
+        ShellCommand(path.c_str(), args.c_str());
+    } else {
+        HWND hExe = FindWindowFromPath(path.c_str());
+        if (hExe != NULL)
+            SetForegroundWindow(hExe);
+        SetFocus(hExe);
+    }
+}
+
+static void closeOne(const CloseEntry& closeEntry)
+{
+    if(_wcsicmp(closeEntry.filePath.c_str(), TEXT("@self")) == 0)
+    {
+        PostQuitMessage(0);
+        return;
+    }
+
+    if(closeEntry.method == CloseAction_KILL)
+    {
+        DWORD id = FindProcessId(closeEntry.filePath.c_str());
+        if(id)
+            KillProcess(id);
+
+    }else
+    {
+        HWND hExe = FindWindowFromPath(closeEntry.filePath.c_str());
+        if(hExe)
+            PostMessage(hExe, WM_CLOSE, 0, 0);
+    }
+
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -520,19 +632,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 POINT curs;
                 curs.x = GET_X_LPARAM(lParam);
                 curs.y = GET_Y_LPARAM(lParam);
-                if (PtInRect(&rBitmapLBtn, curs)&&(dwTimeElapsed < 2000)) {
-                    if (!IsProcessExist(exePath)) {
-                        ShellCommand(exePath.c_str(), NULL);
-                    } else {
-                        HWND hExe = FindWindowFromPath(exePath.c_str());
-                        if (hExe != NULL)
-                            SetForegroundWindow(hExe);
-                        SetFocus(hExe);
+                if (PtInRect(&rBitmapLBtn, curs))
+                {
+                    if(dwTimeElapsed < 1500) 
+                    {
+                        for(CloseEntries::const_iterator it = tapCloseEntries.begin(); it != tapCloseEntries.end(); ++it)
+                        {
+                            closeOne(*it);
+                        }
+
+                        for(ExeEntries::const_iterator it = exeEntries.begin(); it != exeEntries.end(); ++it)
+                        {
+                            startOne(it->filePath, it->arguments);
+                        }
+                        BringWindowToTop(hWnd);
+                    }else if(dwTimeElapsed < 3500)
+                    {
+                        for(CloseEntries::const_iterator it = longTapCloseEntries.begin(); it != longTapCloseEntries.end(); ++it)
+                        {
+                            closeOne(*it);
+                        }
+
+                        for(ExeEntries::const_iterator it = longTapEntries.begin(); it != longTapEntries.end(); ++it)
+                        {
+                            startOne(it->filePath, it->arguments);
+                        }
+                        BringWindowToTop(hWnd);
+                    }else
+                    {
+                        PostQuitMessage(0);										
                     }
-                    BringWindowToTop(hWnd);
                 }
-                if (dwTimeElapsed >= 2000)
-                    PostQuitMessage(0);										
             }
         }
         break;

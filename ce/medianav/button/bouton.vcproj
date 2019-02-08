@@ -106,7 +106,7 @@
 				ForceDirty="-1"
 				RemoteDirectory=""
 				RegisterOutput="0"
-				AdditionalFiles="TheBouton.ini|$(ProjectDir)|%CSIDL_PROGRAM_FILES%\bouton|0;btncam_MN1.bmp|$(ProjectDir)|%CSIDL_PROGRAM_FILES%\bouton|0;home_radio_btn.bmp|$(ProjectDir)|%CSIDL_PROGRAM_FILES%\bouton|0"
+				AdditionalFiles="TheBouton.ini|$(ProjectDir)|%CSIDL_PROGRAM_FILES%\bouton|0;bouton.bmp|$(ProjectDir)|%CSIDL_PROGRAM_FILES%\bouton|0;home_radio_btn.bmp|$(ProjectDir)|%CSIDL_PROGRAM_FILES%\bouton|0"
 			/>
 			<DebuggerTool
 			/>
