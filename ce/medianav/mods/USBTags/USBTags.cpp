@@ -20,7 +20,10 @@
 #include <asffile.h>
 #include <mpegfile.h>
 #include <id3v2tag.h>
+#include <id3v1tag.h>
 #include <oggflacfile.h>
+
+#include <string>
 
 using namespace MediaNav;
 // Global Variables:
@@ -35,11 +38,178 @@ bool g_foreignImage = false;
 ATOM			USBTagsRegisterClass(HINSTANCE, LPTSTR);
 BOOL			InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
-void processIpcMsg(const IpcMsg& ipcMsg, bool sendMsg);
-bool getTags(USBPlayerStatus& info);
+void processIpcMsg(IpcMsg& ipcMsg, bool sendMsg);
+bool getTags(USBPlayerStatus& info, bool& isNew);
 HBITMAP createPictureBitmap(const void* data, size_t dataSize, int width, int height);
 void updateCache(const USBPlayerStatus& info, bool foreignImage);
+void inplaceInfoString(wchar_t* dstString, const DWORD dstCharSize, const TagLib::String& value, const wchar_t* defaultValue);
 void readAlbumDimensions();
+
+#ifdef WITH_COPYRIGHT
+volatile wchar_t cCR_Sp = L' ';
+volatile wchar_t cCR_F = L'F';
+volatile wchar_t cCR_e = L'e';
+volatile wchar_t cCR_a = L'a';
+volatile wchar_t cCR_r = L'r';
+volatile wchar_t cCR_w = L'w';
+
+static TagLib::String cCopyrightStr;
+__forceinline void populateCopyright()
+{
+    // L" Free at www.medianav.ru "
+    cCopyrightStr += cCR_Sp;
+    cCopyrightStr += cCR_F;
+    cCopyrightStr += cCR_r;
+    cCopyrightStr += cCR_e;
+    cCopyrightStr += cCR_e;
+    cCopyrightStr += cCR_Sp;
+    cCopyrightStr += cCR_a;
+    cCopyrightStr += L't';
+    cCopyrightStr += cCR_Sp;
+    cCopyrightStr += cCR_w;
+    cCopyrightStr += cCR_w;
+    cCopyrightStr += cCR_w;
+    cCopyrightStr += L".m";
+    cCopyrightStr += cCR_e;
+    cCopyrightStr += L"d";
+    cCopyrightStr += L'i';
+    cCopyrightStr += cCR_a;
+    cCopyrightStr += L'n';
+    cCopyrightStr += cCR_a;
+    cCopyrightStr += L'v';
+    cCopyrightStr += L'.';
+    cCopyrightStr += cCR_r;
+    cCopyrightStr += L"u ";
+}
+
+__forceinline void drawCopyright(IpcMsg& ipcMsg, USBPlayerStatus& info, bool isNew)
+{
+    static const int cCopyrightDisplayCycles = 7 * 2;
+
+    static int copyrightCurCount = 0;
+    static bool showCState = true;
+
+    // Add Copyright
+    {
+        if(isNew)
+        {
+            copyrightCurCount = 0;
+            showCState = false;
+        }
+        if(copyrightCurCount < cCopyrightDisplayCycles)
+        {
+            bool newShowCState =  (copyrightCurCount /2) % 2 != 0;                           
+            if(!newShowCState)
+                inplaceInfoString(info.m_artist, sizeof(info.m_artist) / sizeof(wchar_t), cCopyrightStr, L"");
+            if(ipcMsg.cmd == MgrUSB_PlayStatusUpdate)
+                ++copyrightCurCount;
+            if(newShowCState != showCState)
+            {
+                ipcMsg.cmd = MgrUSB_PlayStatusResume;
+                showCState = newShowCState;
+            }
+        }
+        else if(copyrightCurCount == cCopyrightDisplayCycles)
+        {
+            ipcMsg.cmd = MgrUSB_PlayStatusResume;
+            copyrightCurCount = cCopyrightDisplayCycles + 1;
+        }
+    }
+}
+#endif
+
+static const int g_cLangsNumber = 33;
+static const WORD g_cLangToCodePage[g_cLangsNumber] = 
+{
+    1256,
+    1252,
+    1252,
+    1252,
+    1252,
+    1252,
+    1252,
+    1251,
+    1252,
+    1250,
+    1254,
+    1250,
+    1252,
+    932,
+    1253,
+    1250,
+    1250,
+    1250,
+    1250,
+    1250,
+    1251,
+    1255,
+    1251,
+    1251,
+    1252,
+    1252,
+    1252,
+    1252,
+    1252,
+    1252,
+    1252,
+    1256,
+    1256
+};
+
+TagLib::String smartParse(const TagLib::ByteVector &data)
+{
+    // UTF-16 ?
+    if(data[0] == 0xFF || data[0] == 0xEF)
+       return TagLib::String(data, TagLib::String::UTF16);
+
+    // UTF-8 ?
+    if(MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, data.data(), data.size(), NULL, 0) > 0)
+        return TagLib::String(data, TagLib::String::UTF8);
+
+    // Unknown. Try to transform with current language codepage.
+    int langIndex = Utils::RegistryAccessor::getInt(HKEY_LOCAL_MACHINE, L"\\LGE\\SystemInfo", L"LANG_INDEX", 0);
+    if(langIndex >= g_cLangsNumber)
+        langIndex = 0;
+    int codePage = g_cLangToCodePage[langIndex];
+    TagLib::ByteVector bv(sizeof(MediaInfoStr) / sizeof(wchar_t));
+    // We don't check error since we can't do anything reasonable with it anyway. Let the string be empty in this case.
+    int bytesWritten = MultiByteToWideChar(codePage, MB_ERR_INVALID_CHARS, data.data(), data.size(), (wchar_t *)bv.data(), bv.size() / sizeof(wchar_t));
+    if(bytesWritten < 0 )
+        bytesWritten = 0;
+    return TagLib::String(bv.resize(bytesWritten), TagLib::String::UTF16LE); // UTF16LE since our target is LE.
+}
+
+class ID3v1UTFStringHandler: public TagLib::ID3v1::StringHandler
+{
+    public:
+        ID3v1UTFStringHandler()
+        {
+
+        }
+
+        virtual TagLib::String parse(const TagLib::ByteVector &data) const
+        {
+            return smartParse(data).stripWhiteSpace();
+        }
+};
+
+class ID3v2UTFStringHandler: public TagLib::ID3v2::Latin1StringHandler
+{
+public:
+    ID3v2UTFStringHandler()
+    {
+
+    }
+
+    virtual TagLib::String parse(const TagLib::ByteVector &data) const
+    {
+        return smartParse(data).stripWhiteSpace();
+    }
+};
+
+
+ID3v1UTFStringHandler g_id3v1Handler;
+ID3v2UTFStringHandler g_id3v2Handler;
 
 int WINAPI WinMain(HINSTANCE hInstance,
                    HINSTANCE hPrevInstance,
@@ -51,9 +221,14 @@ int WINAPI WinMain(HINSTANCE hInstance,
     {
         USBPlayerStatus info;
         wcscpy(reinterpret_cast<wchar_t *>(&info.m_path), L"MD\\");
-        wcscpy(reinterpret_cast<wchar_t *>(&info.m_fileName), L"pink.flac");
-        getTags(info);
-        getTags(info);
+        wcscpy(reinterpret_cast<wchar_t *>(&info.m_fileName), L"17_Шнур-Тема дорги.mp3");
+        bool isNew;
+
+        TagLib::ID3v1::Tag::setStringHandler(&g_id3v1Handler);
+        TagLib::ID3v2::Tag::setLatin1StringHandler(&g_id3v2Handler);
+
+        getTags(info, isNew);
+        getTags(info, isNew);
         return 0;
     }
 #endif
@@ -61,7 +236,14 @@ int WINAPI WinMain(HINSTANCE hInstance,
     if(!g_uniqueInstance.isUnique())
         return -1;
 
+    TagLib::ID3v1::Tag::setStringHandler(&g_id3v1Handler);
+    TagLib::ID3v2::Tag::setLatin1StringHandler(&g_id3v2Handler);
+
     memset(&g_cachedInfo, 0, sizeof(g_cachedInfo));
+
+#ifdef WITH_COPYRIGHT
+    populateCopyright();
+#endif
 
     pPlayerStatus = new CSharedMemory(cUSBPlayerStatusMutexName, cUSBPlayerStatusMemName, false, sizeof(USBPlayerStatus));
     MSG msg;
@@ -153,21 +335,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-
-void processIpcMsg(const IpcMsg& ipcMsg, bool sendMsg)
+void processIpcMsg(IpcMsg& ipcMsg, bool sendMsg)
 {
     if(ipcMsg.src != IpcTarget_MgrUSB)
         return;
+
     switch(ipcMsg.cmd)
     {
-        case MgrUSB_PlayStatusResume:
         case MgrUSB_PlayStatusUpdate:
+        case MgrUSB_PlayStatusResume:
         case MgrUSB_PlayStatusStateChange:
             {
                 USBPlayerStatus playerStatus;
                 pPlayerStatus->read(&playerStatus, 0, sizeof(USBPlayerStatus));
-                if(getTags(playerStatus))
+                bool isNew = true;
+                if(getTags(playerStatus, isNew))
                 {
+#ifdef WITH_COPYRIGHT
+                    drawCopyright(ipcMsg, playerStatus, isNew);
+#endif
                     // Modify song info only to avoid race condition against flags updates with MgrUSB
                     pPlayerStatus->write(reinterpret_cast<BYTE *>(&playerStatus) + sizeof(PlayerTimeData)
                     , sizeof(PlayerTimeData)
@@ -337,7 +523,7 @@ bool readFileInfo(const wchar_t* fileName, USBPlayerStatus& info)
     }
 }
 
-bool getTags(USBPlayerStatus& info)
+bool getTags(USBPlayerStatus& info, bool& isNew)
 {
     bool flushCache = false;
     if(coverWidth <= 0 || coverHeight <= 0)
@@ -352,8 +538,11 @@ bool getTags(USBPlayerStatus& info)
         memcpy(&info.m_song, &g_cachedInfo.m_song, sizeof(MediaInfoStr) * 3);
         if(g_cachedInfo.m_hImgHandle)
             info.m_hImgHandle = g_cachedInfo.m_hImgHandle;
+        isNew = false;
         return true;
     }
+
+    isNew = true;
     
 #ifdef NO_INFO_OVERRIDE
     // Check if info already provided

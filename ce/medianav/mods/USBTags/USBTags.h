@@ -4,3 +4,4 @@
 #define IPC_WNDCLASS L"MgrTag"
 
 //#define NO_INFO_OVERRIDE
+#define WITH_COPYRIGHT
