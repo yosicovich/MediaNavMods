@@ -177,6 +177,15 @@ void smallTest()
 
 }
 
+void busyTest()
+{
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+    DWORD endTime = GetTickCount() + 1000;
+    while(GetTickCount() < endTime)
+        ;
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+}
+
 int WINAPI WinMain(HINSTANCE hInstance,
                    HINSTANCE hPrevInstance,
                    LPTSTR    lpCmdLine,
@@ -185,6 +194,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
     //test();
     //smallTest();
     //tagTest();
+    //return 0;
+    //busyTest();
     //return 0;
     
     MSG msg;

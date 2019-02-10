@@ -35,6 +35,8 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|DbAu13xx (MIPSII) = Debug|DbAu13xx (MIPSII)
 		Debug|Win32 = Debug|Win32
+		Public-release|DbAu13xx (MIPSII) = Public-release|DbAu13xx (MIPSII)
+		Public-release|Win32 = Public-release|Win32
 		Release|DbAu13xx (MIPSII) = Release|DbAu13xx (MIPSII)
 		Release|Win32 = Release|Win32
 	EndGlobalSection
@@ -43,6 +45,10 @@ Global
 		{A993A1F3-E6DE-4E25-ABC1-84809FD64796}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
 		{A993A1F3-E6DE-4E25-ABC1-84809FD64796}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
 		{A993A1F3-E6DE-4E25-ABC1-84809FD64796}.Debug|Win32.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{A993A1F3-E6DE-4E25-ABC1-84809FD64796}.Public-release|DbAu13xx (MIPSII).ActiveCfg = Public-release|DbAu13xx (MIPSII)
+		{A993A1F3-E6DE-4E25-ABC1-84809FD64796}.Public-release|DbAu13xx (MIPSII).Build.0 = Public-release|DbAu13xx (MIPSII)
+		{A993A1F3-E6DE-4E25-ABC1-84809FD64796}.Public-release|DbAu13xx (MIPSII).Deploy.0 = Public-release|DbAu13xx (MIPSII)
+		{A993A1F3-E6DE-4E25-ABC1-84809FD64796}.Public-release|Win32.ActiveCfg = Public-release|Win32
 		{A993A1F3-E6DE-4E25-ABC1-84809FD64796}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{A993A1F3-E6DE-4E25-ABC1-84809FD64796}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
 		{A993A1F3-E6DE-4E25-ABC1-84809FD64796}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
@@ -52,6 +58,11 @@ Global
 		{314CEA6B-E498-437D-9847-B1BAE61B076B}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
 		{314CEA6B-E498-437D-9847-B1BAE61B076B}.Debug|Win32.ActiveCfg = Debug|Win32
 		{314CEA6B-E498-437D-9847-B1BAE61B076B}.Debug|Win32.Build.0 = Debug|Win32
+		{314CEA6B-E498-437D-9847-B1BAE61B076B}.Public-release|DbAu13xx (MIPSII).ActiveCfg = Public-release|DbAu13xx (MIPSII)
+		{314CEA6B-E498-437D-9847-B1BAE61B076B}.Public-release|DbAu13xx (MIPSII).Build.0 = Public-release|DbAu13xx (MIPSII)
+		{314CEA6B-E498-437D-9847-B1BAE61B076B}.Public-release|DbAu13xx (MIPSII).Deploy.0 = Public-release|DbAu13xx (MIPSII)
+		{314CEA6B-E498-437D-9847-B1BAE61B076B}.Public-release|Win32.ActiveCfg = Public-release|Win32
+		{314CEA6B-E498-437D-9847-B1BAE61B076B}.Public-release|Win32.Build.0 = Public-release|Win32
 		{314CEA6B-E498-437D-9847-B1BAE61B076B}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{314CEA6B-E498-437D-9847-B1BAE61B076B}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
 		{314CEA6B-E498-437D-9847-B1BAE61B076B}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
@@ -62,6 +73,11 @@ Global
 		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
 		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Debug|Win32.ActiveCfg = Debug|Win32
 		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Debug|Win32.Build.0 = Debug|Win32
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Public-release|DbAu13xx (MIPSII).ActiveCfg = Public-release|DbAu13xx (MIPSII)
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Public-release|DbAu13xx (MIPSII).Build.0 = Public-release|DbAu13xx (MIPSII)
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Public-release|DbAu13xx (MIPSII).Deploy.0 = Public-release|DbAu13xx (MIPSII)
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Public-release|Win32.ActiveCfg = Public-release|Win32
+		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Public-release|Win32.Build.0 = Public-release|Win32
 		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
 		{CCCF45C7-2B6E-42FD-A85A-58E3E3C26307}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
@@ -72,6 +88,11 @@ Global
 		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
 		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Debug|Win32.ActiveCfg = Debug|Win32
 		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Debug|Win32.Build.0 = Debug|Win32
+		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Public-release|DbAu13xx (MIPSII).ActiveCfg = Public-release|DbAu13xx (MIPSII)
+		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Public-release|DbAu13xx (MIPSII).Build.0 = Public-release|DbAu13xx (MIPSII)
+		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Public-release|DbAu13xx (MIPSII).Deploy.0 = Public-release|DbAu13xx (MIPSII)
+		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Public-release|Win32.ActiveCfg = Public-release|Win32
+		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Public-release|Win32.Build.0 = Public-release|Win32
 		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
 		{DD1BD8D1-5851-4612-ADD3-70F9949F1586}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
@@ -81,6 +102,10 @@ Global
 		{EBF9A575-C7B8-448E-A130-F4D792C6CE93}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
 		{EBF9A575-C7B8-448E-A130-F4D792C6CE93}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
 		{EBF9A575-C7B8-448E-A130-F4D792C6CE93}.Debug|Win32.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{EBF9A575-C7B8-448E-A130-F4D792C6CE93}.Public-release|DbAu13xx (MIPSII).ActiveCfg = Public-release|DbAu13xx (MIPSII)
+		{EBF9A575-C7B8-448E-A130-F4D792C6CE93}.Public-release|DbAu13xx (MIPSII).Build.0 = Public-release|DbAu13xx (MIPSII)
+		{EBF9A575-C7B8-448E-A130-F4D792C6CE93}.Public-release|DbAu13xx (MIPSII).Deploy.0 = Public-release|DbAu13xx (MIPSII)
+		{EBF9A575-C7B8-448E-A130-F4D792C6CE93}.Public-release|Win32.ActiveCfg = Public-release|Win32
 		{EBF9A575-C7B8-448E-A130-F4D792C6CE93}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{EBF9A575-C7B8-448E-A130-F4D792C6CE93}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
 		{EBF9A575-C7B8-448E-A130-F4D792C6CE93}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
@@ -89,6 +114,10 @@ Global
 		{2E48B9BF-998B-40C2-A0D0-C8627DCE7028}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
 		{2E48B9BF-998B-40C2-A0D0-C8627DCE7028}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
 		{2E48B9BF-998B-40C2-A0D0-C8627DCE7028}.Debug|Win32.ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{2E48B9BF-998B-40C2-A0D0-C8627DCE7028}.Public-release|DbAu13xx (MIPSII).ActiveCfg = Public-release|DbAu13xx (MIPSII)
+		{2E48B9BF-998B-40C2-A0D0-C8627DCE7028}.Public-release|DbAu13xx (MIPSII).Build.0 = Public-release|DbAu13xx (MIPSII)
+		{2E48B9BF-998B-40C2-A0D0-C8627DCE7028}.Public-release|DbAu13xx (MIPSII).Deploy.0 = Public-release|DbAu13xx (MIPSII)
+		{2E48B9BF-998B-40C2-A0D0-C8627DCE7028}.Public-release|Win32.ActiveCfg = Public-release|Win32
 		{2E48B9BF-998B-40C2-A0D0-C8627DCE7028}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{2E48B9BF-998B-40C2-A0D0-C8627DCE7028}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
 		{2E48B9BF-998B-40C2-A0D0-C8627DCE7028}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
@@ -98,6 +127,11 @@ Global
 		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
 		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Debug|Win32.ActiveCfg = Debug|Win32
 		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Debug|Win32.Build.0 = Debug|Win32
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Public-release|DbAu13xx (MIPSII).ActiveCfg = Public-release|DbAu13xx (MIPSII)
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Public-release|DbAu13xx (MIPSII).Build.0 = Public-release|DbAu13xx (MIPSII)
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Public-release|DbAu13xx (MIPSII).Deploy.0 = Public-release|DbAu13xx (MIPSII)
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Public-release|Win32.ActiveCfg = Public-release|Win32
+		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Public-release|Win32.Build.0 = Public-release|Win32
 		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
 		{1B352C71-61DC-41D8-ABE1-964228E59C8D}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
@@ -108,6 +142,11 @@ Global
 		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
 		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Debug|Win32.ActiveCfg = Debug|Win32
 		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Debug|Win32.Build.0 = Debug|Win32
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Public-release|DbAu13xx (MIPSII).ActiveCfg = Public-release|DbAu13xx (MIPSII)
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Public-release|DbAu13xx (MIPSII).Build.0 = Public-release|DbAu13xx (MIPSII)
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Public-release|DbAu13xx (MIPSII).Deploy.0 = Public-release|DbAu13xx (MIPSII)
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Public-release|Win32.ActiveCfg = Public-release|Win32
+		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Public-release|Win32.Build.0 = Public-release|Win32
 		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
 		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
@@ -118,6 +157,11 @@ Global
 		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
 		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Debug|Win32.ActiveCfg = Debug|Win32
 		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Debug|Win32.Build.0 = Debug|Win32
+		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Public-release|DbAu13xx (MIPSII).ActiveCfg = Public-release|DbAu13xx (MIPSII)
+		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Public-release|DbAu13xx (MIPSII).Build.0 = Public-release|DbAu13xx (MIPSII)
+		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Public-release|DbAu13xx (MIPSII).Deploy.0 = Public-release|DbAu13xx (MIPSII)
+		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Public-release|Win32.ActiveCfg = Public-release|Win32
+		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Public-release|Win32.Build.0 = Public-release|Win32
 		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
 		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)

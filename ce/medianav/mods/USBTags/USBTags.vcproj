@@ -203,6 +203,104 @@
 			<DebuggerTool
 			/>
 		</Configuration>
+		<Configuration
+			Name="Public-release|DbAu13xx (MIPSII)"
+			OutputDirectory="$(SolutionDir)DbAu13xx (MIPSII)\$(ConfigurationName)"
+			IntermediateDirectory="DbAu13xx (MIPSII)\$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="1"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				ExecutionBucket="7"
+				Optimization="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="2"
+				WholeProgramOptimization="true"
+				AdditionalIncludeDirectories="..\libutils;..\CmnDLL;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\toolkit&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mp4&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\flac&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\asf&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mpeg\id3v1&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mpeg\id3v2\frames&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mpeg\id3v2&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mpeg&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\ogg&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\ogg\flac&quot;;$(NOINHERIT)"
+				PreprocessorDefinitions="TAGLIB_STATIC;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_WINDOWS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;STANDARDSHELL_UI_MODEL"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="true"
+				TreatWChar_tAsBuiltInType="false"
+				RuntimeTypeInfo="true"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE"
+				Culture="1033"
+				AdditionalIncludeDirectories="$(IntDir)"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=" /subsystem:windowsce,6.00 /machine:MIPS"
+				AdditionalDependencies="toolhelp.lib zlibce.lib taglib.lib"
+				OutputFile="$(OutDir)/USBTags.exe"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="$(SolutionDir)\..\thirdparty\$(PlatformName)\$(ConfigurationName)"
+				DelayLoadDLLs="$(NOINHERIT)"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)/USBTags.pdb"
+				SubSystem="0"
+				StackReserveSize="65536"
+				StackCommitSize="4096"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				LinkTimeCodeGeneration="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCCodeSignTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+			<DeploymentTool
+				ForceDirty="-1"
+				RemoteDirectory=""
+				RegisterOutput="0"
+				AdditionalFiles=""
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -225,6 +323,14 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|DbAu13xx (MIPSII)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Public-release|DbAu13xx (MIPSII)"
 					>
 					<Tool
 						Name="VCCLCompilerTool"

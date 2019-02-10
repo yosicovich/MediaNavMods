@@ -180,6 +180,90 @@
 			<DebuggerTool
 			/>
 		</Configuration>
+		<Configuration
+			Name="Public-release|DbAu13xx (MIPSII)"
+			OutputDirectory="$(SolutionDir)DbAu13xx (MIPSII)\$(ConfigurationName)"
+			IntermediateDirectory="DbAu13xx (MIPSII)\$(ConfigurationName)"
+			ConfigurationType="4"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="1"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				ExecutionBucket="7"
+				Optimization="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="2"
+				WholeProgramOptimization="true"
+				AdditionalIncludeDirectories=".\;.\src\taglib;.\src\taglib\toolkit;.\src\taglib\asf;.\src\taglib\mpeg;.\src\taglib\ogg;.\src\taglib\ogg\flac;.\src\taglib\flac;.\src\taglib\mpc;.\src\taglib\mp4;.\src\taglib\ogg\vorbis;.\src\taglib\ogg\speex;.\src\taglib\ogg\opus;.\src\taglib\mpeg\id3v2;.\src\taglib\mpeg\id3v2\frames;.\src\taglib\mpeg\id3v1;.\src\taglib\ape;.\src\taglib\wavpack;.\src\taglib\trueaudio;.\src\taglib\riff;.\src\taglib\riff\aiff;.\src\taglib\riff\wav;.\src\taglib\mod;.\src\taglib\s3m;.\src\taglib\it;.\src\taglib\xm;.\src\taglib\dsf;.\src\taglib\dsdiff;.\src\3rdparty;..\zlib"
+				PreprocessorDefinitions="TAGLIB_STATIC;HAVE_CONFIG_H;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_LIB;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="true"
+				TreatWChar_tAsBuiltInType="false"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE"
+				Culture="1033"
+				AdditionalIncludeDirectories="$(IntDir)"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				AdditionalOptions=" /subsystem:windowsce,6.00 /machine:MIPS"
+				OutputFile="$(OutDir)/taglib.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCCodeSignTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+			<DeploymentTool
+				ForceDirty="-1"
+				RemoteDirectory=""
+				RegisterOutput="0"
+				AdditionalFiles=""
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>

@@ -35,7 +35,6 @@ using namespace std;
 //#define TESTMODE
 #endif
 
-#define PUBLIC_RELEASE
 #ifdef TESTMODE
 #define DEMUX_DBG 1
 #define DEMUX_TRACE 0

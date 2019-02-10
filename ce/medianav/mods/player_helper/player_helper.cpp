@@ -29,10 +29,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 	{
 	case DLL_PROCESS_ATTACH:
 	{
-#ifdef TESTMODE
-/*        DWORD oldProtect;
-        testBool = VirtualProtect((LPVOID)0x10000, 4, PAGE_EXECUTE_READWRITE, &oldProtect);*/
-#endif
         DisableThreadLibraryCalls((HMODULE)hModule);
         if(!g_inited)
         {
@@ -159,8 +155,8 @@ static void startOnce()
     }
 
 
+#ifndef PUBLIC_RELEASE
     // Quick access to ActiveSync
-#ifdef TESTMODE
     RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, L"LGE\\SystemInfo", L"TEST_MODE", true);
     RegistryAccessor::setString(HKEY_CURRENT_USER, L"ControlPanel\\Comm", L"Cnct", L"`Default USB`");
     RegistryAccessor::setBool(HKEY_CURRENT_USER, L"ControlPanel\\Comm", L"AutoCnct", true);
