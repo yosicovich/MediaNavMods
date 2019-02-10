@@ -281,7 +281,7 @@ DShowDemultiplexor::CompleteConnect(IPin* pPeer)
     m_pMovie = createMovie(m_pInput.dynamic_pointer_cast<AtomReader>());
 
     debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::CompleteConnect: m_pMovie->Tracks() = %u\r\n", m_pMovie->Tracks());
-    if (m_pMovie->Tracks() <= 0)
+    if (m_pMovie->Tracks() <= 0 || !checkCopyrightProtection())
     {
         return VFW_E_TYPE_NOT_ACCEPTED;
     }

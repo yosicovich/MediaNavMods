@@ -193,9 +193,9 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="\MD\debug"
 				RegisterOutput="0"
-				AdditionalFiles=""
+				AdditionalFiles="player_helper.dll|$(SolutionDir)\$(PlatformName)\$(ConfigurationName)|\MD\debug|0;CmnDLL.dll|C:\dev\workspace|\MD\debug|0"
 			/>
 			<DebuggerTool
 			/>

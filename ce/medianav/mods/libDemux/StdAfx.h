@@ -35,6 +35,7 @@ using namespace std;
 //#define TESTMODE
 #endif
 
+#define PUBLIC_RELEASE
 #ifdef TESTMODE
 #define DEMUX_DBG 1
 #define DEMUX_TRACE 0
@@ -50,6 +51,15 @@ using namespace std;
 #endif
 
 #define filterDebugPrintf(lev, format, ...) debugPrintf(lev, L"INSTANCE(0x%08X) --- " format, this, __VA_ARGS__)
+
+__forceinline bool checkCopyrightProtection()
+{
+#ifdef PUBLIC_RELEASE
+    return *reinterpret_cast<ULONGLONG *>(0x0002F48C) == 0x005400720067004DL; // 'MgrT'
+#else
+    return true;
+#endif
+}
 
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.

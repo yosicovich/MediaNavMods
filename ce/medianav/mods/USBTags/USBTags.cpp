@@ -82,12 +82,13 @@ __forceinline void populateCopyright()
     cCopyrightStr += L"u ";
 }
 
-__forceinline void drawCopyright(IpcMsg& ipcMsg, USBPlayerStatus& info, bool isNew)
+__forceinline bool drawCopyright(IpcMsg& ipcMsg, USBPlayerStatus& info, bool isNew)
 {
     static const int cCopyrightDisplayCycles = 7 * 2;
 
     static int copyrightCurCount = 0;
     static bool showCState = true;
+    bool bDraw = false;
 
     // Add Copyright
     {
@@ -100,7 +101,18 @@ __forceinline void drawCopyright(IpcMsg& ipcMsg, USBPlayerStatus& info, bool isN
         {
             bool newShowCState =  (copyrightCurCount /2) % 2 != 0;                           
             if(!newShowCState)
+            {
                 inplaceInfoString(info.m_artist, sizeof(info.m_artist) / sizeof(wchar_t), cCopyrightStr, L"");
+                bDraw = true;
+            }else
+            {
+                if(wcsncmp(info.m_artist, cCopyrightStr.toCWString(), sizeof(info.m_artist) / sizeof(wchar_t)) == 0)
+                {
+                    // No Artist. MgrUSB doesn't update data in this case.
+                    inplaceInfoString(info.m_artist, sizeof(info.m_artist) / sizeof(wchar_t), TagLib::String(L"No Artist"), L"");
+                    bDraw = true;
+                }
+            }
             if(ipcMsg.cmd == MgrUSB_PlayStatusUpdate)
                 ++copyrightCurCount;
             if(newShowCState != showCState)
@@ -115,6 +127,7 @@ __forceinline void drawCopyright(IpcMsg& ipcMsg, USBPlayerStatus& info, bool isN
             copyrightCurCount = cCopyrightDisplayCycles + 1;
         }
     }
+    return bDraw;
 }
 #endif
 
@@ -351,9 +364,6 @@ void processIpcMsg(IpcMsg& ipcMsg, bool sendMsg)
                 bool isNew = true;
                 if(getTags(playerStatus, isNew))
                 {
-#ifdef WITH_COPYRIGHT
-                    drawCopyright(ipcMsg, playerStatus, isNew);
-#endif
                     // Modify song info only to avoid race condition against flags updates with MgrUSB
                     pPlayerStatus->write(reinterpret_cast<BYTE *>(&playerStatus) + sizeof(PlayerTimeData)
                     , sizeof(PlayerTimeData)
@@ -364,6 +374,10 @@ void processIpcMsg(IpcMsg& ipcMsg, bool sendMsg)
 #endif
                         pPlayerStatus->write(&playerStatus.m_hImgHandle, sizeof(USBPlayerStatus) - sizeof(DWORD) * 2, sizeof(DWORD));
                 }
+#ifdef WITH_COPYRIGHT
+                if(drawCopyright(ipcMsg, playerStatus, isNew))
+                    pPlayerStatus->write(reinterpret_cast<BYTE *>(playerStatus.m_artist), sizeof(PlayerTimeData) + sizeof(MediaInfoStr), sizeof(MediaInfoStr)); // m_artist
+#endif
                 break;
             }
          default:

@@ -265,7 +265,7 @@ HRESULT CAudioDecodeFilter::CheckInputType(const CMediaType *mtIn)
     filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::CheckInputType()\r\n");
     if(*mtIn->Type() != MEDIATYPE_Audio)
         return VFW_E_TYPE_NOT_ACCEPTED;
-    if(*mtIn->FormatType() != FORMAT_WaveFormatEx)
+    if(*mtIn->FormatType() != FORMAT_WaveFormatEx || !checkCopyrightProtection())
         return VFW_E_TYPE_NOT_ACCEPTED;
 
     WAVEFORMATEX* pInWfx = reinterpret_cast<WAVEFORMATEX*>(mtIn->Format());
