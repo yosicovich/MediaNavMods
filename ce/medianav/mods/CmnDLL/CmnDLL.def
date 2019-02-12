@@ -1,8 +1,16 @@
 LIBRARY	"CmnDLL"
 
 EXPORTS
-        DbgSetDebugLevel @10
         DbgDebugPrint @2
+        DbgGetDebugLevel @4
+        DbgGetDebugOnOff @5
+        DbgGetModuleName @6
+        DbgPrintDLLVersion @7
+        DbgSetAllDebugLevel @8
+        DbgSetAllDebugOnOff @9
+        DbgSetDebugLevel @10
+        DbgSetDebugOnOff @11
+        
         IpcPostMsg @16
         IpcSendMsg @17
         IpcGetMsg @12

@@ -2,9 +2,44 @@
 //
 #include "CmnDLL.h"
 
+void DbgPrintDLLVersion()
+{
+
+}
+
 void DbgSetDebugLevel(int module, int level)
 {
 
+}
+
+void DbgSetAllDebugOnOff(bool bOnOff)
+{
+
+}
+
+void DbgSetAllDebugLevel(int level)
+{
+
+}
+
+void DbgSetDebugOnOff(int module, bool bOnOff)
+{
+
+}
+
+bool DbgGetDebugOnOff(int module)
+{
+    return false;
+}
+
+int DbgGetDebugLevel(int module)
+{
+    return 0;
+}
+
+const wchar_t* DbgGetModuleName(int module)
+{
+    return L"";
 }
 
 void DbgDebugPrint(int module, int level, const wchar_t *format, ...)

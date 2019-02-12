@@ -21,7 +21,16 @@ struct IpcMsg
 };
 typedef void* hShmMem;
 
+#define DbgModules 42
+
+void DbgPrintDLLVersion();
 void DbgSetDebugLevel(int module, int level);
+void DbgSetAllDebugOnOff(bool bOnOff);
+void DbgSetAllDebugLevel(int level);
+void DbgSetDebugOnOff(int module, bool bOnOff);
+bool DbgGetDebugOnOff(int module);
+int DbgGetDebugLevel(int module);
+const wchar_t* DbgGetModuleName(int module);
 void DbgDebugPrint(int module, int level, const wchar_t *format, ...);
 bool IpcPostMsg(int src, int dst, int cmd, int extraSize/* max 4*/, const void* pExtra);
 bool IpcSendMsg(int src, int dst, int cmd, int extraSize, const void* pExtra);

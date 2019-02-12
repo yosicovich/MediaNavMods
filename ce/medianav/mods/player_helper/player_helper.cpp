@@ -12,6 +12,7 @@
 #include <set>
 #include "SimpleIni.h"
 #include <pwindbas.h>
+#include <CmnDLL.h>
 
 using namespace Utils;
 
@@ -110,6 +111,35 @@ static void startOnce()
     // Run the code below only once
     if(!g_onceChecker.isUnique())
         return;
+    
+    const CSimpleIniW::TKeyVal* cmnDebug = g_iniFile.GetSection(TEXT("CmnDebug"));
+    if(cmnDebug)
+    {
+        if(g_iniFile.GetBoolValue(TEXT("CmnDebug"), TEXT("All"), false))
+            DbgSetAllDebugOnOff(true);
+
+        int allLevel = g_iniFile.GetLongValue(TEXT("CmnDebug"), TEXT("AllLevel"), -1);
+        if(allLevel != -1)
+            DbgSetAllDebugLevel(allLevel);
+        static const wchar_t* cSetLevelMark = L"SetLevel_";
+        for(CSimpleIniW::TKeyVal::const_iterator it = cmnDebug->begin(); it != cmnDebug->end(); ++it)
+        {
+            std::wstring sName = it->first.pItem;
+            if(sName.find(cSetLevelMark) != 0)
+                continue;
+            sName = sName.substr(wcslen(cSetLevelMark));
+            if(sName.empty())
+                continue;
+
+            for(int i = 0; i < DbgModules; ++i)
+            {
+                if(sName != DbgGetModuleName(i))
+                    continue;
+                DbgSetDebugOnOff(i, true);
+                DbgSetDebugLevel(i, g_iniFile.GetLongValue(TEXT("CmnDebug"), it->first.pItem, 0));
+            }
+        }
+    }
 
     StartProcesses startPorcesses;
     
