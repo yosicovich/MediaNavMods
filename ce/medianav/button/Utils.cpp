@@ -356,3 +356,31 @@ HBITMAP LoadPicture(const std::wstring& pathName, bool& hasAlpha, int& width, in
 
     return hBitmap;
 }
+
+std::vector<std::wstring> splitString(const std::wstring& str, const std::wstring& token)
+{
+    std::vector<std::wstring> outData;
+
+    std::wstring::size_type prevPos = 0, pos = 0;
+
+    while((pos = str.find(token, pos)) != std::wstring::npos)
+    {
+        std::wstring subStr( str.substr(prevPos, pos-prevPos) );
+        outData.push_back(trim(subStr));
+
+        prevPos = ++pos;
+    }
+
+    outData.push_back(str.substr(prevPos, pos-prevPos));
+
+    return outData;
+}
+
+std::wstring trim(const std::wstring& str)
+{
+    static const wchar_t* spaces = L" \t\n\r\f\v";
+    std::wstring newStr = str;
+    newStr.erase(newStr.find_last_not_of(spaces) + 1);
+    newStr.erase(0, newStr.find_first_not_of(spaces));
+    return newStr;
+}

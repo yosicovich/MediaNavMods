@@ -19,18 +19,15 @@
 #include <memory>
 #include "SystemMeter.h"
 
-#define TIMER_MIDNIGHT 1000
-#define TIMER_POLL 1001
+#define TIMER_POLL 1000
 #define DEFAULT_POLL_INTERVAL_MS 200
 
+#define YEAR_TOKEN L"{year}"
+#define MONTH_TOKEN L"{month}"
+#define DAY_TOKEN L"{day}"
+#define WEEKDAY_TOKEN L"{wday}"
 //Parameters
 int cTextColorR, cTextColorG, cTextColorB;
-enum DateFormat 
-{
-    DateFormat_DMY = 0,
-    DateFormat_YMD = 1,
-    DateFormat_MDY = 2
-};
 
 struct ExeEntry
 {
@@ -63,7 +60,10 @@ struct CloseEntry
 };
 typedef std::vector<CloseEntry> CloseEntries;
 
-DateFormat dateFormat = DateFormat_DMY;
+std::wstring dateFormat;
+std::vector<std::wstring> dayMap;
+std::vector<std::wstring> monthMap;
+
 
 // Global Variables:
 HINSTANCE			g_hInst;			// current instance
@@ -442,17 +442,16 @@ int readConfig(HWND hWnd)
 
         if(ini.GetBoolValue(L"Text", L"ShowDate", false))
         {
-            std::wstring dateFmt = ini.GetValue(L"Text", L"DateFormat", L"DMY");
-            if(dateFmt == L"YMD")
-            {
-                dateFormat = DateFormat_YMD;
-            }else if(dateFmt == L"YMD")
-            {
-                dateFormat = DateFormat_MDY;
-            }else
-            {
-                dateFormat = DateFormat_DMY;
-            }
+            dateFormat = ini.GetValue(L"Text", L"DateFormat", DAY_TOKEN L"/" MONTH_TOKEN L"/" YEAR_TOKEN);
+            // Week Day
+            dayMap = splitString(ini.GetValue(L"Text", L"DayMap", L""), L",");
+            if(dayMap.size() == 1 && dayMap[0].empty())
+                dayMap.clear();
+            // Month
+            monthMap = splitString(ini.GetValue(L"Text", L"MonthMap", L""), L",");
+            if(monthMap.size() == 1 && monthMap[0].empty())
+                monthMap.clear();
+
             printDate(hWnd, true);
             bShowDate = true;
             break;
@@ -765,7 +764,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
         case WM_DESTROY: // indique que la fenêtre est détruite.
-            KillTimer(hWnd, TIMER_MIDNIGHT);
             KillTimer(hWnd, TIMER_POLL);
             PostQuitMessage(0);
         break;
@@ -775,13 +773,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 switch(wParam)
                 {
-                case TIMER_MIDNIGHT:
-                    {
-                        KillTimer(hWnd, TIMER_MIDNIGHT);
-                        printDate(hWnd, true);
-                        InvalidateRect(hWnd, &rBitmapLBtn, TRUE);
-                        break;
-                    }
                 case TIMER_POLL:
                     checkShowState();
                     break;
@@ -799,8 +790,6 @@ static SYSTEMTIME gPrevTime = {0, 0, 0, 0, 0, 0, 0, 0};
 bool printDate(HWND hWnd, bool forceRepaint/* = false*/)
 {
     SYSTEMTIME lt;
-    long msec;
-    wchar_t date[11];
 
     //Get current date
     GetLocalTime(&lt);
@@ -808,25 +797,67 @@ bool printDate(HWND hWnd, bool forceRepaint/* = false*/)
         return false;
 
     gPrevTime = lt;
-    switch (dateFormat)
-    {
-    case DateFormat_YMD:
-        swprintf_s(date, 11, L"%.4d-%.2d-%.2d", lt.wYear, lt.wMonth, lt.wDay);
-        break;
-    case DateFormat_MDY:
-        //MDY
-        swprintf_s(date, 11, L"%.2d/%.2d/%.4d", lt.wMonth, lt.wDay, lt.wYear);
-        break;
-    default:
-        //DMY
-        swprintf_s(date, 11, L"%.2d/%.2d/%.4d", lt.wDay, lt.wMonth, lt.wYear);
-    }
-    gButtonText = date;
+    wchar_t buf[5];
+    
+    // Year
+    swprintf_s(buf, 5, L"%.4d", lt.wYear);
+    std::wstring year = buf;
 
-    // start a timer to change the date at midnight
-    msec = (lt.wHour * 3600000) + (lt.wMinute * 60000) + (lt.wSecond * 1000) + lt.wMilliseconds;
-    msec = 86400000 - msec;
-    SetTimer(hWnd, TIMER_MIDNIGHT, msec, NULL);
+    // Day
+    swprintf_s(buf, 5, L"%.2d", lt.wDay);
+    std::wstring day = buf;
+    
+    // Month
+    std::wstring month;
+    if(lt.wMonth <= monthMap.size())
+    {
+        month = monthMap[lt.wMonth-1];
+    }else
+    {
+        swprintf_s(buf, 5, L"%.2d", lt.wMonth);
+        month = buf;
+    }
+    
+    // Week Day
+    if(lt.wDayOfWeek == 0)
+        lt.wDayOfWeek = 7;
+    std::wstring weekDay;
+    if(lt.wDayOfWeek <= dayMap.size())
+    {
+        weekDay = dayMap[lt.wDayOfWeek - 1];
+    }else
+    {
+        swprintf_s(buf, 5, L"%.2d", lt.wDayOfWeek);
+        weekDay = buf;
+    }
+    
+    std::wstring newDate = dateFormat;
+    
+    int tokenPos = newDate.find(YEAR_TOKEN);
+    if(tokenPos != std::wstring::npos)
+    {
+        newDate.replace(tokenPos, wcslen(YEAR_TOKEN), year);
+    }
+
+    tokenPos = newDate.find(MONTH_TOKEN);
+    if(tokenPos != std::wstring::npos)
+    {
+        newDate.replace(tokenPos, wcslen(MONTH_TOKEN), month);
+    }
+
+    tokenPos = newDate.find(DAY_TOKEN);
+    if(tokenPos != std::wstring::npos)
+    {
+        newDate.replace(tokenPos, wcslen(DAY_TOKEN), day);
+    }
+
+    tokenPos = newDate.find(WEEKDAY_TOKEN);
+    if(tokenPos != std::wstring::npos)
+    {
+        newDate.replace(tokenPos, wcslen(WEEKDAY_TOKEN), weekDay);
+    }
+
+    gButtonText = newDate;
     return true;
 }
 

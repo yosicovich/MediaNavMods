@@ -2,6 +2,7 @@
 
 #include <tlhelp32.h>
 #include <string>
+#include <vector>
 #include <Windows.h>
 #include <wingdi.h>
 #include <windowsx.h>
@@ -94,3 +95,5 @@ BOOL CALLBACK EnumProc(HWND hWnd, LPARAM lParam);
 BOOL HasAlphaChannel(HBITMAP hBmp);
 int GetSmallCurrExePath(LPWSTR smallpath);
 HBITMAP LoadPicture(const std::wstring& pathName, bool& hasAlpha, int& width, int& height);
+std::vector<std::wstring> splitString(const std::wstring& str, const std::wstring& token);
+std::wstring trim(const std::wstring& str);
