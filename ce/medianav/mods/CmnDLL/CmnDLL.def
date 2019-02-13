@@ -11,9 +11,10 @@ EXPORTS
         DbgSetDebugLevel @10
         DbgSetDebugOnOff @11
         
+        IpcGetMsg @12
         IpcPostMsg @16
         IpcSendMsg @17
-        IpcGetMsg @12
+        IpcSetProcessHandle @18
         MSHM_Dll_CreateShmClassObj @30
         MSHM_Dll_DestroyShmClassObj @31
         MSHM_Dll_MakeMappingReadOnly @32

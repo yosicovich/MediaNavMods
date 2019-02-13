@@ -35,6 +35,7 @@ void DbgDebugPrint(int module, int level, const wchar_t *format, ...);
 bool IpcPostMsg(int src, int dst, int cmd, int extraSize/* max 4*/, const void* pExtra);
 bool IpcSendMsg(int src, int dst, int cmd, int extraSize, const void* pExtra);
 IpcMsg* IpcGetMsg(IpcMsg* ipcMsg, UINT message, WPARAM wParam, LPARAM lParam);
+void IpcSetProcessHandle(int module, HWND hWnd);
 
 hShmMem MSHM_Dll_CreateShmClassObj();
 void MSHM_Dll_DestroyShmClassObj(hShmMem hHandle);

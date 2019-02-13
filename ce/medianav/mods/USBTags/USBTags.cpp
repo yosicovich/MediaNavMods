@@ -385,13 +385,23 @@ void processIpcMsg(IpcMsg& ipcMsg, bool sendMsg)
             break;
     }
 
-    if(sendMsg)
+    bool bSent = false;
+    for(int i = 0; i < 2 && !bSent; ++i)
     {
-        IpcSendMsg(ipcMsg.src, IpcTarget_AppMain, ipcMsg.cmd, ipcMsg.extraSize, &ipcMsg.extra);
-    }else
-    {
-        IpcPostMsg(ipcMsg.src, IpcTarget_AppMain, ipcMsg.cmd, ipcMsg.extraSize, &ipcMsg.extra);
+        if(sendMsg)
+        {
+            bSent = IpcSendMsg(ipcMsg.src, IpcTarget_AppMain, ipcMsg.cmd, ipcMsg.extraSize, &ipcMsg.extra);
+        }else
+        {
+            bSent = IpcPostMsg(ipcMsg.src, IpcTarget_AppMain, ipcMsg.cmd, ipcMsg.extraSize, &ipcMsg.extra);
+        }
+
+        if(!bSent)
+            IpcSetProcessHandle(IpcTarget_AppMain, NULL);
     }
+
+    if(!bSent)
+        debugPrintf(DBG, L"USBTags: src=%d, cmd=%d, extraSize=%d, extra=%d, sendMsg=%s still fails. Giving up!\r\n", ipcMsg.src, ipcMsg.cmd, ipcMsg.extraSize, ipcMsg.extra, sendMsg ? L"TRUE" : L"FALSE");
 }
 
 void inplaceInfoString(wchar_t* dstString, const DWORD dstCharSize, const TagLib::String& value, const wchar_t* defaultValue)

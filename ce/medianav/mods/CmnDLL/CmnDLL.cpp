@@ -62,6 +62,11 @@ IpcMsg* IpcGetMsg(IpcMsg* ipcMsg, UINT message, WPARAM wParam, LPARAM lParam)
     return ipcMsg;
 }
 
+void IpcSetProcessHandle(int module, HWND hWnd)
+{
+
+}
+
 hShmMem MSHM_Dll_CreateShmClassObj()
 {
     return NULL;
