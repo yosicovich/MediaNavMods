@@ -644,6 +644,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource.h"
+				>
+			</File>
+			<File
 				RelativePath=".\SimpleIni.h"
 				>
 			</File>
@@ -676,6 +680,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\bouton.rc"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
