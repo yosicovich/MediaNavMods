@@ -746,8 +746,12 @@ DemuxOutputPin::ThreadProc()
                     }
 
                     // oops. clearly you need to divide by dRate. At double the rate, each frame lasts half as long.
-                    tSampleStart = REFERENCE_TIME(tSampleStart / dRate);
-                    tSampleEnd = REFERENCE_TIME(tSampleEnd / dRate);
+                    
+                    if(dRate != 1)
+                    {
+                        tSampleStart = REFERENCE_TIME(tSampleStart / dRate);
+                        tSampleEnd = REFERENCE_TIME(tSampleEnd / dRate);
+                    }
 
                     pSample->SetTime(&tSampleStart, &tSampleEnd);
                     pinDebugPrintf(DEMUX_TRACE, L"DemuxOutputPin::ThreadProc: pSample->SetTime(%I64d, %I64d)\r\n", tSampleStart, tSampleEnd);
