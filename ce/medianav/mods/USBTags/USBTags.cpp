@@ -30,6 +30,7 @@ using namespace MediaNav;
 HINSTANCE			g_hInst;			// current instance
 Utils::SystemWideUniqueInstance g_uniqueInstance(IPC_WNDCLASS);
 smart_ptr<CSharedMemory> pPlayerStatus;
+smart_ptr<CSharedMemory> pTagMgrPlayerStatus;
 USBPlayerStatus g_cachedInfo;
 int coverWidth, coverHeight;
 bool g_foreignImage = false;
@@ -172,7 +173,7 @@ static const WORD g_cLangToCodePage[g_cLangsNumber] =
 TagLib::String smartParse(const TagLib::ByteVector &data)
 {
     // UTF-16 ?
-    if(data[0] == 0xFF || data[0] == 0xEF)
+    if(!data.isEmpty() && (data[0] == 0xFF || data[0] == 0xEF) )
        return TagLib::String(data, TagLib::String::UTF16);
 
     // UTF-8 ?
@@ -233,8 +234,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
     // Test
     {
         USBPlayerStatus info;
-        wcscpy(reinterpret_cast<wchar_t *>(&info.m_path), L"MD\\");
-        wcscpy(reinterpret_cast<wchar_t *>(&info.m_fileName), L"17_Шнур-Тема дорги.mp3");
+        wcscpy(reinterpret_cast<wchar_t *>(&info.m_path), L"MD\\TAG-TEST\\");
+        wcscpy(reinterpret_cast<wchar_t *>(&info.m_fileName), L"Егор_Крид__MOLLY_-_Если_Ты_Меня_Не_Любишь.mp3");
         bool isNew;
 
         TagLib::ID3v1::Tag::setStringHandler(&g_id3v1Handler);
@@ -257,6 +258,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 #ifdef WITH_COPYRIGHT
     populateCopyright();
 #endif
+    pTagMgrPlayerStatus = new CSharedMemory(IPC_MUTEX, IPC_SHARED_MEM, false, sizeof(USBPlayerStatus));
 
     pPlayerStatus = new CSharedMemory(cUSBPlayerStatusMutexName, cUSBPlayerStatusMemName, false, sizeof(USBPlayerStatus));
     MSG msg;
@@ -358,26 +360,16 @@ void processIpcMsg(IpcMsg& ipcMsg, bool sendMsg)
         case MgrUSB_PlayStatusUpdate:
         case MgrUSB_PlayStatusResume:
         case MgrUSB_PlayStatusStateChange:
+        case MgrUSB_PlayStatusSetCoverImage:
             {
                 USBPlayerStatus playerStatus;
-                pPlayerStatus->read(&playerStatus, 0, sizeof(USBPlayerStatus));
+                pTagMgrPlayerStatus->read(&playerStatus, 0, sizeof(USBPlayerStatus));
                 bool isNew = true;
-                if(getTags(playerStatus, isNew))
-                {
-                    // Modify song info only to avoid race condition against flags updates with MgrUSB
-                    pPlayerStatus->write(reinterpret_cast<BYTE *>(&playerStatus) + sizeof(PlayerTimeData)
-                    , sizeof(PlayerTimeData)
-                    , sizeof(MediaInfoStr) * 3); // m_song + m_artist + m_album
-                    
-#ifdef NO_INFO_OVERRIDE
-                    if(playerStatus.m_hImgHandle)
-#endif
-                        pPlayerStatus->write(&playerStatus.m_hImgHandle, sizeof(USBPlayerStatus) - sizeof(DWORD) * 2, sizeof(DWORD));
-                }
+                getTags(playerStatus, isNew);
 #ifdef WITH_COPYRIGHT
-                if(drawCopyright(ipcMsg, playerStatus, isNew))
-                    pPlayerStatus->write(reinterpret_cast<BYTE *>(playerStatus.m_artist), sizeof(PlayerTimeData) + sizeof(MediaInfoStr), sizeof(MediaInfoStr)); // m_artist
+                drawCopyright(ipcMsg, playerStatus, isNew);
 #endif
+                pPlayerStatus->write(&playerStatus, 0, sizeof(USBPlayerStatus));
                 break;
             }
          default:
@@ -397,7 +389,10 @@ void processIpcMsg(IpcMsg& ipcMsg, bool sendMsg)
         }
 
         if(!bSent)
+        {
+            debugPrintf(DBG, L"USBTags: Destination handler cache is invalid! Reset!\r\n");
             IpcSetProcessHandle(IpcTarget_AppMain, NULL);
+        }
     }
 
     if(!bSent)
@@ -425,18 +420,12 @@ bool readFileInfo(const wchar_t* fileName, USBPlayerStatus& info)
         inplaceInfoString(info.m_album, sizeof(info.m_artist) / sizeof(wchar_t), f.tag()->album(), L"No Album");
         inplaceInfoString(info.m_song, sizeof(info.m_artist) / sizeof(wchar_t), f.tag()->title(), info.m_fileName);
 
-#ifndef NO_INFO_OVERRIDE
         info.m_hImgHandle = NULL;
-#endif
         // Read cover image
         if(coverWidth > 0 && coverHeight > 0 )
         {
             do 
             {
-#ifdef NO_INFO_OVERRIDE
-                if(info.m_hImgHandle != NULL)
-                    break;
-#endif
                 // MP4
                 {
                     TagLib::MP4::Tag *mp4Tag = dynamic_cast<TagLib::MP4::Tag *>(f.tag());
@@ -568,16 +557,6 @@ bool getTags(USBPlayerStatus& info, bool& isNew)
 
     isNew = true;
     
-#ifdef NO_INFO_OVERRIDE
-    // Check if info already provided
-    if(wcsncmp(info.m_fileName, info.m_song, MediaInfoStringLenght) != 0)
-    {
-        // Song title is set, so re-use provided info.
-        updateCache(info, true);
-        return true;
-    }
-#endif 
-
     // A new item. Read the data.
     TagLib::String filePath(info.m_path);
     filePath += info.m_fileName;
