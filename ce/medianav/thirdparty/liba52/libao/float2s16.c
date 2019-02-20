@@ -32,10 +32,11 @@
 #ifdef LIBA52_FIXED
 static inline int16_t convert(int32_t i)
 {
-    // input 29bit float + 1bit rational + 1bit sing
+    // input 30bit float + 1bit whole + 1bit sing
     // output 15bit data + 1bit sign
-    // So we have to shrink 30bit input to 15bit output.
-    i = i >> 15; 
+    // AC3 gives output in range form -1.0 to 1.0 so we take float part only.
+    // So we have to shrink 30bit input to 15bit output.-> 30 - 15 = 15
+    i = i >> 15;
     if (i > 32767)
         return 32767;
     else if (i < -32767)

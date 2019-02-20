@@ -31,6 +31,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "a52dec", "liba52\vc++\a52de
 		{A2F44FE1-0C57-4F85-8E2A-2B98AE971954} = {A2F44FE1-0C57-4F85-8E2A-2B98AE971954}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmad", "libmad\msvc++\libmad.vcproj", "{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "madtest", "madtest\madtest.vcproj", "{FA32303E-848F-48B9-9591-AC016ADA1EA2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA} = {ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|DbAu13xx (MIPSII) = Debug|DbAu13xx (MIPSII)
@@ -167,6 +174,32 @@ Global
 		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
 		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Release|Win32.ActiveCfg = Release|Win32
 		{CF79F719-346D-4638-BE7F-5F18D70A2CC1}.Release|Win32.Build.0 = Release|Win32
+		{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}.Debug|Win32.Build.0 = Debug|Win32
+		{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}.Public-release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}.Public-release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}.Public-release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}.Public-release|Win32.ActiveCfg = Release|DbAu13xx (MIPSII)
+		{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}.Release|Win32.ActiveCfg = Release|Win32
+		{ED0A43FE-FC4A-44DC-8A37-2DD1891CDFDA}.Release|Win32.Build.0 = Release|Win32
+		{FA32303E-848F-48B9-9591-AC016ADA1EA2}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{FA32303E-848F-48B9-9591-AC016ADA1EA2}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{FA32303E-848F-48B9-9591-AC016ADA1EA2}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{FA32303E-848F-48B9-9591-AC016ADA1EA2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FA32303E-848F-48B9-9591-AC016ADA1EA2}.Public-release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{FA32303E-848F-48B9-9591-AC016ADA1EA2}.Public-release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{FA32303E-848F-48B9-9591-AC016ADA1EA2}.Public-release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{FA32303E-848F-48B9-9591-AC016ADA1EA2}.Public-release|Win32.ActiveCfg = Release|Win32
+		{FA32303E-848F-48B9-9591-AC016ADA1EA2}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{FA32303E-848F-48B9-9591-AC016ADA1EA2}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{FA32303E-848F-48B9-9591-AC016ADA1EA2}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{FA32303E-848F-48B9-9591-AC016ADA1EA2}.Release|Win32.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
