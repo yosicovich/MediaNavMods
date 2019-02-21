@@ -48,7 +48,7 @@ static const AMOVIESETUP_PIN filterPins[] =
 
 static const AMOVIESETUP_FILTER filter = 
 {
-    &__uuidof(ACCDecoderFilter),  // filter clsid
+    &__uuidof(AACDecoderFilter),  // filter clsid
     L"AAC decoder",   // filter name
     MERIT_NORMAL,     // ie default for auto graph building
     2,                // count of registered pins
@@ -64,7 +64,7 @@ CFactoryTemplate g_Templates[] = {
     {
         filter.strName,
         filter.clsID,
-        ACCDecoderFilter::CreateInstance,
+        AACDecoderFilter::CreateInstance,
         NULL,
         &filter
     },

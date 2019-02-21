@@ -8,11 +8,11 @@
 #include <neaacdec.h>
 
 class DECLSPEC_UUID("313F1007-5458-4275-8143-E760A1D73D0F") // accdecfilter
-ACCDecoderFilter: public CAudioDecodeFilter
+AACDecoderFilter: public CAudioDecodeFilter
 {
 public:
     DECLARE_IUNKNOWN;
-    virtual ~ACCDecoderFilter();
+    virtual ~AACDecoderFilter();
     // constructor method used by class factory
     static CUnknown* WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT* phr);
 
@@ -28,7 +28,7 @@ protected:
 
 private:
     // construct only via class factory
-    ACCDecoderFilter(LPUNKNOWN pUnk, HRESULT* phr);
+    AACDecoderFilter(LPUNKNOWN pUnk, HRESULT* phr);
 
 private:
     // Codec specific

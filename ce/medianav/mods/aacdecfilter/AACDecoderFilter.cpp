@@ -14,13 +14,13 @@ static const int cMaxChannels = 6; // make this higher to support files with mor
 // the class factory calls this to create the filter
 //static 
 CUnknown* WINAPI 
-ACCDecoderFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT* phr)
+AACDecoderFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT* phr)
 {
-    return new ACCDecoderFilter(pUnk, phr);
+    return new AACDecoderFilter(pUnk, phr);
 }
 
-ACCDecoderFilter::ACCDecoderFilter(LPUNKNOWN pUnk, HRESULT* phr)
-:CAudioDecodeFilter(NAME("ACCDecoderFilter"), pUnk, phr, __uuidof(ACCDecoderFilter))
+AACDecoderFilter::AACDecoderFilter(LPUNKNOWN pUnk, HRESULT* phr)
+:CAudioDecodeFilter(NAME("ACCDecoderFilter"), pUnk, phr, __uuidof(AACDecoderFilter))
 ,m_hDecoder(NULL)
 ,m_decoderReady(false)
 ,m_streamingMode(true)
@@ -47,7 +47,7 @@ ACCDecoderFilter::ACCDecoderFilter(LPUNKNOWN pUnk, HRESULT* phr)
     }
 }
 
-ACCDecoderFilter::~ACCDecoderFilter()
+AACDecoderFilter::~AACDecoderFilter()
 {
     if(m_hDecoder)
     {
@@ -55,7 +55,7 @@ ACCDecoderFilter::~ACCDecoderFilter()
     }
 }
 
-HRESULT ACCDecoderFilter::decodeOneFrame(TransformBuffersState& buffersState, bool isDiscontinuity)
+HRESULT AACDecoderFilter::decodeOneFrame(TransformBuffersState& buffersState, bool isDiscontinuity)
 {
     debugDump(DBG_TRACE, buffersState.inData, min(buffersState.inDataSize, 32));
 
@@ -139,17 +139,17 @@ HRESULT ACCDecoderFilter::decodeOneFrame(TransformBuffersState& buffersState, bo
     return S_OK;
 }
 
-DWORD ACCDecoderFilter::getFrameBufferSize()
+DWORD AACDecoderFilter::getFrameBufferSize()
 {
     return m_streamingMode ? FAAD_MIN_STREAMSIZE * cMaxChannels : 0;
 }
 
-CAudioDecodeFilter::OutBufferDesc ACCDecoderFilter::getOutBufferDesc()
+CAudioDecodeFilter::OutBufferDesc AACDecoderFilter::getOutBufferDesc()
 {
     return m_outBufferDesc;
 }
 
-HRESULT ACCDecoderFilter::CheckInputType(const CMediaType *mtIn)
+HRESULT AACDecoderFilter::CheckInputType(const CMediaType *mtIn)
 {
     if(!m_hDecoder)
     {
@@ -189,7 +189,7 @@ HRESULT ACCDecoderFilter::CheckInputType(const CMediaType *mtIn)
     return S_OK;
 }
 
-HRESULT ACCDecoderFilter::CheckTransform(const CMediaType *mtIn, const CMediaType *mtOut)
+HRESULT AACDecoderFilter::CheckTransform(const CMediaType *mtIn, const CMediaType *mtOut)
 {
     HRESULT hr = CAudioDecodeFilter::CheckTransform(mtIn, mtOut);
     if(FAILED(hr))
@@ -199,7 +199,7 @@ HRESULT ACCDecoderFilter::CheckTransform(const CMediaType *mtIn, const CMediaTyp
     return S_OK;
 }
 
-HRESULT ACCDecoderFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
+HRESULT AACDecoderFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
 {
     if(m_pInput->IsConnected() == FALSE)
         return E_UNEXPECTED;
@@ -226,7 +226,7 @@ HRESULT ACCDecoderFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
     return S_OK;
 }
 
-HRESULT ACCDecoderFilter::SetOutputMediaType(const CMediaType *pmt)
+HRESULT AACDecoderFilter::SetOutputMediaType(const CMediaType *pmt)
 {
     debugPrintf(DBG_TRACE, L"AACDecoderFilter::SetOutputMediaType()\r\n");
     HRESULT hr = CAudioDecodeFilter::SetOutputMediaType(pmt);
