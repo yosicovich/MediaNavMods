@@ -185,12 +185,12 @@ TagLib::String smartParse(const TagLib::ByteVector &data)
     if(langIndex >= g_cLangsNumber)
         langIndex = 0;
     int codePage = g_cLangToCodePage[langIndex];
-    TagLib::ByteVector bv(sizeof(MediaInfoStr) / sizeof(wchar_t));
+    TagLib::ByteVector bv(sizeof(MediaInfoStr));
     // We don't check error since we can't do anything reasonable with it anyway. Let the string be empty in this case.
-    int bytesWritten = MultiByteToWideChar(codePage, MB_ERR_INVALID_CHARS, data.data(), data.size(), (wchar_t *)bv.data(), bv.size() / sizeof(wchar_t));
-    if(bytesWritten < 0 )
-        bytesWritten = 0;
-    return TagLib::String(bv.resize(bytesWritten), TagLib::String::UTF16LE); // UTF16LE since our target is LE.
+    int charsWritten = MultiByteToWideChar(codePage, MB_ERR_INVALID_CHARS, data.data(), data.size(), (wchar_t *)bv.data(), bv.size() / sizeof(wchar_t));
+    if(charsWritten < 0 )
+        charsWritten = 0;
+    return TagLib::String(bv.resize(charsWritten * sizeof(wchar_t)), TagLib::String::UTF16LE); // UTF16LE since our target is LE.
 }
 
 class ID3v1UTFStringHandler: public TagLib::ID3v1::StringHandler
