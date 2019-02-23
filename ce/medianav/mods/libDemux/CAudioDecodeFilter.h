@@ -36,7 +36,7 @@ public:
 protected:
     struct TransformBuffersState
     {
-        BYTE* inData;
+        const BYTE* inData;
         DWORD  inDataSize;
         BYTE* outBuf;
         DWORD  outBufSize;

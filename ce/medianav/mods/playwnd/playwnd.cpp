@@ -647,7 +647,7 @@ LRESULT CALLBACK WndMainProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
     switch(message)
     {
     case WM_CREATE:
-        SetTimer(hWnd, 10000, 3000, NULL);
+        //SetTimer(hWnd, 10000, 3000, NULL);
         break;
     case WM_DESTROY:
         KillTimer(hWnd, 10000);

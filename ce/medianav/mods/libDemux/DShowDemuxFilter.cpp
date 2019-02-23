@@ -293,6 +293,11 @@ DShowDemultiplexor::CompleteConnect(IPin* pPeer)
     {
         debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::CompleteConnect: getting track nTrack = %u\r\n", nTrack);
         MovieTrackPtr pTrack = m_pMovie->Track(nTrack);
+#ifdef _DEBUG
+        // Skip video tracks in debug mode.
+        if(pTrack->IsVideo())
+            continue;
+#endif
         _bstr_t strName(pTrack->Name());
         debugPrintf(DEMUX_DBG, L"DShowDemultiplexor::CompleteConnect: strName = %s - %S\r\n", strName.GetBSTR(), pTrack->Name());
         // Make priority higher not to exhaust the queue

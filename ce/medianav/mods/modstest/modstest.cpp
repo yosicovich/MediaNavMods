@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "modstest.h"
-#include "player_helper.h"
+//#include "player_helper.h"
 #include "SystemMeter.h"
 #include <medianav.h>
 #include <CmnDLL.h>
@@ -186,11 +186,37 @@ void busyTest()
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
 }
 
+void ksa_test()
+{
+    Utils::RegistryAccessor::setString(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\KSA", L"Dll", L"\\MD\\debug\\KSA_driver\\KSA_driver.dll");
+    Utils::RegistryAccessor::setString(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\KSA", L"Prefix", L"KSA");
+    Utils::RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\KSA", L"Order", 1);
+    Utils::RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\KSA", L"Index", 1);
+    
+    HANDLE devHandle = ActivateDeviceEx(L"\\Drivers\\BuiltIn\\KSA",NULL,0,NULL);
+    DWORD err = GetLastError();
+    HANDLE hFile = CreateFile(L"KSA1:", GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    DWORD size = (0xC09FBE00 - 0xC09B1000);
+    void* pBuf = malloc(size);
+    DWORD bytesRead;
+    SetFilePointer(hFile, 0xC09B1000, NULL, FILE_BEGIN);
+    ReadFile(hFile, pBuf, size, &bytesRead, NULL);
+    CloseHandle(hFile);
+    hFile = CreateFile(L"\\MD\\usbware.code", GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    WriteFile(hFile, pBuf, size, &bytesRead, NULL);
+    free(pBuf);
+    CloseHandle(hFile);
+    DeactivateDevice(devHandle);
+
+
+}
 int WINAPI WinMain(HINSTANCE hInstance,
                    HINSTANCE hPrevInstance,
                    LPTSTR    lpCmdLine,
                    int       nCmdShow)
 {
+    ksa_test();
+    return 0;
     //test();
     //smallTest();
     //tagTest();

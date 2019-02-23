@@ -1,0 +1,10 @@
+; exports.def ; declares the exports
+
+LIBRARY         "mp3decfilter.dll"
+
+EXPORTS
+        DllGetClassObject PRIVATE
+        DllCanUnloadNow PRIVATE
+        DllRegisterServer PRIVATE
+        DllUnregisterServer PRIVATE
+

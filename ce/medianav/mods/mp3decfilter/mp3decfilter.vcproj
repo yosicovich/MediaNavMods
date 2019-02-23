@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="windows-1251"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="modstest"
-	ProjectGUID="{6B464AB5-0336-4751-8874-9EA4BCAB2D7E}"
-	RootNamespace="modstest"
+	Name="mp3decfilter"
+	ProjectGUID="{622D15FB-B089-49C8-837F-1176B1933EAC}"
+	RootNamespace="mp3decfilter"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -20,7 +20,8 @@
 			Name="Debug|DbAu13xx (MIPSII)"
 			OutputDirectory="$(SolutionDir)\$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\mediasdk.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -41,13 +42,14 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
+				AdditionalOptions="-DMAE2"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\libutils;..\player_helper;..\CmnDLL;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\toolkit&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mp4&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\flac&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\asf&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mpeg\id3v2\frames&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mpeg\id3v2&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mpeg&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\ogg&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\ogg\flac&quot;"
-				PreprocessorDefinitions="TAGLIB_STATIC;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;DEBUG;_WINDOWS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;STANDARDSHELL_UI_MODEL"
+				AdditionalIncludeDirectories="..\libUtils;$(SolutionDir)\..\thirdparty\libmad;..\libdemux;$(MEDIA_SDK)\include"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_WINDOWS;_USRDLL;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;BOOST_DISABLE_ASSERTS"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
 				TreatWChar_tAsBuiltInType="false"
-				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
 			/>
@@ -66,17 +68,21 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,6.00 /machine:MIPS"
-				AdditionalDependencies="toolhelp.lib zlibce.lib taglib.lib"
-				OutputFile="$(OutDir)/modstest.exe"
+				AdditionalDependencies="Strmbase.lib mmtimer.lib Strmiids.lib toolhelp.lib libmad.lib"
+				OutputFile="$(OutDir)/mp3decfilter.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(SolutionDir)\..\thirdparty\$(PlatformName)\$(ConfigurationName)"
+				ModuleDefinitionFile="exports.def"
 				DelayLoadDLLs="$(NOINHERIT)"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/modstest.pdb"
+				ProgramDatabaseFile="$(OutDir)/mp3decfilter.pdb"
+				GenerateMapFile="true"
 				SubSystem="0"
 				StackReserveSize="65536"
 				StackCommitSize="4096"
 				RandomizedBaseAddress="1"
+				DataExecutionPrevention="1"
+				ImportLibrary="$(OutDir)/mp3decfilter.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -100,7 +106,7 @@
 				ForceDirty="-1"
 				RemoteDirectory="\MD\vtest"
 				RegisterOutput="0"
-				AdditionalFiles="CmnDLL.dll|C:\dev\workspace|\MD\vtest|0"
+				AdditionalFiles=""
 			/>
 			<DebuggerTool
 			/>
@@ -109,7 +115,8 @@
 			Name="Release|DbAu13xx (MIPSII)"
 			OutputDirectory="$(SolutionDir)\$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\mediasdk.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -130,15 +137,16 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
+				AdditionalOptions="-DMAE2"
 				Optimization="2"
-				FavorSizeOrSpeed="2"
+				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="..\libutils;..\player_helper;..\CmnDLL;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\toolkit&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mp4&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\flac&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\asf&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mpeg\id3v2\frames&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mpeg\id3v2&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mpeg&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\ogg&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\ogg\flac&quot;"
-				PreprocessorDefinitions="TAGLIB_STATIC;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_WINDOWS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;STANDARDSHELL_UI_MODEL"
+				AdditionalIncludeDirectories="..\libUtils;$(SolutionDir)\..\thirdparty\libmad;..\libdemux;$(MEDIA_SDK)\include"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_WINDOWS;_USRDLL;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				TreatWChar_tAsBuiltInType="false"
-				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
 			/>
@@ -157,14 +165,16 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,6.00 /machine:MIPS"
-				AdditionalDependencies="toolhelp.lib zlibce.lib taglib.lib"
-				OutputFile="$(OutDir)/modstest.exe"
+				AdditionalDependencies="Strmbase.lib mmtimer.lib Strmiids.lib toolhelp.lib libmad.lib"
+				OutputFile="$(OutDir)/mp3decfilter.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(SolutionDir)\..\thirdparty\$(PlatformName)\$(ConfigurationName)"
+				ModuleDefinitionFile="exports.def"
 				DelayLoadDLLs="$(NOINHERIT)"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/modstest.pdb"
-				SubSystem="0"
+				ProgramDatabaseFile="$(OutDir)/mp3decfilter.pdb"
+				GenerateMapFile="true"
+				SubSystem="8"
 				StackReserveSize="65536"
 				StackCommitSize="4096"
 				OptimizeReferences="2"
@@ -172,6 +182,7 @@
 				LinkTimeCodeGeneration="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
+				ImportLibrary="$(OutDir)/mp3decfilter.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -193,18 +204,19 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory="\MD\debug"
+				RemoteDirectory="\MD\vtest"
 				RegisterOutput="0"
-				AdditionalFiles="player_helper.dll|$(SolutionDir)\$(PlatformName)\$(ConfigurationName)|\MD\debug|0;CmnDLL.dll|C:\dev\workspace|\MD\debug|0"
+				AdditionalFiles=""
 			/>
 			<DebuggerTool
 			/>
 		</Configuration>
 		<Configuration
 			Name="Public-release|DbAu13xx (MIPSII)"
-			OutputDirectory="$(SolutionDir)DbAu13xx (MIPSII)\$(ConfigurationName)"
-			IntermediateDirectory="DbAu13xx (MIPSII)\$(ConfigurationName)"
-			ConfigurationType="1"
+			OutputDirectory="$(SolutionDir)\$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\mediasdk.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -226,15 +238,16 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
+				AdditionalOptions="-DMAE2"
 				Optimization="2"
-				FavorSizeOrSpeed="2"
+				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="..\libutils;..\player_helper;..\CmnDLL;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\toolkit&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mp4&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\flac&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\asf&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mpeg\id3v2\frames&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mpeg\id3v2&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\mpeg&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\ogg&quot;;&quot;$(SolutionDir)\..\thirdparty\taglib\src\taglib\ogg\flac&quot;"
-				PreprocessorDefinitions="TAGLIB_STATIC;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_WINDOWS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;STANDARDSHELL_UI_MODEL"
+				AdditionalIncludeDirectories="..\libUtils;$(SolutionDir)\..\thirdparty\libmad;..\libdemux;$(MEDIA_SDK)\include"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_WINDOWS;_USRDLL;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				TreatWChar_tAsBuiltInType="false"
-				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
 			/>
@@ -253,14 +266,16 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,6.00 /machine:MIPS"
-				AdditionalDependencies="toolhelp.lib zlibce.lib taglib.lib"
-				OutputFile="$(OutDir)/modstest.exe"
+				AdditionalDependencies="Strmbase.lib mmtimer.lib Strmiids.lib toolhelp.lib libmad.lib"
+				OutputFile="$(OutDir)/mp3decfilter.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(SolutionDir)\..\thirdparty\$(PlatformName)\$(ConfigurationName)"
+				ModuleDefinitionFile="exports.def"
 				DelayLoadDLLs="$(NOINHERIT)"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/modstest.pdb"
-				SubSystem="0"
+				ProgramDatabaseFile="$(OutDir)/mp3decfilter.pdb"
+				GenerateMapFile="true"
+				SubSystem="8"
 				StackReserveSize="65536"
 				StackCommitSize="4096"
 				OptimizeReferences="2"
@@ -268,6 +283,7 @@
 				LinkTimeCodeGeneration="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
+				ImportLibrary="$(OutDir)/mp3decfilter.lib"
 				TargetMachine="0"
 			/>
 			<Tool
@@ -304,74 +320,50 @@
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
+			UniqueIdentifier="{9374597F-43C7-4F47-9E8E-604957B4A16D}"
 			>
 			<File
-				RelativePath=".\modstest.cpp"
+				RelativePath=".\exports.def"
 				>
 			</File>
 			<File
-				RelativePath=".\stdafx.cpp"
+				RelativePath=".\mp3decfilter.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|DbAu13xx (MIPSII)"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|DbAu13xx (MIPSII)"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Public-release|DbAu13xx (MIPSII)"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\MP3DecoderFilter.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\StdAfx.cpp"
+				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
+			UniqueIdentifier="{E5573936-8AD1-4EC4-AFBB-C28787CBFE77}"
 			>
 			<File
-				RelativePath=".\modstest.h"
+				RelativePath=".\MP3DecoderFilter.h"
 				>
 			</File>
 			<File
-				RelativePath=".\Resource.h"
+				RelativePath=".\resource.h"
 				>
 			</File>
 			<File
-				RelativePath=".\stdafx.h"
+				RelativePath=".\StdAfx.h"
 				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
+			UniqueIdentifier="{0FF46424-338F-4780-953C-05624912BB9D}"
 			>
 			<File
-				RelativePath=".\modstest.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\modstest.rc"
-				>
-			</File>
-			<File
-				RelativePath=".\modstest.rc2"
+				RelativePath=".\resources.rc"
 				>
 			</File>
 		</Filter>

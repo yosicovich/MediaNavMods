@@ -95,11 +95,7 @@ Mpeg4Movie::Mpeg4Movie(const AtomReaderPtr& pRoot)
                 (patm->Type() == FOURCC("cctk")))
             {
                 MovieTrackPtr pTrack = MovieTrackPtr(new Mpeg4MovieTrack(patm, this, idxTrack++));
-#ifdef _DEBUG
-                if (pTrack->Valid() && !pTrack->IsVideo())
-#else
                 if (pTrack->Valid())
-#endif
                 {
                     m_Tracks.push_back(pTrack);
                 }

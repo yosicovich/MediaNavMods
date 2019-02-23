@@ -99,11 +99,18 @@ HRESULT CAudioDecodeFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
 
     while(inDataSize)
     {
+        /*if(buffersState.outBufSize == 0)
+        {
+            // Output Overflow condition. We still have data to process but there is no output room remains.
+            filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() buffersState.outBufSize == 0 - overflow. Output buffer is not enough to decode incoming chunks!.\r\n");
+            break;
+        }
+
         if(buffersState.outBufSize < m_outBufferAlignment)
         {
             filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() buffersState.outBufSize = %d < m_outBufferAlignment = %d, possible causes - missed discontinuity or decode failure. Drop whole sample.\r\n", buffersState.outBufSize, m_outBufferAlignment);
             break;
-        }
+        }*/
 
         if(m_frameBuffer != NULL)
         {
@@ -190,8 +197,9 @@ HRESULT CAudioDecodeFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
             {
                 if(buffersState.inDataSize == m_frameBufferUsed)
                 {
-                    if(buffersState.outBufSize == pOut->GetSize())
+                    if(m_frameBufferUsed == m_frameBufferSize)
                     {
+                        // Frame buffer is full and no data has been picked at all. So frame data most likely is bad, Discard it.
                         filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() Bad frame data detected. Discarding it.\r\n");
                         m_frameBufferUsed = 0;
                         continue;
@@ -238,19 +246,26 @@ HRESULT CAudioDecodeFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
             m_maxOutputBufUsed = usedBuffer;
 #endif
         pOut->SetActualDataLength(usedBuffer);
-        if(m_doTimeSet)
+        if(usedBuffer)
         {
-            REFERENCE_TIME tStart;
-            REFERENCE_TIME tStop;
-            if(pOut->GetTime(&tStart, &tStop) != S_OK)
+            if(m_doTimeSet)
             {
-                filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() pOut->GetTime(&tStart, &tStop) failed!\r\n");
-                return E_UNEXPECTED;
+                REFERENCE_TIME tStart;
+                REFERENCE_TIME tStop;
+                if(pOut->GetTime(&tStart, &tStop) != S_OK)
+                {
+                    filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() pOut->GetTime(&tStart, &tStop) failed!\r\n");
+                    return E_UNEXPECTED;
+                }
+                pOut->SetTime(&m_joinStart, &tStop);
             }
-            pOut->SetTime(&m_joinStart, &tStop);
+            filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::Transform() return S_OK\r\n");
+            return S_OK;
+        }else
+        {
+            filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::Transform() usedBuffer == 0, return S_FALSE\r\n");
+            return S_FALSE;
         }
-        filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::Transform() return S_OK\r\n");
-        return S_OK;
     }else
     {
         m_joinBufferUsed = m_joinBufferSize - buffersState.outBufSize;
@@ -272,14 +287,6 @@ HRESULT CAudioDecodeFilter::CheckInputType(const CMediaType *mtIn)
     m_curOutputWfx = *pInWfx;
     m_curOutputWfx.cbSize = 0;
     m_curOutputWfx.wFormatTag = WAVE_FORMAT_PCM;
-
-    m_frameBufferSize = getFrameBufferSize();
-    m_frameBuffer = new BYTE[m_frameBufferSize];
-    if(m_frameBuffer == NULL)
-    {
-        filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::CheckInputType(): new BYTE[m_frameBufferSize] failed - out of memory!\r\n");
-        return E_OUTOFMEMORY;
-    }
 
     filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::CheckInputType(): return S_OK!\r\n");
     return S_OK;
@@ -351,8 +358,8 @@ HRESULT CAudioDecodeFilter::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PR
         return E_UNEXPECTED;
     }
 
-    if( bufferSize % m_outBufferAlignment > 0)
-        bufferSize += m_outBufferAlignment - (bufferSize % m_outBufferAlignment);
+    /*if( bufferSize % m_outBufferAlignment > 0)
+        bufferSize += m_outBufferAlignment - (bufferSize % m_outBufferAlignment);*/
 
     m_outJoinCount = outBufferDesc.joinCount;
     bufferSize *= m_outJoinCount;
@@ -384,6 +391,7 @@ HRESULT CAudioDecodeFilter::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PR
     pProperties->cbBuffer = bufferSize;
     ASSERT(pProperties->cbBuffer);
 
+    pProperties->cbAlign = m_outBufferAlignment;
     // Ask the allocator to reserve us some sample memory, NOTE the function
     // can succeed (that is return NOERROR) but still not have allocated the
     // memory that we requested, so we must check we got whatever we wanted
@@ -397,8 +405,10 @@ HRESULT CAudioDecodeFilter::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PR
 
     ASSERT( Actual.cBuffers == pProperties->cBuffers );
 
-    if (pProperties->cBuffers > Actual.cBuffers ||
-        pProperties->cbBuffer > Actual.cbBuffer) 
+    if (pProperties->cBuffers > Actual.cBuffers
+        || pProperties->cbBuffer > Actual.cbBuffer
+        || pProperties->cbAlign > Actual.cbAlign
+        ) 
     {
         return E_FAIL;
     }
@@ -411,6 +421,21 @@ HRESULT CAudioDecodeFilter::SetOutputMediaType(const CMediaType *pmt)
     filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::SetOutputMediaType()\r\n");
     if(*pmt->FormatType() != FORMAT_WaveFormatEx)
         return VFW_E_TYPE_NOT_ACCEPTED;
+
+    // Setup frame buffer here since it is the last stage and all data is available at this point.
+    m_frameBufferSize = getFrameBufferSize();
+    if(m_frameBufferSize > 0)
+    {
+        m_frameBuffer = new BYTE[m_frameBufferSize];
+        if(m_frameBuffer == NULL)
+        {
+            filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::CheckInputType(): new BYTE[m_frameBufferSize] failed - out of memory!\r\n");
+            return E_OUTOFMEMORY;
+        }
+    }else
+    {
+        m_frameBuffer = NULL;
+    }
 
     m_curOutputWfx = *reinterpret_cast<PWAVEFORMATEX>(pmt->Format());
     filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::SetOutputMediaType() nChannels=%d, SubType=%s\r\n", static_cast<unsigned int>(m_curOutputWfx.nChannels), *pmt->Subtype() == MEDIASUBTYPE_PostProcPCM ? L"MEDIASUBTYPE_PostProcPCM" : L"MEDIASUBTYPE_PCM");

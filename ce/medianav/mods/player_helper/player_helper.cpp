@@ -233,6 +233,8 @@ PLAYER_HELPER_API bool fixCodecsPath()
     if(codecsPath.length() > 0 && codecsPath.at(codecsPath.length() - 1) != L'\\')
         codecsPath += L'\\';
 
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{C8F59247-8FAA-42d9-93A6-EF32961644B2}\\InprocServer32", L"", codecsPath + L"mp3decfilter.dll"));
+
     registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{1F3F5741-A9EE-4bd9-B64E-99C5534B3817}\\InprocServer32", L"", codecsPath + L"ac3decfilter.dll"));
     registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{313F1007-5458-4275-8143-E760A1D73D0F}\\InprocServer32", L"", codecsPath + L"aacdecfilter.dll"));
     registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D24C840C-C469-4368-A363-0913B44AEF5C}\\InprocServer32", L"", codecsPath + L"avidmx.dll"));

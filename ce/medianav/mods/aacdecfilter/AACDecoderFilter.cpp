@@ -8,7 +8,7 @@
 // Configuration
 static const int cOutBufferTimeS = 1; // Buffer length in seconds
 static const int cSampleSizePerChannel = 2; //sizeof(short); 
-static const int cAACOneChannelOutFrameSize = 1024 * cSampleSizePerChannel;//256(samples per channel) * size of sample
+static const int cAACOneChannelOutFrameSize = 1024 * cSampleSizePerChannel;//1024(samples per channel) * size of sample
 static const int cMaxChannels = 6; // make this higher to support files with more channels
 
 // the class factory calls this to create the filter
@@ -68,7 +68,7 @@ HRESULT AACDecoderFilter::decodeOneFrame(TransformBuffersState& buffersState, bo
         {
             unsigned long sampleRate;
             unsigned char channels;
-            errCode = NeAACDecInit(m_hDecoder, buffersState.inData, buffersState.inDataSize, &sampleRate, &channels);
+            errCode = NeAACDecInit(m_hDecoder, (BYTE*)buffersState.inData, buffersState.inDataSize, &sampleRate, &channels);
             if(errCode >= 0)
             {
                 buffersState.inDataSize -= errCode;
@@ -112,7 +112,7 @@ HRESULT AACDecoderFilter::decodeOneFrame(TransformBuffersState& buffersState, bo
     }
 
     NeAACDecFrameInfo hInfo;
-    NeAACDecDecode2(m_hDecoder, &hInfo, buffersState.inData, buffersState.inDataSize, reinterpret_cast<void **>(&buffersState.outBuf), buffersState.outBufSize);
+    NeAACDecDecode2(m_hDecoder, &hInfo, (BYTE*)buffersState.inData, buffersState.inDataSize, reinterpret_cast<void **>(&buffersState.outBuf), buffersState.outBufSize);
     buffersState.inDataSize -= hInfo.bytesconsumed;
     buffersState.inData += hInfo.bytesconsumed;
     if(hInfo.samples)
