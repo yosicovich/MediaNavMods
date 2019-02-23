@@ -1,0 +1,12 @@
+LIBRARY	"KSA_driver"
+EXPORTS
+	KSA_Init
+	KSA_Deinit
+	KSA_Open
+	KSA_Close
+	KSA_Seek
+	KSA_Read
+	KSA_Write
+	KSA_IOControl
+	KSA_PowerDown
+	KSA_PowerUp
