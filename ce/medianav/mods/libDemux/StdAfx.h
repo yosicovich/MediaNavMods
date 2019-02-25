@@ -40,7 +40,11 @@ using namespace std;
 #define DEMUX_TRACE 0
 #define ADECODE_DBG 1
 #define ADECODE_TRACE 0
+#ifndef _DEBUG
 #define ADECODE_PERF 1
+#else
+#define ADECODE_PERF 0
+#endif
 #else
 #define DEMUX_DBG 0
 #define DEMUX_TRACE 0

@@ -139,8 +139,7 @@ private:
     mad_synth m_madSynth;
 
     OutBufferDesc m_outBufferDesc;
-    DWORD m_oneInFrameSize;
-    DWORD m_maxFramesPerChunk;
+    bool m_underFlowCondition;
 
     LinearDither m_leftDither;
     LinearDither m_rightDither;

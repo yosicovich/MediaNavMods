@@ -6,11 +6,9 @@
 #include <audshow.h>
 
 // Configuration
-static const int cOutBufferTimeS = 2; // Buffer length in seconds
 static const int cSampleSizePerChannel = 2; //sizeof(short);
 static const int cMP3SamplePerFrame = 1152;
 static const int cMP3OneChannelOutFrameSize = cMP3SamplePerFrame * cSampleSizePerChannel;
-static const int cMaxInputChunkSize = 65536;
 
 // the class factory calls this to create the filter
 //static 
@@ -22,8 +20,7 @@ MP3DecoderFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT* phr)
 
 MP3DecoderFilter::MP3DecoderFilter(LPUNKNOWN pUnk, HRESULT* phr)
 :CAudioDecodeFilter(NAME("MP3DecoderFilter"), pUnk, phr, __uuidof(MP3DecoderFilter))
-,m_oneInFrameSize(0)
-,m_maxFramesPerChunk(1)
+,m_underFlowCondition(false)
 ,m_leftDither(16, 28, MAD_F_ONE)
 ,m_rightDither(16, 28, MAD_F_ONE)
 {
@@ -41,6 +38,7 @@ MP3DecoderFilter::~MP3DecoderFilter()
     mad_stream_finish(&m_madStream);
 }
 
+#ifdef SND_TEST
 static short convert( mad_fixed_t i)
 {
     // input 28bit float + 3bit whole + 1bit sing
@@ -55,6 +53,7 @@ static short convert( mad_fixed_t i)
     else
         return i;
 }
+#endif
 
 bool MP3DecoderFilter::storeSamples(TransformBuffersState& buffersState, const mad_pcm& pcm)
 {
@@ -63,11 +62,24 @@ bool MP3DecoderFilter::storeSamples(TransformBuffersState& buffersState, const m
         return false;
     short *pBuffer = reinterpret_cast<short*>(buffersState.outBuf);
     int bufPos = 0;
-    for (WORD i = 0; i < pcm.length; ++i)
+#ifdef SND_TEST
+    if(Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, L"LGE\\SystemInfo", L"MP3_SND_TEST", false))
     {
-        pBuffer[bufPos++] = m_leftDither.ditherSample(pcm.samples[0][i] >> 1);
-        if(pcm.channels > 1)
-            pBuffer[bufPos++] = m_rightDither.ditherSample(pcm.samples[1][i] >> 1);//convert(pcm.samples[1][i]);
+        for (WORD i = 0; i < pcm.length; ++i)
+        {
+            pBuffer[bufPos++] = convert(pcm.samples[0][i]);
+            if(pcm.channels > 1)
+                pBuffer[bufPos++] = convert(pcm.samples[1][i]);
+        }
+    }else
+#endif
+    {
+        for (WORD i = 0; i < pcm.length; ++i)
+        {
+            pBuffer[bufPos++] = m_leftDither.ditherSample(pcm.samples[0][i] >> 1);
+            if(pcm.channels > 1)
+                pBuffer[bufPos++] = m_rightDither.ditherSample(pcm.samples[1][i] >> 1);
+        }
     }
     
     buffersState.outBufSize -= dataSize;
@@ -81,31 +93,58 @@ HRESULT MP3DecoderFilter::decodeOneFrame(TransformBuffersState& buffersState, bo
     mad_stream_buffer(&m_madStream, buffersState.inData, buffersState.inDataSize);
     
     if(isDiscontinuity)
+    {
         m_madStream.sync = 0;
+        m_underFlowCondition = false;
+    }else
+    {
+        if(m_underFlowCondition)
+        {
+            if(!storeSamples(buffersState, m_madSynth.pcm))
+            {
+                return VFW_E_BUFFER_OVERFLOW;
+            }
+            m_underFlowCondition = false;
+        }
+    }
 
-    while(mad_frame_decode(&m_madFrame, &m_madStream) == 0 || MAD_RECOVERABLE(m_madStream.error))
+    int madStatus = mad_frame_decode(&m_madFrame, &m_madStream);
+    updateInBuffer(buffersState, m_madStream);
+
+    if(madStatus == 0)
     {
         mad_synth_frame(&m_madSynth, &m_madFrame);
         if(!storeSamples(buffersState, m_madSynth.pcm))
         {
-            updateInBuffer(buffersState, m_madStream);
+            m_underFlowCondition = true;
             return VFW_E_BUFFER_OVERFLOW;
         }
-    };
-
-    if(m_madStream.error == MAD_ERROR_BUFLEN)
+        m_underFlowCondition = false;
+        return S_OK;
+    }else
     {
-        updateInBuffer(buffersState, m_madStream);
-        return VFW_E_BUFFER_UNDERFLOW;
+        if(MAD_RECOVERABLE(m_madStream.error))
+        {
+            // Let the show go on.
+            return S_OK;
+        }else if(m_madStream.error == MAD_ERROR_BUFLEN)
+        {
+            return VFW_E_BUFFER_UNDERFLOW;
+        }else
+        {
+            return E_FAIL;
+        }
     }
 
-    // Right, this routine never returns S_OK but it's OK for it since we always utilize frame buffer.
-    return E_FAIL;
+    // We shouldn't get here really.
+    return E_UNEXPECTED;
 }
 
 DWORD MP3DecoderFilter::getFrameBufferSize()
 {
-    return m_oneInFrameSize * 2;// Mad needs at least two consequent frames to decode.
+    // Let's assume the worst case. 320kbit at 32kHz
+    // (320000/8) /(32000/1152) = 1152 * 10 /8
+    return (cMP3SamplePerFrame * 10 / 8) * 2;// Mad needs at least two consequent frames to decode. We give him 2.
 }
 
 CAudioDecodeFilter::OutBufferDesc MP3DecoderFilter::getOutBufferDesc()
@@ -127,11 +166,6 @@ HRESULT MP3DecoderFilter::CheckInputType(const CMediaType *mtIn)
         && *mtIn->Subtype() != MEDIASUBTYPE_MPEG2_AUDIO
         )
         return VFW_E_TYPE_NOT_ACCEPTED;
-
-    m_oneInFrameSize = m_curOutputWfx.nAvgBytesPerSec * cMP3SamplePerFrame / m_curOutputWfx.nSamplesPerSec;
-    m_maxFramesPerChunk = cMaxInputChunkSize / m_oneInFrameSize + 1; // +1 for round up
-    m_maxFramesPerChunk +=2; // +1 for the case when we have a half from previous chunk
-    m_oneInFrameSize += 1;
 
     // Nothing more than STEREO is supported
     if(m_curOutputWfx.nChannels > 2)
@@ -192,7 +226,8 @@ HRESULT MP3DecoderFilter::SetOutputMediaType(const CMediaType *pmt)
 
     m_outBufferDesc.alignment = cMP3OneChannelOutFrameSize * m_curOutputWfx.nChannels;
     m_outBufferDesc.buffersCount = 2;
-    m_outBufferDesc.bufferSize = m_maxFramesPerChunk * m_outBufferDesc.alignment; //m_curOutputWfx.nAvgBytesPerSec * cOutBufferTimeS;
+    m_outBufferDesc.deliveryThreshold = m_outBufferDesc.alignment; //  1 frame per MediaSample
+    m_outBufferDesc.bufferSize = m_outBufferDesc.deliveryThreshold * 2; // Take a doubled space to be on safer side.
     return S_OK;
 }
 

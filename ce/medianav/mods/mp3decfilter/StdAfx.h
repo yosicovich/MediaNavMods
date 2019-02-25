@@ -25,6 +25,8 @@ using namespace std;
 
 #pragma warning(pop)
 
+//#define SND_TEST
+
 #ifdef _DEBUG
 #define TESTMODE
 #else

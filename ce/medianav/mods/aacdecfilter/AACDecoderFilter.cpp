@@ -244,8 +244,8 @@ HRESULT AACDecoderFilter::SetOutputMediaType(const CMediaType *pmt)
         // Frame aligned samples are expected
         m_outBufferDesc.alignment = cAACOneChannelOutFrameSize * m_curOutputWfx.nChannels;
         m_outBufferDesc.buffersCount = 4;
-        m_outBufferDesc.bufferSize = m_outBufferDesc.alignment;
-        m_outBufferDesc.joinCount = 8;
+        m_outBufferDesc.deliveryThreshold = m_outBufferDesc.alignment * 8;
+        m_outBufferDesc.bufferSize = m_outBufferDesc.deliveryThreshold;
     }
     return S_OK;
 }

@@ -210,19 +210,27 @@ void ksa_test()
 
 
 }
+
+void sndTest()
+{
+    Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, L"LGE\\SystemInfo", L"MP3_SND_TEST", !Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, L"LGE\\SystemInfo", L"MP3_SND_TEST", false));
+}
+
 int WINAPI WinMain(HINSTANCE hInstance,
                    HINSTANCE hPrevInstance,
                    LPTSTR    lpCmdLine,
                    int       nCmdShow)
 {
-    ksa_test();
-    return 0;
+    //sndTest();
+    //return 0;
+    //ksa_test();
+    //return 0;
     //test();
     //smallTest();
     //tagTest();
     //return 0;
-    //busyTest();
-    //return 0;
+    busyTest();
+    return 0;
     
     MSG msg;
 	// Perform application initialization:

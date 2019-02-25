@@ -8,11 +8,7 @@ CAudioDecodeFilter::CAudioDecodeFilter(TCHAR *name, LPUNKNOWN pUnk, HRESULT* phr
 ,m_frameBufferUsed(0)
 ,m_frameBufferSize(0)
 ,m_outBufferAlignment(1)
-,m_outJoinCount(1)
-,m_outJoinCur(0)
-,m_joinBufferUsed(0)
-,m_joinBufferSize(0)
-,m_doTimeSet(false)
+,m_deliveryThreshold(0)
 #if ADECODE_PERF > 0
 ,m_maxOutputBufUsed(0)
 ,m_dbgMaxFrameProcessTime(0)
@@ -44,74 +40,65 @@ CAudioDecodeFilter::~CAudioDecodeFilter()
 #endif
 }
 
-HRESULT CAudioDecodeFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
+HRESULT CAudioDecodeFilter::Receive(IMediaSample *pSample)
 {
-    filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::Transform()\r\n");
+    filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::Receive\r\n");
+    /*  Check for other streams and pass them on */
+    AM_SAMPLE2_PROPERTIES * const pProps = m_pInput->SampleProps();
+    if (pProps->dwStreamId != AM_STREAM_MEDIA) {
+        return m_pOutput->Deliver(pSample);
+    }
+
+    // Actual code start here
     TransformBuffersState buffersState;
     BYTE* inData;
     DWORD inDataSize;
-    pIn->GetPointer(&inData);
-    inDataSize = pIn->GetActualDataLength();
-
-    pOut->GetPointer(&buffersState.outBuf);
-    buffersState.outBufSize = pOut->GetSize();
+    pSample->GetPointer(&inData);
+    inDataSize = pSample->GetActualDataLength();
 
     bool discontinuity = false;
     // Reset frame buffer in case of seeking.
-    if(pIn->IsDiscontinuity() == S_OK)
+    if(pSample->IsDiscontinuity() == S_OK)
     {
-        filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() discontinuity detected! Reset frame buffer.\r\n");
+        filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Receive() discontinuity detected! Reset frame buffer.\r\n");
         m_frameBufferUsed = 0;
-        m_outJoinCur = 0;
+        // Release any pending output data
+        m_curOutMediaSample.Release();
         discontinuity = true;
     }
 
-    if(m_outJoinCur == 0)
+    HRESULT hr;
+    if(!m_curOutMediaSample)
     {
-        REFERENCE_TIME tStop;
-        m_doTimeSet = true;
-        if(pOut->GetTime(&m_joinStart, &tStop) != S_OK)
-        {
-            filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::Transform() pOut->GetTime() failed!\r\n");
-            m_doTimeSet = false;
-        }
-        m_joinBufferUsed = 0;
-    }
-
-    if(m_outJoinCur == m_outJoinCount - 1) // The last one.
-    {
-        if(m_joinBufferUsed)
-        {
-            if(buffersState.outBufSize < m_joinBufferUsed)
-            {
-                filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() buffersState.outBufSize < m_joinBufferUsed - mis configuration?\r\n");
-                return E_UNEXPECTED;
-            }
-            memcpy(buffersState.outBuf, *m_joinBuffer, m_joinBufferUsed);
-            buffersState.outBuf += m_joinBufferUsed;
-            buffersState.outBufSize -= m_joinBufferUsed;
-        }
+        IMediaSample *pOutSample;
+        hr = InitializeOutputSample(pSample, &pOutSample);
+        if(FAILED(hr)) 
+            return hr;
+        m_curOutMediaSample.Attach(pOutSample);
+        m_curOutMediaSample->SetActualDataLength(0);
     }else
     {
-        buffersState.outBuf = *m_joinBuffer + m_joinBufferUsed;
-        buffersState.outBufSize = m_joinBufferSize - m_joinBufferUsed;
+        // Update Stop times if any
+        REFERENCE_TIME tStart, tStop;
+        if(pSample->GetTime(&tStart, &tStop) == S_OK)
+        {
+            REFERENCE_TIME cStart, cStop;
+            hr = m_curOutMediaSample->GetTime(&cStart, &cStop);
+            if(hr == S_OK || hr == VFW_S_NO_STOP_TIME)
+            {
+                m_curOutMediaSample->SetTime(&cStart, &tStop);
+            }else
+            {
+                m_curOutMediaSample->SetTime(NULL, &tStop);
+            }
+        }
     }
+    
+    // Populate output buffer data
+    attachToMediaSample(m_curOutMediaSample, buffersState);
 
     while(inDataSize)
     {
-        /*if(buffersState.outBufSize == 0)
-        {
-            // Output Overflow condition. We still have data to process but there is no output room remains.
-            filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() buffersState.outBufSize == 0 - overflow. Output buffer is not enough to decode incoming chunks!.\r\n");
-            break;
-        }
-
-        if(buffersState.outBufSize < m_outBufferAlignment)
-        {
-            filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() buffersState.outBufSize = %d < m_outBufferAlignment = %d, possible causes - missed discontinuity or decode failure. Drop whole sample.\r\n", buffersState.outBufSize, m_outBufferAlignment);
-            break;
-        }*/
-
         if(m_frameBuffer != NULL)
         {
             if(m_frameBufferUsed < m_frameBufferSize)
@@ -140,19 +127,19 @@ HRESULT CAudioDecodeFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
             bool measureFailed = false;
             if(!QueryPerformanceCounter(&startTime))
             {
-                filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() QueryPerformanceCounter() failed at start\r\n");
+                filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Receive() QueryPerformanceCounter() failed at start\r\n");
                 measureFailed = true;
             }
 #endif
             frameProcessResult = decodeOneFrame(buffersState, discontinuity);
             discontinuity = false; // Once only.
 #if ADECODE_PERF > 0
-            if(!measureFailed)
+            if((frameProcessResult == S_OK || frameProcessResult == VFW_E_BUFFER_OVERFLOW) && !measureFailed) // Take into account good frames only.
             {
                 LARGE_INTEGER endTime;
                 if(!QueryPerformanceCounter(&endTime))
                 {
-                    filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() QueryPerformanceCounter() failed at and\r\n");
+                    filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Receive() QueryPerformanceCounter() failed at and\r\n");
                 }else
                 {
                     ++m_totalFramesProcessed;
@@ -177,18 +164,19 @@ HRESULT CAudioDecodeFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
         if(frameProcessResult == E_UNEXPECTED)
         {
             // Something definitely went REALLY wrong! Let the system know.
-            filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() decodeOneFrame() == E_UNEXPECTED. Let the system known and expect no further calls.\r\n");
+            filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Receive() decodeOneFrame() == E_UNEXPECTED. Let the system known and expect no further calls.\r\n");
             m_frameBufferUsed = 0;
-            m_outJoinCur = 0;
+            m_curOutMediaSample.Release();
             return E_UNEXPECTED;
         }
 
         if(frameProcessResult == E_FAIL)
         {
-            filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() decodeOneFrame() == E_FAIL. Possible causes - missed discontinuity or decode failure. Drop whole sample.\r\n");
+            filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Receive() decodeOneFrame() == E_FAIL. Possible causes - missed discontinuity or decode failure. Drop whole sample.\r\n");
             // Reset frame buffer 
             m_frameBufferUsed = 0;
-            break;
+            // Deliver data if any
+            return deliverAndReleaseOutSample(buffersState);
         }
 
         if(m_frameBuffer != NULL)
@@ -200,7 +188,7 @@ HRESULT CAudioDecodeFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
                     if(m_frameBufferUsed == m_frameBufferSize)
                     {
                         // Frame buffer is full and no data has been picked at all. So frame data most likely is bad, Discard it.
-                        filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() Bad frame data detected. Discarding it.\r\n");
+                        filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Receive() Bad frame data detected. Discarding it.\r\n");
                         m_frameBufferUsed = 0;
                         continue;
                     }
@@ -211,17 +199,23 @@ HRESULT CAudioDecodeFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
             }
             m_frameBufferUsed = buffersState.inDataSize;
         }
-
+        
         if(frameProcessResult == VFW_E_BUFFER_OVERFLOW)
         {
-            filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() decodeOneFrame() == VFW_E_BUFFER_OVERFLOW. No more output space!\r\n");
-            if(m_outJoinCur != m_outJoinCount - 1)
+            filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::Receive() decodeOneFrame() == VFW_E_BUFFER_OVERFLOW. No more output space!\r\n");
+            // Deliver data and get new output sample.
+            if(m_curOutMediaSample->GetSize() == buffersState.outBufSize)
             {
-                // Discard all the out data
-                m_outJoinCur = 0;
-                return S_FALSE; // Force to skip the sample.
+                filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Receive() decodeOneFrame() == VFW_E_BUFFER_OVERFLOW and m_curOutMediaSample->GetSize() == buffersState.outBufSize. How has this happend!!!! Stop!\r\n");
+                m_curOutMediaSample.Release();
+                return E_UNEXPECTED;
             }
-            break;
+            
+            hr = deliverOutSampleAndContinue(pSample, buffersState);
+            if(FAILED(hr))
+                return hr;
+
+            continue;
         }else if(frameProcessResult == VFW_E_BUFFER_UNDERFLOW)
         {
             if(m_frameBuffer != NULL)
@@ -229,50 +223,70 @@ HRESULT CAudioDecodeFilter::Transform(IMediaSample *pIn, IMediaSample *pOut)
                 // Normal situation. Let frame buffer be populated with the data from current sample if any still available.
             }else
             {
-                filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() decodeOneFrame() == VFW_E_BUFFER_UNDERFLOW and no frame buffering is used. STOP!!!\r\n");
-                m_outJoinCur = 0;
+                filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Receive() decodeOneFrame() == VFW_E_BUFFER_UNDERFLOW and no frame buffering is used. STOP!!!\r\n");
+                m_curOutMediaSample.Release();
                 return E_UNEXPECTED;
             }
         }
+
+        
+        if(m_deliveryThreshold != 0 && (m_curOutMediaSample->GetSize() - buffersState.outBufSize) >= m_deliveryThreshold)
+        {
+            if(inDataSize > 0)
+                hr = deliverOutSampleAndContinue(pSample, buffersState);
+            else
+                hr = deliverAndReleaseOutSample(buffersState);
+
+            if(FAILED(hr))
+                return hr;
+        }
     }
 
-    ++m_outJoinCur;
-    if(m_outJoinCur == m_outJoinCount)
+    if(!!m_curOutMediaSample)
     {
-        m_outJoinCur = 0;
-        DWORD usedBuffer = pOut->GetSize() - buffersState.outBufSize;
-#if ADECODE_PERF > 0
-        if(m_maxOutputBufUsed < usedBuffer)
-            m_maxOutputBufUsed = usedBuffer;
-#endif
-        pOut->SetActualDataLength(usedBuffer);
-        if(usedBuffer)
+        DWORD usedBuffer = m_curOutMediaSample->GetSize() - buffersState.outBufSize;
+        if(m_deliveryThreshold != 0)
         {
-            if(m_doTimeSet)
+            if(usedBuffer >= m_deliveryThreshold)
             {
-                REFERENCE_TIME tStart;
-                REFERENCE_TIME tStop;
-                if(pOut->GetTime(&tStart, &tStop) != S_OK)
-                {
-                    filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Transform() pOut->GetTime(&tStart, &tStop) failed!\r\n");
-                    return E_UNEXPECTED;
-                }
-                pOut->SetTime(&m_joinStart, &tStop);
+                hr = deliverAndReleaseOutSample(buffersState);
+                if(FAILED(hr))
+                    return hr;
+
+            }else if(usedBuffer == 0)
+            {
+                // Just created sample. Release it to get correct timestamps at next run.
+                m_curOutMediaSample.Release();
+            }else
+            {
+                m_curOutMediaSample->SetActualDataLength(usedBuffer);
             }
-            filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::Transform() return S_OK\r\n");
-            return S_OK;
         }else
         {
-            filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::Transform() usedBuffer == 0, return S_FALSE\r\n");
-            return S_FALSE;
+            hr = deliverAndReleaseOutSample(buffersState);
+            if(FAILED(hr))
+                return hr;
         }
-    }else
-    {
-        m_joinBufferUsed = m_joinBufferSize - buffersState.outBufSize;
-        filterDebugPrintf(ADECODE_TRACE, L"CAudioDecodeFilter::Transform() return S_FALSE\r\n");
-        return S_FALSE;
     }
+    return S_OK;
+}
 
+HRESULT CAudioDecodeFilter::EndOfStream(void)
+{
+    deliverAndReleaseCurOutSample();
+    return CTransformFilter::EndOfStream();
+}
+
+HRESULT CAudioDecodeFilter::BeginFlush(void)
+{
+    m_curOutMediaSample.Release();
+    return CTransformFilter::BeginFlush();
+}
+
+HRESULT CAudioDecodeFilter::EndFlush(void)
+{
+    m_curOutMediaSample.Release();
+    return CTransformFilter::EndFlush();
 }
 
 HRESULT CAudioDecodeFilter::CheckInputType(const CMediaType *mtIn)
@@ -342,12 +356,6 @@ HRESULT CAudioDecodeFilter::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PR
         return E_UNEXPECTED;
     }
 
-    if(outBufferDesc.joinCount == 0)
-    {
-        filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::DecideBufferSize() outBufferDesc.joinCount == 0 - mis-configuration!!!\r\n");
-        return E_UNEXPECTED;
-    }
-
     size_t bufferSize = outBufferDesc.bufferSize;
 
     // Make buffer frame aligned.
@@ -361,21 +369,7 @@ HRESULT CAudioDecodeFilter::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PR
     /*if( bufferSize % m_outBufferAlignment > 0)
         bufferSize += m_outBufferAlignment - (bufferSize % m_outBufferAlignment);*/
 
-    m_outJoinCount = outBufferDesc.joinCount;
-    bufferSize *= m_outJoinCount;
-
-    if(m_outJoinCount > 1)
-    {
-        m_joinBuffer = new BYTE[bufferSize];
-        m_joinBufferSize = bufferSize;
-    }else
-    {
-        m_joinBuffer = NULL;
-        m_joinBufferSize = 0;
-    }
-    m_joinBufferUsed = 0;
-    m_outJoinCur = 0;
-    
+    m_deliveryThreshold = outBufferDesc.deliveryThreshold;
 
     ASSERT(pAlloc);
     ASSERT(pProperties);
@@ -412,7 +406,7 @@ HRESULT CAudioDecodeFilter::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PR
     {
         return E_FAIL;
     }
-    filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::DecideBufferSize() return S_OK \t\r\n size=%d (requested = %d with join = %d) \t\r\n count=%d \r\n", Actual.cbBuffer, pProperties->cbBuffer, m_outJoinCount, Actual.cBuffers);
+    filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::DecideBufferSize() return S_OK \t\r\n size=%d (requested = %d with delivery treshold = %d) \t\r\n count=%d \r\n", Actual.cbBuffer, pProperties->cbBuffer, m_deliveryThreshold, Actual.cBuffers);
     return S_OK;
 }
 
