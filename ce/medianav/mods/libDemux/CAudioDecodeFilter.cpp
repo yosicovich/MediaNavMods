@@ -63,7 +63,8 @@ HRESULT CAudioDecodeFilter::Receive(IMediaSample *pSample)
         filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::Receive() discontinuity detected! Reset frame buffer.\r\n");
         m_frameBufferUsed = 0;
         // Release any pending output data
-        m_curOutMediaSample.Release();
+        if(m_curOutMediaSample)
+            m_curOutMediaSample.Release();
         discontinuity = true;
     }
 
@@ -122,6 +123,13 @@ HRESULT CAudioDecodeFilter::Receive(IMediaSample *pSample)
         HRESULT frameProcessResult;
         do 
         {
+            if(m_deliveryThreshold != 0 && (m_curOutMediaSample->GetSize() - buffersState.outBufSize) >= m_deliveryThreshold)
+            {
+                hr = deliverOutSampleAndContinue(pSample, buffersState);
+
+                if(FAILED(hr))
+                    return hr;
+            }
 #if ADECODE_PERF > 0
             LARGE_INTEGER startTime;
             bool measureFailed = false;
@@ -227,22 +235,10 @@ HRESULT CAudioDecodeFilter::Receive(IMediaSample *pSample)
                 m_curOutMediaSample.Release();
                 return E_UNEXPECTED;
             }
-        }
-
-        
-        if(m_deliveryThreshold != 0 && (m_curOutMediaSample->GetSize() - buffersState.outBufSize) >= m_deliveryThreshold)
-        {
-            if(inDataSize > 0)
-                hr = deliverOutSampleAndContinue(pSample, buffersState);
-            else
-                hr = deliverAndReleaseOutSample(buffersState);
-
-            if(FAILED(hr))
-                return hr;
-        }
+        }        
     }
 
-    if(!!m_curOutMediaSample)
+    if(m_curOutMediaSample)
     {
         DWORD usedBuffer = m_curOutMediaSample->GetSize() - buffersState.outBufSize;
         if(m_deliveryThreshold != 0)
@@ -279,13 +275,15 @@ HRESULT CAudioDecodeFilter::EndOfStream(void)
 
 HRESULT CAudioDecodeFilter::BeginFlush(void)
 {
-    m_curOutMediaSample.Release();
+    if(m_curOutMediaSample)
+        m_curOutMediaSample.Release();
     return CTransformFilter::BeginFlush();
 }
 
 HRESULT CAudioDecodeFilter::EndFlush(void)
 {
-    m_curOutMediaSample.Release();
+    if(m_curOutMediaSample)
+        m_curOutMediaSample.Release();
     return CTransformFilter::EndFlush();
 }
 

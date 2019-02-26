@@ -149,9 +149,6 @@ public:
     STDMETHODIMP GetRate(double * pdRate);
     STDMETHODIMP GetPreroll(LONGLONG * pllPreroll);
 
-//  Debug stuff
-    STDMETHODIMP GetMediaSampleTimes(ULONG* pnCount, LONGLONG** ppnStartTimes, LONGLONG** ppnStopTimes, ULONG** ppnFlags, ULONG** ppnDataSizes);
-
 private:
     MovieTrackPtr m_pTrack;
     DShowDemultiplexor* m_pParser;

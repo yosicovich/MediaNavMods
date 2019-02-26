@@ -111,14 +111,13 @@ public:
     bool Parse(DWORD scale, LONGLONG CTOffset, const AtomPtr& patmSTBL);
     DWORD Size(DWORD nSample) const;
     LONGLONG Offset(DWORD nSample) const;
+    DWORD Next(DWORD nSample) const;
 
     DWORD SyncFor(DWORD nSample) const;
-    DWORD Next(DWORD nSample) const;
-    SIZE_T Get(SIZE_T*& pnIndexes) const;
+    DWORD NextSync(DWORD nSample) const;
 
     DWORD CTSToSample(LONGLONG nSample) const;
     DWORD DTSToSample(LONGLONG tStart) const;
-    SIZE_T Get(REFERENCE_TIME*& pnTimes) const;
     LONGLONG SampleToCTS(DWORD nSample) const;
     LONGLONG Duration(DWORD nSample) const;
 

@@ -200,15 +200,14 @@ public:
         return m_nMaxSize;
     }
     virtual LONGLONG Offset(DWORD nSample) const = 0;
+    virtual DWORD Next(DWORD nSample) const = 0;
 
     // Key
     virtual DWORD SyncFor(DWORD nSample) const = 0;
-    virtual DWORD Next(DWORD nSample) const = 0;
-    virtual SIZE_T Get(SIZE_T*& pnIndexes) const = 0;
+    virtual DWORD NextSync(DWORD nSample) const = 0;
 
     // Times
     virtual DWORD DTSToSample(LONGLONG tStart) const = 0;
-    virtual SIZE_T Get(REFERENCE_TIME*& pnTimes) const = 0;
     virtual LONGLONG SampleToCTS(DWORD nSample) const = 0;
     virtual LONGLONG Duration(DWORD nSample) const = 0;
     virtual DWORD CTSToSample(LONGLONG tStart) const = 0;
@@ -325,7 +324,6 @@ public:
 	bool CheckInSegment(REFERENCE_TIME tNext, bool bSyncBefore, size_t* pnSegment, DWORD* pnSample);
 	void GetTimeBySegment(DWORD nSample, size_t segment, REFERENCE_TIME* ptStart, REFERENCE_TIME* pDuration);
 	bool NextBySegment(DWORD* pnSample, size_t* psegment);
-	SIZE_T GetTimes(REFERENCE_TIME** ppnStartTimes, REFERENCE_TIME** ppnStopTimes, ULONG** ppnFlags, ULONG** ppnDataSizes);
 
 protected:
     AtomPtr m_pRoot;

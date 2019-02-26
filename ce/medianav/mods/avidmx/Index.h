@@ -27,14 +27,13 @@ public:
     {
         return m_totalFrames;
     }
+    DWORD Next(DWORD nSample) const;
 
     DWORD SyncFor(DWORD nSample) const;
-    DWORD Next(DWORD nSample) const;
-    SIZE_T Get(SIZE_T*& pnIndexes) const;
+    DWORD NextSync(DWORD nSample) const;
 
     DWORD CTSToSample(LONGLONG nSample) const { return DTSToSample(nSample);}
     DWORD DTSToSample(LONGLONG tStart) const;
-    SIZE_T Get(REFERENCE_TIME*& pnTimes) const;
     LONGLONG SampleToCTS(DWORD nSample) const;
     LONGLONG Duration(DWORD nSample) const;
 

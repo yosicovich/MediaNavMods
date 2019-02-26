@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="mp4demux"
-	ProjectGUID="{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}"
-	RootNamespace="mp4demux"
+	Name="mp3demux"
+	ProjectGUID="{AD10D026-29AA-47DF-A279-5361DE9AD0E7}"
+	RootNamespace="mp3demux"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -69,20 +69,20 @@
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,6.00 /machine:MIPS"
 				AdditionalDependencies="Strmbase.lib mmtimer.lib Strmiids.lib toolhelp.lib"
-				OutputFile="$(OutDir)/mp4demux.dll"
+				OutputFile="$(OutDir)/mp3demux.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
-				ModuleDefinitionFile="mp4demux.def"
+				ModuleDefinitionFile="mp3demux.def"
 				DelayLoadDLLs="$(NOINHERIT)"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mp4demux.pdb"
+				ProgramDatabaseFile="$(OutDir)/mp3demux.pdb"
 				GenerateMapFile="true"
 				SubSystem="0"
 				StackReserveSize="65536"
 				StackCommitSize="4096"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="1"
-				ImportLibrary="$(OutDir)/mp4demux.lib"
+				ImportLibrary="$(OutDir)/mp3demux.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -167,13 +167,13 @@
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,6.00 /machine:MIPS"
 				AdditionalDependencies="Strmbase.lib mmtimer.lib Strmiids.lib toolhelp.lib"
-				OutputFile="$(OutDir)/mp4demux.dll"
+				OutputFile="$(OutDir)/mp3demux.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories=""
-				ModuleDefinitionFile="mp4demux.def"
+				ModuleDefinitionFile="mp3demux.def"
 				DelayLoadDLLs="$(NOINHERIT)"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mp4demux.pdb"
+				ProgramDatabaseFile="$(OutDir)/mp3demux.pdb"
 				GenerateMapFile="true"
 				SubSystem="8"
 				StackReserveSize="65536"
@@ -183,7 +183,7 @@
 				LinkTimeCodeGeneration="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary="$(OutDir)/mp4demux.lib"
+				ImportLibrary="$(OutDir)/mp3demux.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -269,13 +269,13 @@
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,6.00 /machine:MIPS"
 				AdditionalDependencies="Strmbase.lib mmtimer.lib Strmiids.lib toolhelp.lib"
-				OutputFile="$(OutDir)/mp4demux.dll"
+				OutputFile="$(OutDir)/mp3demux.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories=""
-				ModuleDefinitionFile="mp4demux.def"
+				ModuleDefinitionFile="mp3demux.def"
 				DelayLoadDLLs="$(NOINHERIT)"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mp4demux.pdb"
+				ProgramDatabaseFile="$(OutDir)/mp3demux.pdb"
 				GenerateMapFile="true"
 				SubSystem="8"
 				StackReserveSize="65536"
@@ -285,7 +285,7 @@
 				LinkTimeCodeGeneration="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary="$(OutDir)/mp4demux.lib"
+				ImportLibrary="$(OutDir)/mp3demux.lib"
 				TargetMachine="0"
 			/>
 			<Tool
@@ -322,7 +322,7 @@
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
+			UniqueIdentifier="{6282EC61-6061-4FCE-9D9C-C652134A76EA}"
 			>
 			<File
 				RelativePath=".\ElemType.cpp"
@@ -333,15 +333,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\mp4demux.cpp"
+				RelativePath=".\mp3.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\Mpeg4.cpp"
+				RelativePath=".\mp3demux.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\Mpeg4Demultiplexor.cpp"
+				RelativePath=".\Mpeg1AudioDemultiplexor.cpp"
 				>
 			</File>
 			<File
@@ -352,7 +352,7 @@
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
+			UniqueIdentifier="{C6E8AE18-DB75-45E5-9151-1227B2C1AA95}"
 			>
 			<File
 				RelativePath=".\ElemType.h"
@@ -363,11 +363,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Mpeg4.h"
+				RelativePath=".\mp3.h"
 				>
 			</File>
 			<File
-				RelativePath=".\Mpeg4Demultiplexor.h"
+				RelativePath=".\Mpeg1AudioDemultiplexor.h"
 				>
 			</File>
 			<File
@@ -382,10 +382,10 @@
 		<Filter
 			Name="Resource Files"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
+			UniqueIdentifier="{5AE0EB41-4B5B-496F-99FE-415F1ACC7F58}"
 			>
 			<File
-				RelativePath=".\mp4demux.rc"
+				RelativePath=".\mp3demux.rc"
 				>
 			</File>
 		</Filter>

@@ -635,7 +635,7 @@ DemuxOutputPin::ThreadProc()
                 while (late > (perFrame / 2))
                 {
                     // we are more than 3/4 frame late. Should we skip?
-                    DWORD next = m_pTrack->Index()->Next(nSample);
+                    DWORD next = m_pTrack->Index()->NextSync(nSample);
                     if (next && (next <= nStop))
                     {
                         REFERENCE_TIME tDiff = m_pTrack->Index()->SampleToCTS(next) - m_pTrack->Index()->SampleToCTS(nSample);
@@ -1120,21 +1120,6 @@ DemuxOutputPin::GetPreroll(LONGLONG * pllPreroll)
 }
 
 // IDemuxOutputPin
-
-STDMETHODIMP DemuxOutputPin::GetMediaSampleTimes(ULONG* pnCount, LONGLONG** ppnStartTimes, LONGLONG** ppnStopTimes, ULONG** ppnFlags, ULONG** ppnDataSizes)
-{
-	if(!pnCount || !ppnStartTimes)
-		return E_POINTER;
-	if(!ppnStopTimes && !ppnFlags && !ppnDataSizes)
-		return E_INVALIDARG; // Nothing to Do
-	if(ppnStopTimes || ppnDataSizes)
-		return E_NOTIMPL;
-	//CAutoLock Lock(m_pLock);
-	if(!m_pTrack)
-		return E_NOINTERFACE;
-	*pnCount = (ULONG) m_pTrack->GetTimes(ppnStartTimes, ppnStopTimes, ppnFlags, ppnDataSizes);
-	return S_OK;
-}
 
 BSTR _com_util::ConvertStringToBSTR(const char* pSrc)
 {

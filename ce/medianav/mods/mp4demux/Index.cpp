@@ -257,6 +257,11 @@ Mpeg4TrackIndex::Offset(DWORD nSample) const
     return m_samplesArray[nSample].offset;
 }
 
+DWORD Mpeg4TrackIndex::Next(DWORD nSample) const
+{
+    return nSample + 1;
+}
+
 void 
 Mpeg4TrackIndex::AdjustFixedSize(DWORD nBytes)
 {
@@ -277,7 +282,7 @@ Mpeg4TrackIndex::SyncFor(DWORD nSample) const
 }
 
 DWORD 
-Mpeg4TrackIndex::Next(DWORD nSample) const
+Mpeg4TrackIndex::NextSync(DWORD nSample) const
 {
     for(;nSample < m_nSamples; ++nSample)
     {
@@ -285,11 +290,6 @@ Mpeg4TrackIndex::Next(DWORD nSample) const
             return nSample;
     }
     return m_nSamples - 1; // Or 0?
-}
-
-SIZE_T Mpeg4TrackIndex::Get(SIZE_T*& pnIndexes) const
-{
-    return 0;
 }
 
 DWORD 
@@ -317,11 +317,6 @@ Mpeg4TrackIndex::DTSToSample(LONGLONG tStart) const
         ++nSample;
     }
     return nSample;
-}
-
-SIZE_T Mpeg4TrackIndex::Get(REFERENCE_TIME*& pnTimes) const
-{
-	return 0;
 }
 
 LONGLONG 

@@ -30,7 +30,8 @@ Mpeg4Atom::ScanChildrenAt(LONGLONG llOffset)
     {
         BYTE hdr[8];
         DWORD cHeader = 8;
-        Read(llOffset, 8, hdr);
+        if(Read(llOffset, 8, hdr) != S_OK)
+            break;
         LONGLONG llLength = (DWORD)SwapLong(hdr);
         DWORD type = (DWORD)SwapLong(hdr + 4);
         if (llLength == 1)

@@ -101,6 +101,11 @@ AviTrackIndex::Offset(DWORD nSample) const
     return m_samplesArray[nSample].offset;
 }
 
+DWORD AviTrackIndex::Next(DWORD nSample) const
+{
+    return nSample + 1;
+}
+
 DWORD 
 AviTrackIndex::SyncFor(DWORD nSample) const
 {
@@ -111,7 +116,7 @@ AviTrackIndex::SyncFor(DWORD nSample) const
 }
 
 DWORD 
-AviTrackIndex::Next(DWORD nSample) const
+AviTrackIndex::NextSync(DWORD nSample) const
 {
     for(;nSample < m_nSamples; ++nSample)
     {
@@ -119,11 +124,6 @@ AviTrackIndex::Next(DWORD nSample) const
             return nSample;
     }
     return m_nSamples - 1; // Or 0?
-}
-
-SIZE_T AviTrackIndex::Get(SIZE_T*& pnIndexes) const
-{
-	return 0;
 }
 
 DWORD 
@@ -138,11 +138,6 @@ AviTrackIndex::DTSToSample(LONGLONG tStart) const
         ++nSample;
     }
     return nSample;
-}
-
-SIZE_T AviTrackIndex::Get(REFERENCE_TIME*& pnTimes) const
-{
-	return 0;
 }
 
 LONGLONG 

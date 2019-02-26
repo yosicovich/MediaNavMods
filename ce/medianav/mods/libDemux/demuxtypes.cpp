@@ -324,7 +324,7 @@ void MovieTrack::GetTimeBySegment(
 
 bool MovieTrack::NextBySegment(DWORD* pnSample, size_t* psegment)
 {
-	DWORD n = *pnSample + 1;
+	DWORD n = Index()->Next(*pnSample);
 	EditEntry* it = &m_Edits[*psegment];
 
 
@@ -340,44 +340,4 @@ bool MovieTrack::NextBySegment(DWORD* pnSample, size_t* psegment)
 	}
 	REFERENCE_TIME tEdit = it->duration + it->sumDurations;
 	return CheckInSegment(tEdit, false, psegment, pnSample);
-}
-
-SIZE_T MovieTrack::GetTimes(REFERENCE_TIME** ppnStartTimes, REFERENCE_TIME** ppnStopTimes, ULONG** ppnFlags, ULONG** ppnDataSizes)
-{
-	ASSERT(ppnStartTimes);
-	if(!Index())
-		return 0;
-	ppnStopTimes; ppnDataSizes;
-	ASSERT(!ppnStopTimes && !ppnDataSizes); // Not Implemented
-	const SIZE_T nSampleCount = Index()->Get(*ppnStartTimes);
-	if(nSampleCount)
-	{
-		if(ppnFlags)
-		{
-			ULONG* pnFlags = (ULONG*) CoTaskMemAlloc(nSampleCount * sizeof *pnFlags);
-			ASSERT(pnFlags);
-			for(SIZE_T nSampleIndex = 0; nSampleIndex < nSampleCount; nSampleIndex++)
-				pnFlags[nSampleIndex] = AM_SAMPLE_TIMEVALID;
-            SIZE_T* pnIndexes = NULL;
-            const SIZE_T nIndexCount = Index()->Get(pnIndexes);
-            if(nIndexCount)
-            {
-                for(SIZE_T nIndexIndex = 0; nIndexIndex < nIndexCount; nIndexIndex++)
-                {
-                    const SIZE_T nSampleIndex = pnIndexes[nIndexIndex];
-                    ASSERT(nSampleIndex < nSampleCount);
-                    if(nSampleIndex < nSampleCount)
-                        pnFlags[nSampleIndex] |= AM_SAMPLE_SPLICEPOINT;
-                }
-            } else
-            {
-                // NOTE: Missing key map means all samples are splice points (all frames are key frames)
-                for(SIZE_T nSampleIndex = 0; nSampleIndex < nSampleCount; nSampleIndex++)
-                    pnFlags[nSampleIndex] |= AM_SAMPLE_SPLICEPOINT;
-            }
-            CoTaskMemFree(pnIndexes);
-			*ppnFlags = pnFlags;
-		}
-	}
-	return nSampleCount;
 }

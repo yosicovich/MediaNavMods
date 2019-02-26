@@ -233,21 +233,25 @@ PLAYER_HELPER_API bool fixCodecsPath()
     if(codecsPath.length() > 0 && codecsPath.at(codecsPath.length() - 1) != L'\\')
         codecsPath += L'\\';
 
+    // Demux
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D24C840C-C469-4368-A363-0913B44AEF5C}\\InprocServer32", L"", codecsPath + L"avidmx.dll"));
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{DC56E099-C9EA-49c8-9FA2-0A173D1522F1}\\InprocServer32", L"", codecsPath + L"mp3demux.dll"));
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{025BE2E4-1787-4da4-A585-C5B2B9EEB57C}\\InprocServer32", L"", codecsPath + L"mp4demux.dll"));
+    // Audio
     registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{C8F59247-8FAA-42d9-93A6-EF32961644B2}\\InprocServer32", L"", codecsPath + L"mp3decfilter.dll"));
-
     registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{1F3F5741-A9EE-4bd9-B64E-99C5534B3817}\\InprocServer32", L"", codecsPath + L"ac3decfilter.dll"));
     registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{313F1007-5458-4275-8143-E760A1D73D0F}\\InprocServer32", L"", codecsPath + L"aacdecfilter.dll"));
-    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D24C840C-C469-4368-A363-0913B44AEF5C}\\InprocServer32", L"", codecsPath + L"avidmx.dll"));
-    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{692100F0-01C4-4af0-BDC2-C8BA5C5DED01}\\InprocServer32", L"", codecsPath + L"DecodeFilter.dll"));
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D1E456E1-47E5-497a-ABA1-A0C57C3CE5C1}\\InprocServer32", L"", codecsPath + L"speexdecfilter.dll"));
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D1E456E1-47E5-497a-ABA1-A0C57C3CE5C0}\\InprocServer32", L"", codecsPath + L"vorbisdecfilter.dll"));
     // FLAC
     registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{B380606B-B500-4001-ABA9-635D24D95504}\\InprocServer32", L"", codecsPath + L"losslessdecfilter.dll"));
     // APE
     //registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{B380606C-B500-4001-ABA9-635D24D95504}\\InprocServer32", L"", codecsPath + L"losslessdecfilter.dll"));
-    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{025BE2E4-1787-4da4-A585-C5B2B9EEB57C}\\InprocServer32", L"", codecsPath + L"mp4demux.dll"));
-    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D1E456E1-47E5-497a-ABA1-A0C57C3CE5C1}\\InprocServer32", L"", codecsPath + L"speexdecfilter.dll"));
+    // Video
+    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{692100F0-01C4-4af0-BDC2-C8BA5C5DED01}\\InprocServer32", L"", codecsPath + L"DecodeFilter.dll"));
     registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{0ba13ea1-70e5-11db-9690-00e08161165f}\\InprocServer32", L"", codecsPath + L"VideoRenderer.dll"));
-    registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D1E456E1-47E5-497a-ABA1-A0C57C3CE5C0}\\InprocServer32", L"", codecsPath + L"vorbisdecfilter.dll"));
 #ifndef STABLE_ONLY
+    // Unstable
     registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{3E4DCA25-347E-4678-B22A-6F4CC68FF2A8}\\InprocServer32", L"", codecsPath + L"audiocorefilter.dll"));
     registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{9EBFDAAE-0963-4b5a-8B2E-EDB9B943820B}\\InprocServer32", L"", codecsPath + L"matroskafilter.dll"));
 #endif

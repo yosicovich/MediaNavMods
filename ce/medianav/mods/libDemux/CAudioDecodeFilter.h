@@ -80,7 +80,6 @@ protected:
     virtual OutBufferDesc getOutBufferDesc() = 0;
 
 private:
-    typedef CComPtr<IMediaSample> IMediaSamplePtr;
     // Frame buffering
     smart_array<BYTE> m_frameBuffer;
     DWORD m_frameBufferUsed;
@@ -150,6 +149,14 @@ private:
             hasStop = true;
         }
 
+        REFERENCE_TIME tMediaStart, tMediaStop;
+        bool hasMediaStop = false;
+        if(m_curOutMediaSample->GetMediaTime(&tMediaStart, &tMediaStop) == S_OK)
+        {
+            m_curOutMediaSample->SetMediaTime(&tMediaStart, NULL);
+            hasMediaStop = true;
+        }
+
         HRESULT hr = deliverAndReleaseOutSample(buffersState);
         if(FAILED(hr))
             return hr;
@@ -163,6 +170,7 @@ private:
         m_curOutMediaSample->SetActualDataLength(0);
 
         m_curOutMediaSample->SetTime(NULL, hasStop ? &tStop : NULL);
+        m_curOutMediaSample->SetMediaTime(NULL, hasMediaStop ? &tMediaStop : NULL);
 
         attachToMediaSample(m_curOutMediaSample, buffersState);
         return S_OK;
