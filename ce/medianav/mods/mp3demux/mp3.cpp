@@ -204,7 +204,7 @@ void MP3Atom::ScanChildrenAt(LONGLONG llOffset)
             size += static_cast<WORD>(id3Header.size[2]) << 7;
             size += static_cast<DWORD>(id3Header.size[1]) << 14;
             size += static_cast<DWORD>(id3Header.size[0]) << 21;
-            llLength = size;
+            llLength = sizeof(ID3v2Header) + size;
             type = FOURCC("ID3 ");
         }else if(hdr[0] == 0xFF && (hdr[1] & 0xE0) == 0xE0)
         {
