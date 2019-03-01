@@ -178,12 +178,23 @@ void patchMgrUsb(const std::string& srcFile, const std::string& dstFile)
     {
         wchar_t* usbTags = L"MgrTag\0";
         // Patch IpcPostMsg table
-		pe.patchSection(0x0002F48C, usbTags, 7 * 2);
+		pe.patchSection(0x0002F48C, usbTags, (wcslen(usbTags) + 1) * 2);
 		// Path SendMessageTimeout
-		pe.patchSection(0x0002A5FC, usbTags, 7 * 2);
-
+		pe.patchSection(0x0002A5FC, usbTags, (wcslen(usbTags) + 1) * 2);
     }
-    pe.saveToFile(dstFile.c_str());
+
+	// set USBTags mutex name
+	{
+		wchar_t* usbTags = L"ShmMxMgrUsbTagMgr_";
+		pe.patchSection(0x0002C58C, usbTags, wcslen(usbTags) * 2);
+	}
+
+	// set USBTags shared mem name
+	{
+		wchar_t* usbTags = L"ShmFmMgrUsbTagMgr_";
+		pe.patchSection(0x0002C794, usbTags, wcslen(usbTags) * 2);
+	}
+	pe.saveToFile(dstFile.c_str());
 }
 
 void patchRVC(const std::string& srcFile, const std::string& dstFile)
