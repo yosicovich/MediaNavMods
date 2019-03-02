@@ -12,7 +12,7 @@
 // The filter has an IAsyncReader input pin and creates an output pin
 // for each valid stream in the input pin.
 
-class DECLSPEC_UUID("DC56E099-C9EA-49c8-9FA2-0A173D1522F1") // mp3demux
+class DECLSPEC_UUID(MP3_DEMUX_UUID) // mp3demux
 Mpeg1AudioDemultiplexor: public DShowDemultiplexor
 {
 public:

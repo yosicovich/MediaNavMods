@@ -212,7 +212,7 @@ void MP3Atom::ScanChildrenAt(LONGLONG llOffset)
             type = FOURCC("STRM");
         }else
         {
-            if(hdr[0] != 0)
+            if(hdr[0] != 0 && llOffset >= m_scanWithin)
                 break; // Most likely bad data. Stop further parsing.
             ++llOffset;
             continue;
@@ -224,6 +224,8 @@ void MP3Atom::ScanChildrenAt(LONGLONG llOffset)
         llOffset += llLength;
     }
 }
+
+DWORD MP3Atom::m_scanWithin = Utils::RegistryAccessor::getInt(HKEY_CLASSES_ROOT, TEXT("\\CLSID\\{") TEXT(MP3_DEMUX_UUID) TEXT("}\\Pins\\Input"), TEXT("Mp3FileScanWithin"), 0);
 
 MP3Movie::MP3Movie(const AtomReaderPtr& pRoot)
 : Movie(pRoot)

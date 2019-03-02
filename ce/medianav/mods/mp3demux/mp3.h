@@ -26,6 +26,8 @@ public:
     // call this if the child items do not start immediately after the header
     // -- llOffset is an offset from HeaderSize
     virtual void ScanChildrenAt(LONGLONG llOffset);
+private:
+    static DWORD m_scanWithin;
 };
 // --- movie and track headers ---------------------------
 class MP3Movie;

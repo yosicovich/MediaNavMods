@@ -30,6 +30,7 @@ using namespace std;
 #pragma warning(pop)
 #define FOURCC(p)   (DWORD(p[3] | (p[2] << 8) | (p[1] << 16) | (p[0] << 24)))
 
+#define MP3_DEMUX_UUID "DC56E099-C9EA-49c8-9FA2-0A173D1522F1"
 #ifdef _DEBUG
 #define TESTMODE
 #else
