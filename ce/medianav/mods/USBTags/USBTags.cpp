@@ -83,7 +83,7 @@ __forceinline void populateCopyright()
     cCopyrightStr += L"u ";
 }
 
-__forceinline bool drawCopyright(IpcMsg& ipcMsg, USBPlayerStatus& info, bool isNew)
+__forceinline void drawCopyright(IpcMsg& ipcMsg, USBPlayerStatus& info, bool isNew)
 {
     static const int cCopyrightDisplayCycles = 7 * 2;
 
@@ -104,15 +104,6 @@ __forceinline bool drawCopyright(IpcMsg& ipcMsg, USBPlayerStatus& info, bool isN
             if(!newShowCState)
             {
                 inplaceInfoString(info.m_artist, sizeof(info.m_artist) / sizeof(wchar_t), cCopyrightStr, L"");
-                bDraw = true;
-            }else
-            {
-                if(wcsncmp(info.m_artist, cCopyrightStr.toCWString(), sizeof(info.m_artist) / sizeof(wchar_t)) == 0)
-                {
-                    // No Artist. MgrUSB doesn't update data in this case.
-                    inplaceInfoString(info.m_artist, sizeof(info.m_artist) / sizeof(wchar_t), TagLib::String(L"No Artist"), L"");
-                    bDraw = true;
-                }
             }
             if(ipcMsg.cmd == MgrUSB_PlayStatusUpdate)
                 ++copyrightCurCount;
@@ -128,7 +119,7 @@ __forceinline bool drawCopyright(IpcMsg& ipcMsg, USBPlayerStatus& info, bool isN
             copyrightCurCount = cCopyrightDisplayCycles + 1;
         }
     }
-    return bDraw;
+    return;
 }
 #endif
 
@@ -367,7 +358,9 @@ void processIpcMsg(IpcMsg& ipcMsg, bool sendMsg)
                 bool isNew = true;
                 getTags(playerStatus, isNew);
 #ifdef WITH_COPYRIGHT
+                debugPrintf(DBG, L"USBTags: processIpcMsg() before copyright = %s, isNew=%s\r\n", playerStatus.m_artist, isNew ? L"true" : L"false");
                 drawCopyright(ipcMsg, playerStatus, isNew);
+                debugPrintf(DBG, L"USBTags: processIpcMsg() after copyright = %s\r\n", playerStatus.m_artist);
 #endif
                 pPlayerStatus->write(&playerStatus, 0, sizeof(USBPlayerStatus));
                 break;
@@ -415,7 +408,10 @@ bool readFileInfo(const wchar_t* fileName, USBPlayerStatus& info)
         TagLib::FileStream fileStream(fileName, true);// Open file in readonly mode.
         TagLib::FileRef f(&fileStream, false);
         if(f.isNull())
-            return false;
+        {
+            debugPrintf(DBG, L"USBTags: readFileInfo() f.isNull()\r\n");
+            return true;
+        }
         inplaceInfoString(info.m_artist, sizeof(info.m_artist) / sizeof(wchar_t), f.tag()->artist(), L"No Artist");
         inplaceInfoString(info.m_album, sizeof(info.m_artist) / sizeof(wchar_t), f.tag()->album(), L"No Album");
         inplaceInfoString(info.m_song, sizeof(info.m_artist) / sizeof(wchar_t), f.tag()->title(), info.m_fileName);
@@ -545,6 +541,7 @@ bool getTags(USBPlayerStatus& info, bool& isNew)
         flushCache = coverWidth > 0 && coverHeight > 0;
     }
 
+    debugPrintf(DBG, L"USBTags: getTags() path = %s  ----  %s, file = %s  ----  %s\r\n", info.m_path, g_cachedInfo.m_path, info.m_fileName, g_cachedInfo.m_fileName);
     if(!flushCache && memcmp(g_cachedInfo.m_path, info.m_path, sizeof(MediaInfoStr) * 2) == 0)
     {
         // We have already read this file info
@@ -564,6 +561,7 @@ bool getTags(USBPlayerStatus& info, bool& isNew)
     if(!readFileInfo(filePath.toCWString(), info))
         return false;
 
+    debugPrintf(DBG, L"USBTags: readFileInfo() Data has been read. Updating cache...\r\n");
     updateCache(info, false);
     return true;
 }
