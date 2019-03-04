@@ -270,6 +270,11 @@ MP3MovieTrack::MP3MovieTrack(const AtomPtr& pAtom, MP3Movie* pMovie, DWORD idx)
     }
     DWORD sampleRate = cMPASampleRate[mpaVersion][frameHeader.sampleRateIndex];
     DWORD bitrate = cMPABitrates[mpaVersion != MPEG1][mpaLayer][frameHeader.bitrateIndex] * 1000;
+    if(sampleRate == 0 || bitrate == 0)
+    {
+        debugPrintf(DBG, L"MP3MovieTrack::MP3MovieTrack: frame header - sampleRate == 0 || bitrate == 0, samplerate=%d, bitRate=%d\r\n", sampleRate, bitrate);
+        return;
+    }
     DWORD samplesPerFrame = cMPASamplesPerFrames[mpaVersion != MPEG1][mpaLayer];
     ChannelMode channelMode = static_cast<ChannelMode>(frameHeader.channelMode);
 
