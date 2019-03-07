@@ -36,6 +36,7 @@ MP3DecoderFilter::~MP3DecoderFilter()
     mad_synth_finish(&m_madSynth);
     mad_frame_finish(&m_madFrame);
     mad_stream_finish(&m_madStream);
+    debugPrintf(DBG, L"MP3DecoderFilter::~MP3DecoderFilter() destroyed\r\n");
 }
 
 #ifdef SND_TEST

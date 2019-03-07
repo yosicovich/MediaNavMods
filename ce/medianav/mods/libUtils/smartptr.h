@@ -70,13 +70,17 @@ public:
 
     // initialisation
     smart_ptr()
-    : m_pObject(NULL),
-    m_pCount(NULL)
+        : m_pObject(NULL),
+        m_pCount(NULL)
     {
     }
 
     explicit smart_ptr(T* pObj)
+        : m_pObject(NULL),
+        m_pCount(NULL)
     {
+        if(!pObj)
+            return;
         m_pObject = pObj;
         AssignNew();
     }
@@ -219,13 +223,17 @@ public:
 
     // initialisation
     smart_array()
-    : m_pObject(NULL),
-    m_pCount(NULL)
+        : m_pObject(NULL),
+        m_pCount(NULL)
     {
     }
 
     smart_array(T* pObj)
+        : m_pObject(NULL),
+        m_pCount(NULL)
     {
+        if(!pObj)
+            return;
         m_pObject = pObj;
         AssignNew();
     }

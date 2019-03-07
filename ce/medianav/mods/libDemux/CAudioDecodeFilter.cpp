@@ -269,22 +269,9 @@ HRESULT CAudioDecodeFilter::Receive(IMediaSample *pSample)
 
 HRESULT CAudioDecodeFilter::EndOfStream(void)
 {
+    filterDebugPrintf(ADECODE_DBG, L"CAudioDecodeFilter::EndOfStream()\r\n");
     deliverAndReleaseCurOutSample();
     return CTransformFilter::EndOfStream();
-}
-
-HRESULT CAudioDecodeFilter::BeginFlush(void)
-{
-    if(m_curOutMediaSample)
-        m_curOutMediaSample.Release();
-    return CTransformFilter::BeginFlush();
-}
-
-HRESULT CAudioDecodeFilter::EndFlush(void)
-{
-    if(m_curOutMediaSample)
-        m_curOutMediaSample.Release();
-    return CTransformFilter::EndFlush();
 }
 
 HRESULT CAudioDecodeFilter::CheckInputType(const CMediaType *mtIn)

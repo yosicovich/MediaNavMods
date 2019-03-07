@@ -20,8 +20,6 @@ public:
 
     HRESULT Receive(IMediaSample *pSample);
     HRESULT EndOfStream(void);
-    HRESULT BeginFlush(void);
-    HRESULT EndFlush(void);
     HRESULT CheckInputType(const CMediaType *mtIn);
     HRESULT CheckTransform(const CMediaType *mtIn, const CMediaType *mtOut);
     HRESULT DecideBufferSize(IMemAllocator *pAlloc,
