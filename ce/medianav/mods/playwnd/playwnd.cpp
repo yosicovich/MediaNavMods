@@ -367,6 +367,9 @@ void CloseInterfaces(void)
         pVW->put_Owner(NULL);
     }
 
+    if(pME)
+        pME->SetNotifyWindow(NULL, 0, 0);
+
     HELPER_RELEASE(pMC);
     HELPER_RELEASE(pME);
     HELPER_RELEASE(pMS);
@@ -490,7 +493,7 @@ HRESULT ToggleFullScreen(void)
         CloseClip();
         RETAILMSG(1, (TEXT("PlayMovieInWindow()\r\n")));
         PlayMovieInWindow(films[roundIndex++]);
-        if(roundIndex == 4)
+        if(roundIndex == 3)
             roundIndex = 0;
         RETAILMSG(1, (TEXT("PlayMovieInWindow() - OK\r\n")));
         return S_OK;
@@ -589,7 +592,7 @@ HRESULT HandleGraphEvent(void)
     LONG evCode, evParam1, evParam2;
     HRESULT hr=S_OK;
 
-    while(SUCCEEDED(pME->GetEvent(&evCode, &evParam1, &evParam2, 0)))
+    while(pME && SUCCEEDED(pME->GetEvent(&evCode, &evParam1, &evParam2, 0)))
     {
         // Spin through the events
         hr = pME->FreeEventParams(evCode, evParam1, evParam2);
