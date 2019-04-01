@@ -176,71 +176,7 @@ const DWORD cMPASlotSizes[3] =
 #define TOC_FLAG        0x0004
 #define VBR_SCALE_FLAG  0x0008
 
-void MP3Atom::ScanChildrenAt(LONGLONG llOffset)
-{
-    llOffset += m_cHeader;
-
-    while (llOffset < m_llLength)
-    {
-        BYTE hdr[4];
-        if(Read(llOffset, 4, hdr) != S_OK)
-            break;
-        LONGLONG llLength = 0;
-        DWORD type;
-        if(memcmp("TAG", hdr, 3) == 0)
-        {
-            llLength = 128;
-            type = FOURCC("TAG ");
-        }else if(memcmp("TAG+", hdr, 4) == 0)
-        {
-            llLength = 227;
-            type = FOURCC("TAG+");
-        }else if(memcmp("ID3", hdr, 3) == 0)
-        {
-            ID3v2Header id3Header;
-            if(Read(llOffset, sizeof(ID3v2Header), &id3Header) != S_OK)
-                break;
-            DWORD size = id3Header.size[3];
-            size += static_cast<WORD>(id3Header.size[2]) << 7;
-            size += static_cast<DWORD>(id3Header.size[1]) << 14;
-            size += static_cast<DWORD>(id3Header.size[0]) << 21;
-            llLength = sizeof(ID3v2Header) + size;
-            type = FOURCC("ID3 ");
-        }else if(hdr[0] == 0xFF && (hdr[1] & 0xE0) == 0xE0)
-        {
-            llLength = m_llLength - llOffset;
-            type = FOURCC("STRM");
-        }else
-        {
-            if(hdr[0] != 0 && llOffset >= m_scanWithin)
-                break; // Most likely bad data. Stop further parsing.
-            ++llOffset;
-            continue;
-        }
-
-        AtomPtr pChild = AtomPtr(new MP3Atom(this, llOffset, llLength, type));
-        m_Children.push_back(pChild);
-
-        llOffset += llLength;
-    }
-}
-
 DWORD MP3Atom::m_scanWithin = Utils::RegistryAccessor::getInt(HKEY_CLASSES_ROOT, TEXT("\\CLSID\\{") TEXT(MP3_DEMUX_UUID) TEXT("}\\Pins\\Input"), TEXT("Mp3FileScanWithin"), 0);
-
-MP3Movie::MP3Movie(const AtomReaderPtr& pRoot)
-: Movie(pRoot)
-{
-    AtomPtr pMp3 = AtomPtr(new MP3Atom(pRoot.get(), 0, pRoot->Length(), 0));
-    const AtomPtr& pStream = pMp3->FindChild(FOURCC("STRM"));
-    if (pStream == NULL)
-        return;
-    MovieTrackPtr pTrack = MovieTrackPtr(new MP3MovieTrack(pStream, this, 0));
-    if (pTrack->Valid())
-    {
-        m_Tracks.push_back(pTrack);
-    }
-    return;
-}
 
 static const int cMPAJoinFramesCount = 64; // Join this number of frames to a chunk to reduce media read operations overhead.
 static const int cMPAMinimalConsequentFrames = 10; // Number of consequent valid frames to be sure the file is MP3.
@@ -256,7 +192,7 @@ struct MP3FrameInfo
     DWORD size;
 };
 
-bool readFrameHeader(MP3FrameInfo& frameInfo, const AtomPtr& pAtom, LONGLONG llOffset)
+bool readFrameHeader(MP3FrameInfo& frameInfo, Atom* pAtom, LONGLONG llOffset)
 {
     FrameHeader frameHeader;
     DWORD hdrVal;
@@ -271,7 +207,7 @@ bool readFrameHeader(MP3FrameInfo& frameInfo, const AtomPtr& pAtom, LONGLONG llO
         debugPrintf(DBG, L"MP3MovieTrack - readFrameHeader: frame header - bad sync %d\r\n", frameHeader.sync);
         return false;
     }
-    
+
     MPAVersion mpaVersion = static_cast<MPAVersion>(frameHeader.version);
     MPALayer mpaLayer = static_cast<MPALayer>(LayerReserved - frameHeader.layer);
     if(mpaVersion == MPEGReserved || mpaLayer == LayerReserved)
@@ -300,21 +236,20 @@ bool readFrameHeader(MP3FrameInfo& frameInfo, const AtomPtr& pAtom, LONGLONG llO
     return true;
 }
 
-MP3MovieTrack::MP3MovieTrack(const AtomPtr& pAtom, MP3Movie* pMovie, DWORD idx)
-: MovieTrack(AtomPtr(), pMovie, idx)
+bool detectMP3Track(Atom* pAtom, LONGLONG offset, MP3FrameInfo& mp3FrameInfo, DWORD& totalFrames)
 {
     MP3FrameInfo frameInfo;
-    if(!readFrameHeader(frameInfo, pAtom, 0))
+    if(!readFrameHeader(frameInfo, pAtom, offset))
     {
-        debugPrintf(DBG, L"MP3MovieTrack::MP3MovieTrack: Bad first frame header!\r\n");
-        return;
+        debugPrintf(DBG, L"detectMP3Track: Bad first frame header!\r\n");
+        return false;
     }
     DWORD frames = static_cast<DWORD>(pAtom->Length() / frameInfo.size);
     bool forSureMP3 = false;
     do
     {
         // Check for Xing header
-        DWORD vbrOffset = cMPAHeaderSize + cMPASideInfoSizes[frameInfo.mpaVersion != MPEG1][frameInfo.channelMode == SingleChannel];
+        LONGLONG vbrOffset = offset + cMPAHeaderSize + cMPASideInfoSizes[frameInfo.mpaVersion != MPEG1][frameInfo.channelMode == SingleChannel];
         {
         	/*  XING VBR-Header
 	            size    description
@@ -325,12 +260,12 @@ MP3MovieTrack::MP3MovieTrack(const AtomPtr& pAtom, MP3Movie* pMovie, DWORD idx)
 	            100     toc (optional)
 	            4       a VBR quality indicator: 0=best 100=worst (optional)
         	*/
-            debugPrintf(DBG, L"MP3MovieTrack::MP3MovieTrack: Trying Xing header at %d\r\n", vbrOffset);
+            debugPrintf(DBG, L"detectMP3Track: Trying Xing header at %d\r\n", vbrOffset);
             BYTE vbrHeader[8];
             if(pAtom->Read(vbrOffset, 8, &vbrHeader) != S_OK)
             {
-                debugPrintf(DBG, L"MP3MovieTrack::MP3MovieTrack: Unable to read Xing vbr header, offset = %d\r\n", vbrOffset);
-                return;
+                debugPrintf(DBG, L"detectMP3Track: Unable to read Xing vbr header, offset = %d\r\n", vbrOffset);
+                return false;
             }
 
             if(memcmp(&vbrHeader, "Xing", 4) == 0 || memcmp(&vbrHeader, "Info", 4) == 0)
@@ -348,8 +283,8 @@ MP3MovieTrack::MP3MovieTrack(const AtomPtr& pAtom, MP3Movie* pMovie, DWORD idx)
                 smart_array<BYTE> hdrBuf = new BYTE[sizeToRead];
                 if(pAtom->Read(vbrOffset, sizeToRead, hdrBuf) != S_OK)
                 {
-                    debugPrintf(DBG, L"MP3MovieTrack::MP3MovieTrack: Unable to read vbr Xing header data, size = %d\r\n", sizeToRead);
-                    return;
+                    debugPrintf(DBG, L"detectMP3Track: Unable to read vbr Xing header data, size = %d\r\n", sizeToRead);
+                    return false;
                 }
                 size_t hdrBufOffset = 0;
                 if(flags & FRAMES_FLAG)
@@ -357,7 +292,7 @@ MP3MovieTrack::MP3MovieTrack(const AtomPtr& pAtom, MP3Movie* pMovie, DWORD idx)
                     DWORD dTmp = SwapLong(*(reinterpret_cast<DWORD *>(&((*hdrBuf)[hdrBufOffset]))));
                     if(dTmp == 0)
                     {
-                        debugPrintf(DBG, L"MP3MovieTrack::MP3MovieTrack: Xing frames is 0. Broken header! Ignore it.\r\n");
+                        debugPrintf(DBG, L"detectMP3Track: Xing frames is 0. Broken header! Ignore it.\r\n");
                         break;
                     }
                     frames = dTmp;
@@ -393,22 +328,22 @@ MP3MovieTrack::MP3MovieTrack(const AtomPtr& pAtom, MP3Movie* pMovie, DWORD idx)
                 ??      dynamic table consisting out of frames with size 1-4
             			whole length in table size! (for TOC)
             */
-            debugPrintf(DBG, L"MP3MovieTrack::MP3MovieTrack: Trying VBRI\r\n");
-            vbrOffset = cMPAHeaderSize + cMPAVBRIHeaderOffest;
+            debugPrintf(DBG, L"detectMP3Track: Trying VBRI\r\n");
+            vbrOffset = offset + cMPAHeaderSize + cMPAVBRIHeaderOffest;
             VBRIHeader vrbiHeader;
             if(pAtom->Read(vbrOffset, sizeof(vrbiHeader), &vrbiHeader) != S_OK)
             {
-                debugPrintf(DBG, L"MP3MovieTrack::MP3MovieTrack: Unable to read VBRI vbr header, offset = %d\r\n", vbrOffset);
-                return;
+                debugPrintf(DBG, L"detectMP3Track: Unable to read VBRI vbr header, offset = %d\r\n", vbrOffset);
+                return false;
             }
 
             if(memcmp(&vrbiHeader.ID, "VBRI", 4) == 0)
             {
-                debugPrintf(DBG, L"MP3MovieTrack::MP3MovieTrack: Found VBRI header at %d\r\n", vbrOffset);
+                debugPrintf(DBG, L"detectMP3Track: Found VBRI header at %d\r\n", vbrOffset);
                 DWORD dTmp = SwapLong(vrbiHeader.frames);
                 if(dTmp == 0)
                 {
-                    debugPrintf(DBG, L"MP3MovieTrack::MP3MovieTrack: vrbiHeader.frames is 0. Broken header! Ignore it.\r\n");
+                    debugPrintf(DBG, L"detectMP3Track: vrbiHeader.frames is 0. Broken header! Ignore it.\r\n");
                     break;
                 }
                 
@@ -420,25 +355,107 @@ MP3MovieTrack::MP3MovieTrack(const AtomPtr& pAtom, MP3Movie* pMovie, DWORD idx)
         }
  
         // Fall back to CBR without info.
-        debugPrintf(DBG, L"MP3MovieTrack::MP3MovieTrack: Fall back to CBR without header\r\n");
+        debugPrintf(DBG, L"detectMP3Track: Fall back to CBR without header\r\n");
     }while(false);
     
     if(!forSureMP3)
     {
         // Scan for next frames to be sure it is real mp3.
         MP3FrameInfo nextFrame;
-        LONGLONG nextOffset = frameInfo.size;
+        LONGLONG nextOffset = offset + frameInfo.size;
         for(int i = 0; i < cMPAMinimalConsequentFrames; ++i)
         {
             if(!readFrameHeader(nextFrame, pAtom, nextOffset))
             {
-                debugPrintf(DBG, L"MP3MovieTrack::MP3MovieTrack: Bad frame on scan at attempt %d, droping the file\r\n", i);
-                return;
+                debugPrintf(DBG, L"detectMP3Track: Bad frame on scan at attempt %d, droping the file\r\n", i);
+                return false;
             }
             nextOffset += nextFrame.size;
         }
     }
     
+    mp3FrameInfo = frameInfo;
+    totalFrames = frames;
+    return true;
+}
+
+void MP3Atom::ScanChildrenAt(LONGLONG llOffset)
+{
+    llOffset += m_cHeader;
+
+    while (llOffset < m_llLength)
+    {
+        BYTE hdr[4];
+        if(Read(llOffset, 4, hdr) != S_OK)
+            break;
+        LONGLONG llLength = 0;
+        DWORD type;
+        MP3FrameInfo mp3FrameInfo;
+        DWORD totalFrames;
+        if(memcmp("TAG", hdr, 3) == 0)
+        {
+            llLength = 128;
+            type = FOURCC("TAG ");
+        }else if(memcmp("TAG+", hdr, 4) == 0)
+        {
+            llLength = 227;
+            type = FOURCC("TAG+");
+        }else if(memcmp("ID3", hdr, 3) == 0)
+        {
+            ID3v2Header id3Header;
+            if(Read(llOffset, sizeof(ID3v2Header), &id3Header) != S_OK)
+                break;
+            DWORD size = id3Header.size[3];
+            size += static_cast<WORD>(id3Header.size[2]) << 7;
+            size += static_cast<DWORD>(id3Header.size[1]) << 14;
+            size += static_cast<DWORD>(id3Header.size[0]) << 21;
+            llLength = sizeof(ID3v2Header) + size;
+            type = FOURCC("ID3 ");
+        }else if(hdr[0] == 0xFF && (hdr[1] & 0xE0) == 0xE0 && detectMP3Track(this, llOffset, mp3FrameInfo, totalFrames))
+        {
+            llLength = m_llLength - llOffset;
+            type = FOURCC("STRM");
+        }else
+        {
+            if(hdr[0] != 0 && llOffset >= m_scanWithin)
+                break; // Most likely bad data. Stop further parsing.
+            ++llOffset;
+            continue;
+        }
+
+        AtomPtr pChild = AtomPtr(new MP3Atom(this, llOffset, llLength, type));
+        m_Children.push_back(pChild);
+
+        llOffset += llLength;
+    }
+}
+
+MP3Movie::MP3Movie(const AtomReaderPtr& pRoot)
+: Movie(pRoot)
+{
+    AtomPtr pMp3 = AtomPtr(new MP3Atom(pRoot.get(), 0, pRoot->Length(), 0));
+    const AtomPtr& pStream = pMp3->FindChild(FOURCC("STRM"));
+    if (pStream == NULL)
+        return;
+    MovieTrackPtr pTrack = MovieTrackPtr(new MP3MovieTrack(pStream, this, 0));
+    if (pTrack->Valid())
+    {
+        m_Tracks.push_back(pTrack);
+    }
+    return;
+}
+
+MP3MovieTrack::MP3MovieTrack(const AtomPtr& pAtom, MP3Movie* pMovie, DWORD idx)
+: MovieTrack(AtomPtr(), pMovie, idx)
+{
+    MP3FrameInfo frameInfo;
+    DWORD frames;
+    if(!detectMP3Track(pAtom.get(), 0, frameInfo, frames))
+    {
+        debugPrintf(DBG, L"MP3MovieTrack::MP3MovieTrack: detectMP3Track() failed!!! How is it possible???\r\n");
+        return;
+    }
+   
     m_pIndex = new MP3TrackIndex(pAtom->Offset(), frameInfo.samplesPerFrame, frameInfo.sampleRate, frameInfo.size, frames, cMPAJoinFramesCount);
     m_pType = new MP3ElementaryType(frameInfo.sampleRate, frameInfo.bitrate, frameInfo.channelMode != SingleChannel ? 2 : 1, frameInfo.mpaVersion != MPEG1);
 
