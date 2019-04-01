@@ -77,9 +77,9 @@ bool MP3DecoderFilter::storeSamples(TransformBuffersState& buffersState, const m
     {
         for (WORD i = 0; i < pcm.length; ++i)
         {
-            pBuffer[bufPos++] = m_leftDither.ditherSample(pcm.samples[0][i] >> 1);
+            pBuffer[bufPos++] = m_leftDither.ditherSample(pcm.samples[0][i]/* >> 1*/);
             if(pcm.channels > 1)
-                pBuffer[bufPos++] = m_rightDither.ditherSample(pcm.samples[1][i] >> 1);
+                pBuffer[bufPos++] = m_rightDither.ditherSample(pcm.samples[1][i]/* >> 1*/);
         }
     }
     

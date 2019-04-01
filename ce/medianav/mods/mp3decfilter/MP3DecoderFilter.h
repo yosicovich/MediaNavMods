@@ -54,11 +54,11 @@ public:
         m_dither.random = random;
 
         /* clip */
-        if (output > m_limit) 
+        if (output > m_limit - 1) 
         {
-            output = m_limit;
-            if (sample > m_limit)
-                sample = m_limit;
+            output = m_limit - 1;
+            if (sample > m_limit - 1)
+                sample = m_limit - 1;
         }
 
         if (output < -m_limit) 
