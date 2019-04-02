@@ -180,6 +180,8 @@ DWORD MP3Atom::m_scanWithin = Utils::RegistryAccessor::getInt(HKEY_CLASSES_ROOT,
 
 static const int cMPAJoinFramesCount = 64; // Join this number of frames to a chunk to reduce media read operations overhead.
 static const int cMPAMinimalConsequentFrames = 10; // Number of consequent valid frames to be sure the file is MP3.
+static const int cMPAMaximumFalseHeaders = 10; // Maximal number of faulty detected frames.
+static const int cMPAStreamDetectWindow = 0x10000; // Amount of data used to search for stream header. It has to be more then sizeof(FrameHeader)
 
 struct MP3FrameInfo
 {
@@ -192,19 +194,13 @@ struct MP3FrameInfo
     DWORD size;
 };
 
-bool readFrameHeader(MP3FrameInfo& frameInfo, Atom* pAtom, LONGLONG llOffset)
+bool parseFrameHeader(DWORD hdrVal, MP3FrameInfo& frameInfo)
 {
     FrameHeader frameHeader;
-    DWORD hdrVal;
-    if(pAtom->Read(llOffset, sizeof(DWORD), &hdrVal) != S_OK)
-    {
-        debugPrintf(DBG, L"MP3MovieTrack - readFrameHeader: Unable to read frame header\r\n");
-        return false;
-    }
     frameHeader.value_ = SwapLong(hdrVal);
     if(frameHeader.sync != 0x7FF)
     {
-        debugPrintf(DBG, L"MP3MovieTrack - readFrameHeader: frame header - bad sync %d\r\n", frameHeader.sync);
+        debugPrintf(DBG_TRACE, L"MP3 - parseFrameHeader: frame header - bad sync %d\r\n", frameHeader.sync);
         return false;
     }
 
@@ -212,14 +208,14 @@ bool readFrameHeader(MP3FrameInfo& frameInfo, Atom* pAtom, LONGLONG llOffset)
     MPALayer mpaLayer = static_cast<MPALayer>(LayerReserved - frameHeader.layer);
     if(mpaVersion == MPEGReserved || mpaLayer == LayerReserved)
     {
-        debugPrintf(DBG, L"MP3MovieTrack - readFrameHeader: frame header - bad version/layer = %d/%d\r\n", frameHeader.version, frameHeader.layer);
+        debugPrintf(DBG, L"MP3 - parseFrameHeader: frame header - bad version/layer = %d/%d\r\n", frameHeader.version, frameHeader.layer);
         return false;
     }
     DWORD sampleRate = cMPASampleRate[mpaVersion][frameHeader.sampleRateIndex];
     DWORD bitrate = cMPABitrates[mpaVersion != MPEG1][mpaLayer][frameHeader.bitrateIndex] * 1000;
     if(sampleRate == 0 || bitrate == 0)
     {
-        debugPrintf(DBG, L"MP3MovieTrack - readFrameHeader: frame header - sampleRate == 0 || bitrate == 0, samplerate=%d, bitRate=%d\r\n", sampleRate, bitrate);
+        debugPrintf(DBG, L"MP3 - parseFrameHeader: frame header - sampleRate == 0 || bitrate == 0, samplerate=%d, bitRate=%d\r\n", sampleRate, bitrate);
         return false;
     }
     DWORD samplesPerFrame = cMPASamplesPerFrames[mpaVersion != MPEG1][mpaLayer];
@@ -234,6 +230,17 @@ bool readFrameHeader(MP3FrameInfo& frameInfo, Atom* pAtom, LONGLONG llOffset)
     frameInfo.channelMode = channelMode;
     frameInfo.size = static_cast<DWORD>((cMPACoefficients[mpaVersion != MPEG1][mpaLayer] * bitrate / sampleRate) + (frameHeader.padding ? 1 : 0)) * cMPASlotSizes[mpaLayer];
     return true;
+}
+
+bool readFrameHeader(MP3FrameInfo& frameInfo, Atom* pAtom, LONGLONG llOffset)
+{
+    DWORD hdrVal;
+    if(pAtom->Read(llOffset, sizeof(DWORD), &hdrVal) != S_OK)
+    {
+        debugPrintf(DBG, L"MP3MovieTrack - readFrameHeader: Unable to read frame header\r\n");
+        return false;
+    }
+    return parseFrameHeader(hdrVal, frameInfo);
 }
 
 bool detectMP3Track(Atom* pAtom, LONGLONG offset, MP3FrameInfo& mp3FrameInfo, DWORD& totalFrames)
@@ -383,6 +390,47 @@ void MP3Atom::ScanChildrenAt(LONGLONG llOffset)
 {
     llOffset += m_cHeader;
 
+    // Check whatever this file is MPEG stream
+    // The approach is as following:
+    // Try to find valid cMPAMinimalConsequentFrames consequent frames in the middle of the file.
+    // If it successes then 99% this is MPEG stream file and we can do stream start search.
+    // If it isn't then don't bother time since this file is most likely not MPEG stream.
+    {
+        LONGLONG searchOffset = llOffset + m_llLength / 2;
+        smart_array<BYTE> searchBuf = new BYTE[cMPAStreamDetectWindow];
+        if(Read(searchOffset, cMPAStreamDetectWindow, searchBuf) != S_OK)
+        {
+            debugPrintf(DBG, L"MP3Atom::ScanChildrenAt: Unable to read cMPAStreamDetectWindow size data from the middle.\r\n");
+            return;
+        }
+        // Search from frame header.
+        bool found = false;
+        MP3FrameInfo mp3FrameInfo;
+        DWORD totalFrames;
+        int i;
+        for(i = 0; i < cMPAStreamDetectWindow - sizeof(FrameHeader); ++i)
+        {
+            if(parseFrameHeader(Utils::readUnaligned<DWORD>(&((*searchBuf)[i])), mp3FrameInfo))
+            {
+                found = true;
+                break;
+            }
+        }
+        if(!found)
+        {
+            debugPrintf(DBG, L"MP3Atom::ScanChildrenAt: Detect MPEG stream failed. Most likely it is not MP3 file. Drop it.\r\n");
+            return;
+        }
+        searchOffset += i;
+        if(!detectMP3Track(this, searchOffset, mp3FrameInfo, totalFrames))
+        {
+            debugPrintf(DBG, L"MP3Atom::ScanChildrenAt: detectMP3Track() failed!\r\n");
+            return;
+        }
+    }
+    // The file is most likely MPEG stream. Try to find out the stream beginning.
+    int totalFaultFrameDetections = 0;
+
     while (llOffset < m_llLength)
     {
         BYTE hdr[4];
@@ -411,10 +459,20 @@ void MP3Atom::ScanChildrenAt(LONGLONG llOffset)
             size += static_cast<DWORD>(id3Header.size[0]) << 21;
             llLength = sizeof(ID3v2Header) + size;
             type = FOURCC("ID3 ");
-        }else if(hdr[0] == 0xFF && (hdr[1] & 0xE0) == 0xE0 && detectMP3Track(this, llOffset, mp3FrameInfo, totalFrames))
+        }else if(parseFrameHeader(*reinterpret_cast<DWORD*>(hdr), mp3FrameInfo))
         {
-            llLength = m_llLength - llOffset;
-            type = FOURCC("STRM");
+            if(detectMP3Track(this, llOffset, mp3FrameInfo, totalFrames))
+            {
+                llLength = m_llLength - llOffset;
+                type = FOURCC("STRM");
+            }else
+            {
+                ++llOffset;
+                ++totalFaultFrameDetections;
+                if(totalFaultFrameDetections >= cMPAMaximumFalseHeaders)
+                    break;
+                continue;
+            }
         }else
         {
             if(hdr[0] != 0 && llOffset >= m_scanWithin)

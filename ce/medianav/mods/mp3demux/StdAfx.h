@@ -42,8 +42,10 @@ using namespace std;
 
 #ifdef TESTMODE
 #define DBG 1
+#define DBG_TRACE 0
 #else
 #define DBG 0
+#define DBG_TRACE 0
 #endif
 
 //{{AFX_INSERT_LOCATION}}

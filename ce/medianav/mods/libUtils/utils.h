@@ -152,5 +152,17 @@ namespace Utils
     std::wstring convertToWString(const std::string& str);
 
     bool checkRectCompleteCovered(HWND hWnd, RECT rect, const std::set<HWND>& skipWindows = std::set<HWND>());
+
+#pragma pack(push,1)
+    template <typename T>
+    struct unaligned_read
+    {
+        T val;
+    };
+    template <typename T> __forceinline T readUnaligned(const void* ptr)
+    {
+        return reinterpret_cast<const unaligned_read<T> *>(ptr)->val;
+    }
+#pragma pack(pop)
 };
 
