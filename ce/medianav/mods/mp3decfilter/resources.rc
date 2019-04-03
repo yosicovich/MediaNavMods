@@ -53,8 +53,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,1,1
- PRODUCTVERSION 9,1,3,0
+ FILEVERSION 1,0,1,2
+ PRODUCTVERSION 9,1,3,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -71,12 +71,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "www.medianav.ru"
             VALUE "FileDescription", "MP3 decoder filter"
-            VALUE "FileVersion", "1.0.1.1"
+            VALUE "FileVersion", "1.0.1.2"
             VALUE "InternalName", "mp3decfilter"
             VALUE "LegalCopyright", "Copyright © 2017-2019 www.medianav.ru. All rights reserved."
             VALUE "OriginalFilename", "mp3decfilter.dll"
             VALUE "ProductName", "MediaNav CE mods"
-            VALUE "ProductVersion", "9.1.3.0.20"
+            VALUE "ProductVersion", "9.1.3.1.1"
         END
     END
     BLOCK "VarFileInfo"
