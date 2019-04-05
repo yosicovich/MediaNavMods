@@ -410,7 +410,7 @@ void MP3Atom::ScanChildrenAt(LONGLONG llOffset)
         int i;
         for(i = 0; i < cMPAStreamDetectWindow - sizeof(FrameHeader); ++i)
         {
-            if(parseFrameHeader(Utils::readUnaligned<DWORD>(&((*searchBuf)[i])), mp3FrameInfo))
+            if(parseFrameHeader(Utils::readUnaligned<DWORD>(&((*searchBuf)[i])), mp3FrameInfo) && detectMP3Track(this, searchOffset + i, mp3FrameInfo, totalFrames))
             {
                 found = true;
                 break;
@@ -419,12 +419,6 @@ void MP3Atom::ScanChildrenAt(LONGLONG llOffset)
         if(!found)
         {
             debugPrintf(DBG, L"MP3Atom::ScanChildrenAt: Detect MPEG stream failed. Most likely it is not MP3 file. Drop it.\r\n");
-            return;
-        }
-        searchOffset += i;
-        if(!detectMP3Track(this, searchOffset, mp3FrameInfo, totalFrames))
-        {
-            debugPrintf(DBG, L"MP3Atom::ScanChildrenAt: detectMP3Track() failed!\r\n");
             return;
         }
     }
