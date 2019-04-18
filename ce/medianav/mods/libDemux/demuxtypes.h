@@ -118,12 +118,24 @@ class AtomCache
 public:
     AtomCache(const AtomPtr& patm = AtomPtr())
     : m_pAtom(patm)
+    , m_pBuffer(NULL)
     {
 		if (patm != NULL)
 		{
 			m_pBuffer = patm->Buffer() + patm->HeaderSize();
 		}
     }
+    
+    AtomCache(const AtomCache& src)
+        : m_pAtom(src.m_pAtom)
+        , m_pBuffer(NULL)
+    {
+        if (m_pAtom != NULL)
+        {
+            m_pBuffer = m_pAtom->Buffer() + m_pAtom->HeaderSize();
+        }
+    }
+
     ~AtomCache()
     {
         debugPrintf(DEMUX_DBG, L"AtomCache::~AtomCache(): m_pAtom = 0x%08X\r\n", m_pAtom.get());
@@ -137,6 +149,7 @@ public:
         if (m_pAtom != NULL)
         {
             m_pAtom->BufferRelease();
+            m_pBuffer = NULL;
         }
         m_pAtom = patm;
         if (m_pAtom != NULL)

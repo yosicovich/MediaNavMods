@@ -21,6 +21,7 @@ public:
     AviTrackIndex();
 
     bool Parse(const AVISTREAMHEADER& streamHeader, unsigned int streamIdx, const AVIOLDINDEX* pIndexArray, unsigned int offsetOfOffset);
+    bool Parse(const AVISTREAMHEADER& streamHeader, unsigned int streamIdx, const AtomCache& pODMLIndex, const AtomReaderPtr& pRoot);
     DWORD Size(DWORD nSample) const;
     LONGLONG Offset(DWORD nSample) const;
     LONGLONG TotalFrames() const 

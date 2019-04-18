@@ -32,11 +32,11 @@ public:
     virtual void ScanChildrenAt(LONGLONG llOffset);
 };
 // --- movie and track headers ---------------------------
-
+class AviMovie;
 class AviMovieTrack: public MovieTrack
 {
 public:
-    AviMovieTrack(const AtomPtr& pAtom, Movie* pMovie, DWORD idx, const AtomCache& pIndex, unsigned int offsetOfOffset);
+    AviMovieTrack(const AtomPtr& pAtom, AviMovie* pMovie, DWORD idx, const AtomCache& pIndex, unsigned int offsetOfOffset);
     virtual REFERENCE_TIME Duration() const;
     bool isDisabled() const
     {
@@ -51,6 +51,7 @@ class AviMovie: public Movie
 {
 public:
     AviMovie(const AtomReaderPtr& pRoot);
+    const AtomReaderPtr getRoot() const;
 
 private:
     bool m_hasVideo;

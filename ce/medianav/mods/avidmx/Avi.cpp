@@ -156,6 +156,11 @@ AviMovie::AviMovie(const AtomReaderPtr& pRoot)
     debugPrintf(DBG, L"AviMovie::AviMovie: Finished\r\n");
 }
 
+const AtomReaderPtr AviMovie::getRoot() const
+{
+    return m_pRoot;
+}
+
 bool AviMovie::setTracks(const Movie::MovieTracks& sourceTracks)
 {
     if(m_hasVideo && m_hasAudio)
@@ -187,7 +192,7 @@ bool AviMovie::setTracks(const Movie::MovieTracks& sourceTracks)
 // ------------------------------------------------------------------
 
 
-AviMovieTrack::AviMovieTrack(const AtomPtr& pAtom, Movie* pMovie, DWORD idx, const AtomCache& pIndex, unsigned int offsetOfOffset)
+AviMovieTrack::AviMovieTrack(const AtomPtr& pAtom, AviMovie* pMovie, DWORD idx, const AtomCache& pIndex, unsigned int offsetOfOffset)
 : MovieTrack(AtomPtr(), pMovie, idx),
   m_disabled(false)
 {
@@ -214,14 +219,32 @@ AviMovieTrack::AviMovieTrack(const AtomPtr& pAtom, Movie* pMovie, DWORD idx, con
     }
     debugPrintf(DBG, L"AviMovieTrack::AviMovieTrack: AviElementaryType created\r\n");
     
-    const AVIOLDINDEX* pIndexArray = reinterpret_cast<const AVIOLDINDEX*>(pIndex.getRawBuffer());
-
     m_pIndex = new AviTrackIndex();
-    if ((!GetTypedPtr(AviTrackIndex, m_pIndex)->Parse(streamHeader, m_idx, pIndexArray, offsetOfOffset) || (m_pIndex->SampleCount() <= 0)))
+
+    AtomPtr pODMLIndex = pAtom->FindChild(ckidAVISUPERINDEX);
+    bool indexBuilt = false;
+    if(pODMLIndex != NULL)
     {
-        return;
+        // There is OpenDML index present. Try to use it to build track index
+        AtomCache pODMLCached(pODMLIndex);
+        indexBuilt = GetTypedPtr(AviTrackIndex, m_pIndex)->Parse(streamHeader, m_idx, pODMLCached, pMovie->getRoot()) && (m_pIndex->SampleCount() > 0);
+        
+        if(indexBuilt)
+        {
+            debugPrintf(DBG, L"AviMovieTrack::AviMovieTrack: AviTrackIndex using AVI OpenDML index is created\r\n");
+        }
     }
-    debugPrintf(DBG, L"AviMovieTrack::AviMovieTrack: AviTrackIndex is created\r\n");
+
+    if(!indexBuilt)
+    {
+        // Fall back to AVI 1.0 index
+        const AVIOLDINDEX* pIndexArray = reinterpret_cast<const AVIOLDINDEX*>(pIndex.getRawBuffer());
+        if ((!GetTypedPtr(AviTrackIndex, m_pIndex)->Parse(streamHeader, m_idx, pIndexArray, offsetOfOffset) || (m_pIndex->SampleCount() <= 0)))
+        {
+            return;
+        }
+        debugPrintf(DBG, L"AviMovieTrack::AviMovieTrack: AviTrackIndex using AVI 1.0 index is created\r\n");
+    }
 
     AtomPtr pStrn = pAtom->FindChild(ckidSTREAMNAME);
     if(pStrn != NULL)
