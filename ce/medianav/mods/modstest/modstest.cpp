@@ -16,6 +16,7 @@
 #include <imaging.h>
 #include <imgguids.h>
 #include <utils.h>
+#include <MicomAccessor.h>
 
 #define MAX_LOADSTRING 100
 
@@ -216,11 +217,39 @@ void sndTest()
     Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, L"LGE\\SystemInfo", L"MP3_SND_TEST", !Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, L"LGE\\SystemInfo", L"MP3_SND_TEST", false));
 }
 
+void micomTest()
+{
+    MicomAccessor micom;
+    micom.Connect();
+    for(int i = 0x22; i < 0x27; ++i)
+    {
+        micom.SendReadCmd(0x0D, i, 0x40);
+        ResRead* res = micom.GetResRead();
+        if(res->len > 0)
+        {
+            debugDump(1, res->data, res->len);
+        }
+    }
+    micom.SendReadCmd(0x0D, 6, 0x02);
+    ResRead* res = micom.GetResRead();
+    if(res->len > 0)
+    {
+        debugDump(1, res->data, res->len);
+    }
+    micom.SendReadCmd(0x0D, 0x4D, 0x01);
+    res = micom.GetResRead();
+    if(res->len > 0)
+    {
+        debugDump(1, res->data, res->len);
+    }
+}
+
 int WINAPI WinMain(HINSTANCE hInstance,
                    HINSTANCE hPrevInstance,
                    LPTSTR    lpCmdLine,
                    int       nCmdShow)
 {
+    micomTest();
     //sndTest();
     //return 0;
     //ksa_test();
@@ -229,7 +258,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
     //smallTest();
     //tagTest();
     //return 0;
-    busyTest();
+    //busyTest();
     return 0;
     
     MSG msg;

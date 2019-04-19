@@ -279,6 +279,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MicomAccessor.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\SystemMeter.cpp"
 				>
 			</File>
@@ -297,7 +301,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\crc32.h"
+				>
+			</File>
+			<File
 				RelativePath=".\medianav.h"
+				>
+			</File>
+			<File
+				RelativePath=".\micom.h"
+				>
+			</File>
+			<File
+				RelativePath=".\MicomAccessor.h"
 				>
 			</File>
 			<File
