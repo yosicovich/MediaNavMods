@@ -6,14 +6,6 @@
 //
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
-#include "os_api.h"
-#include "AuITE.h"
-#include "AuAllocator.h"
-#include "AuOverlay.h"
-#include "dshow\SecureConnection.h"
-#include <memory>
-#include "SystemMeter.h"
-
 #ifndef __VIDEORENDERER_H
 #define __VIDEORENDERER_H
 
@@ -24,6 +16,18 @@
 //#define TESTMODE
 //#define NO_HIDE
 #endif
+
+#include "os_api.h"
+#include "AuITE.h"
+#include "AuAllocator.h"
+#include "AuOverlay.h"
+#include "dshow\SecureConnection.h"
+#include <memory>
+#include "SystemMeter.h"
+#include <CmnDLL.h>
+#include <medianav.h>
+#include <smartptr.h>
+
 // Forward declarations
 
 class CVideoRenderer;
@@ -53,6 +57,8 @@ enum OSDInfo
     OSDInfo_Last = OSDInfo_MemUsage
 
 };
+
+using namespace MediaNav;
 
 class CVideoWindow : public CBaseControlWindow, public CBaseControlVideo
 {
@@ -90,6 +96,16 @@ protected:
     DWORD           m_tapStartTime;
     std::auto_ptr<Utils::SystemMeter> m_pSystemMeter;
 
+    HBITMAP         m_uiButtons;
+    
+    RECT            m_osdSwitchButtonRect;
+    RECT            m_RewButtonRect;
+    RECT            m_ForwardButtonRect;
+    RECT            m_PauseButtonRect;
+
+    RECT            m_clickedRect;
+    smart_ptr<CSharedMemory> m_pPlayerStatus;
+    USBPlayerStatus m_playerStatus;
 
 	void CreateOverlay();
 	void DestroyOverlay();
@@ -99,6 +115,19 @@ protected:
     void toggleOnScreenInfo();
     void switchOSDInfo();
     void stopSystemMeter();
+
+    void activateUI();
+    void reactivateUI();
+    void inactivateUI();
+    void setUIActive(bool bUIActive);
+    bool getUIActive();
+    void processButtons(const POINT& pt);
+    void setClickedRect(HWND hwnd, const POINT& pt);
+    void resetClickedRect(HWND hwnd);
+    
+    void loadUIButtons(const std::wstring& fileName);
+    void processIpcMsg(IpcMsg& ipcMsg, bool sendMsg);
+    void updatePlayerStatus();
 
 public:
 	CAuOverlay		*m_pOverlay;

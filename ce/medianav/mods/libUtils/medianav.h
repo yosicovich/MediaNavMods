@@ -29,6 +29,13 @@ namespace MediaNav
         DWORD m_bRepeatMode; //0 - none; 1 - track; 2 - folder; 3 - all
         DWORD m_bShuffle;
     };
+    
+    enum PlayerState
+    {
+        ST_PLAY = 1,
+        ST_PAUSE = 2,
+        ST_STOP = 3
+    };
 
     struct USBPlayerStatus
     {
@@ -51,25 +58,30 @@ namespace MediaNav
 
     enum IpcTarget
     {
+        IpcTarget_MgrVid = 0x04,
         IpcTarget_MgrUSB = 0x05,
         IpcTarget_AppMain = 0x15
     };
 
-/*        IDM_AMAIN_MUSB_SELECT_CATEGORY 112
-        IDM_AMAIN_MUSB_MOVE_PLAY_FOLDER 114
-        IDM_AMAIN_MUSB_ERROR_NEXT_PLAY 118
-        IDM_AMAIN_MUSB_NEXT_TRACK 101
-        IDM_AMAIN_MUSB_PREV_TRACK 100
-        IDM_AMAIN_MUSB_CHANGE_SHUFFLE 106
-        IDM_AMAIN_MUSB_CHANGE_REPEAT 107
-        IDM_AMAIN_MUSB_CHANGE_PLAY_STATUS 108
-        IDM_AMAIN_MUSB_FAST_RWD_START 102
-        IDM_AMAIN_MUSB_FAST_RWD_END 103
-        IDM_AMAIN_MUSB_FAST_FWD_START 104
-        IDM_AMAIN_MUSB_FAST_FWD_END 105
-        save resume data 115
-        IDM_AMAIN_MUSB_AUDIO_PATH_USB_STATUS 122
-        delete resume data 124*/
+    enum AppMainCommand
+    {
+        AppMain_IDM_AMAIN_MUSB_SELECT_CATEGORY = 112,
+        AppMain_IDM_AMAIN_MUSB_MOVE_PLAY_FOLDER = 114,
+        AppMain_IDM_AMAIN_MUSB_ERROR_NEXT_PLAY = 118,
+        AppMain_IDM_AMAIN_MUSB_NEXT_TRACK = 101,
+        AppMain_IDM_AMAIN_MUSB_PREV_TRACK = 100,
+        AppMain_IDM_AMAIN_MUSB_CHANGE_SHUFFLE = 106,
+        AppMain_IDM_AMAIN_MUSB_CHANGE_REPEAT = 107,
+        AppMain_IDM_AMAIN_MUSB_CHANGE_PLAY_STATUS = 108,
+        AppMain_IDM_AMAIN_MUSB_FAST_RWD_START = 102,
+        AppMain_IDM_AMAIN_MUSB_FAST_RWD_END = 103,
+        AppMain_IDM_AMAIN_MUSB_FAST_FWD_START = 104,
+        AppMain_IDM_AMAIN_MUSB_FAST_FWD_END = 105,
+        AppMain_SaveResumeData = 115,
+        AppMain_IDM_AMAIN_MUSB_AUDIO_PATH_USB_STATUS = 122,
+        AppMain_DeleteResumeData = 124
+    };
+
     enum MgrUSBCommand
     {
         MgrUSB_PlayStatusResume = 0x64,

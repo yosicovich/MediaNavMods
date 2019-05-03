@@ -53,8 +53,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,1
- PRODUCTVERSION 9,1,3,1
+ FILEVERSION 1,0,0,3
+ PRODUCTVERSION 9,1,3,2
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -71,17 +71,17 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "www.medianav.ru"
             VALUE "FileDescription", "USB tags server"
-            VALUE "FileVersion", "1, 0, 0, 1"
+            VALUE "FileVersion", "1, 0, 0, 3"
             VALUE "InternalName", "USBTags"
             VALUE "LegalCopyright", "Copyright © 2017-2019 www.medianav.ru. All rights reserved."
             VALUE "OriginalFilename", "USBTags.exe"
             VALUE "ProductName", "MediaNav CE mods"
-            VALUE "ProductVersion", "9.1.3.0.11"
+            VALUE "ProductVersion", "9.1.3.1.2"
         END
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", 0x419, 1200
+        VALUE "Translation", 0x409, 1200
     END
 END
 

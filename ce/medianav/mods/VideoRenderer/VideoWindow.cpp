@@ -16,6 +16,7 @@
 // either its own allocator (the preferred approach) or a source filter's allocator
 // (like when it connects to the tee filter). It has separate code paths to
 // handle the drawing, depending whose allocator it is using on this connection.
+
 #include <windows.h>
 #include <streams.h>
 #include "lcd.h"
@@ -37,12 +38,12 @@
 #define TRACE	0 
 #endif
 
-
 #define ASPECT_PRECISION 0x10000
 #define MAX_DOWNSCALE		32
 #define MAX_UPSCALE			4
 
 #define CHECK_SHOW_STATE_TIMER_ID 101
+#define UI_ACTIVE_TIMER_ID 102
 
 #ifdef TESTMODE
 #define CHECK_SHOW_STATE_TIMER_INTERVAL_MS 1000
@@ -51,8 +52,10 @@
 #endif
 
 static const DWORD cLongTapTimeMS = 2000;
+static const DWORD cUIActiveTimeMS = 4000;
 
-
+#define UI_DEF_PATH L"\\Storage Card\\System\\mods\\UI\\"
+#define UI_BUTTONS L"buttons.png"
 
 CCritSec CVideoWindow::m_csMempool;
 
@@ -80,8 +83,27 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
     m_visible(FALSE),
     m_osdInfo(OSDInfo_MemUsage),
     m_longTapDetect(false),
-    m_tapStartTime(0)
+    m_tapStartTime(0),
+    m_uiButtons(NULL),
+    m_osdSwitchButtonRect(),
+    m_RewButtonRect(),
+    m_ForwardButtonRect(),
+    m_PauseButtonRect(),
+    m_clickedRect(),
+    m_pPlayerStatus(new CSharedMemory(cUSBPlayerStatusMutexName, cUSBPlayerStatusMemName, true, sizeof(USBPlayerStatus)))
 {
+    // UI section
+    {
+        SetRect(&m_osdSwitchButtonRect, 0, 0, 50, 50);
+        SetRect(&m_RewButtonRect, 0, 77, 118, 404);
+        SetRect(&m_ForwardButtonRect, 680, 77, 800, 404);
+        SetRect(&m_PauseButtonRect, 0, 405, 800, 480);
+
+        loadUIButtons(Utils::makeFolderPath(Utils::RegistryAccessor::getString(HKEY_LOCAL_MACHINE, VIDEO_RENDERER_REGKEY, L"UIPath", UI_DEF_PATH)) + UI_BUTTONS);
+
+        updatePlayerStatus();
+    }
+
     SetRectEmpty(&m_rcTarget);
 
 	CreateOverlay();
@@ -109,6 +131,7 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
 //
 CVideoWindow::~CVideoWindow()
 {
+    KillTimer(m_hwnd, UI_ACTIVE_TIMER_ID);
     if(!KillTimer(m_hwnd, CHECK_SHOW_STATE_TIMER_ID))
         OS_Print(DBG, "Kill show state timer failed!\r\n");
     InactivateWindow();
@@ -228,7 +251,7 @@ LPTSTR CVideoWindow::GetClassWindowStyles(DWORD *pClassStyles,
 	*pWindowStyles   = WS_POPUP | WS_CLIPCHILDREN;
 	*pWindowStylesEx = WS_EX_NOANIMATION | WS_EX_TOPMOST;
 
-	return TEXT("VideoRenderer\0");
+	return TEXT("MgrVid\0");
 } // GetClassWindowStyles
 
 
@@ -239,6 +262,7 @@ void CVideoWindow::AdjustWindowSize(BOOL maximized)
         SetWindowPosition(0, 0, OS_GetScreenWidth(), OS_GetScreenHeight());
 	}else
 	{
+        inactivateUI();
         RECT rect = GetDefaultRect();
         SetWindowPosition(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
 	}
@@ -308,6 +332,14 @@ HRESULT CVideoWindow::DoShowWindow(LONG ShowCmd)
 
     m_pOverlay->ShowOverlay(bShow);
 
+    if(bShow)
+    {
+        if(getUIActive() && getFullScreen())
+            reactivateUI();
+        else
+            setUIActive(false);
+    }
+
 	return CBaseWindow::DoShowWindow(ShowCmd);
 }
 
@@ -347,6 +379,14 @@ LRESULT CVideoWindow::OnReceiveMessage(HWND hwnd,          // Window handle
                                      LPARAM lParam)      // Other parameter
 {
     IBaseFilter *pFilter = NULL;
+    POINT pt;
+
+    IpcMsg ipcMsg;
+    IpcGetMsg(&ipcMsg, uMsg, wParam, lParam);
+    if(ipcMsg.isValid())
+    {
+        processIpcMsg(ipcMsg, uMsg == WM_COPYDATA);
+    }
 
 	switch(uMsg)
 	{
@@ -396,23 +436,38 @@ LRESULT CVideoWindow::OnReceiveMessage(HWND hwnd,          // Window handle
     case WM_LBUTTONDOWN:
         m_longTapDetect = true;
         m_tapStartTime = GetTickCount();
+        pt.x = GET_X_LPARAM(lParam);
+        pt.y = GET_Y_LPARAM(lParam);
+        setClickedRect(hwnd, pt);
         break;
 	case WM_LBUTTONUP:
-        if(m_OSD_enabled && GET_X_LPARAM(lParam) <= 50 && GET_Y_LPARAM(lParam) <= 50)
         {
-            switchOSDInfo();
-        }else
-        {
-            if(m_longTapDetect && (GetTickCount() - m_tapStartTime) >= cLongTapTimeMS)
+            resetClickedRect(hwnd);
+
+            pt.x = GET_X_LPARAM(lParam);
+            pt.y = GET_Y_LPARAM(lParam);
+            if(m_OSD_enabled && PtInRect(&m_osdSwitchButtonRect, pt))
             {
-                toggleOnScreenInfo();
+                switchOSDInfo();
             }else
             {
-                AdjustWindowSize(!getFullScreen());
+                if(m_longTapDetect && (GetTickCount() - m_tapStartTime) >= cLongTapTimeMS)
+                {
+                    toggleOnScreenInfo();
+                }else
+                {
+                    if(getFullScreen() && !getUIActive())
+                    {
+                        activateUI();
+                    }else
+                    {
+                        processButtons(pt);
+                    }
+                }
             }
+            m_longTapDetect = false;
+            break;
         }
-        m_longTapDetect = false;
-        break;
     case WM_TIMER:
         switch (wParam)
         {
@@ -423,6 +478,11 @@ LRESULT CVideoWindow::OnReceiveMessage(HWND hwnd,          // Window handle
                 if(m_OSD_enabled)
                     OnScreenDisplay(NULL);
 
+                break;
+            }
+        case UI_ACTIVE_TIMER_ID:
+            {
+                inactivateUI();
                 break;
             }
         }
@@ -440,12 +500,11 @@ LRESULT CVideoWindow::OnEraseBackground(HDC hdc, LPARAM lParam, HWND hwnd)
 	HBRUSH hBrush;
 
 	GetClientRect(hwnd, &ClientRect);
-
-	hBrush = CreateSolidBrush(m_KeyColor);
+    hBrush = CreateSolidBrush(m_KeyColor);
     EXECUTE_ASSERT(FillRect(hdc,&ClientRect,hBrush));
     EXECUTE_ASSERT(DeleteObject(hBrush));
 
-    return 0;
+    return TRUE;
 }
 
 //
@@ -475,7 +534,7 @@ LRESULT CVideoWindow::OnPaint(HWND hwnd)
 {
 	RECT WinRect;
 	RECT ClientRect;
-	HBRUSH hBrush;
+	//HBRUSH hBrush;
 	PAINTSTRUCT ps;
 
 	HDC hdc = BeginPaint(hwnd, &ps);
@@ -498,10 +557,28 @@ LRESULT CVideoWindow::OnPaint(HWND hwnd)
 		m_bSizeChanged = FALSE;
 	}
 
-	// Paint the colorkey only when player window active
+    /*
+    // Paint the colorkey only when player window active
 	hBrush = CreateSolidBrush(m_KeyColor);
 	EXECUTE_ASSERT(FillRect(hdc,&ClientRect,hBrush));
 	EXECUTE_ASSERT(DeleteObject(hBrush));
+    */
+
+    if(getUIActive() && m_uiButtons)
+    {
+        debugPrintf(DBG, L"CVideoWindow::OnPaint: Draw background picture\r\n");
+        HDC memDC;
+        memDC = CreateCompatibleDC(hdc);
+        SelectObject(memDC, m_uiButtons);
+        BitBlt(hdc, 0, 0, WIDTH(&ClientRect), HEIGHT(&ClientRect), memDC, 0, 0, SRCPAINT);
+        DeleteDC(memDC);
+    }
+
+
+    if(WIDTH(&m_clickedRect) && HEIGHT(&m_clickedRect))
+    {
+        InvertRect(hdc, &m_clickedRect);
+    }
 
     if(m_OSD_enabled)
         OnScreenDisplay(NULL);
@@ -1229,7 +1306,10 @@ void CVideoWindow::DestroyOverlay()
 }
 
 static const LPWSTR cSystemInfoKey = L"\\LGE\\SystemInfo";
+
 static const LPWSTR cFullScreenName = L"VIDEO_FULLSCREEN";
+static const LPWSTR cUIActiveName = L"VIDEO_UI_ACTIVE";
+
 void CVideoWindow::setFullScreen(BOOL bFullScreen)
 {
     Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, cSystemInfoKey, cFullScreenName, bFullScreen == TRUE ? true : false);
@@ -1238,6 +1318,16 @@ void CVideoWindow::setFullScreen(BOOL bFullScreen)
 BOOL CVideoWindow::getFullScreen()
 {
     return Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, cSystemInfoKey, cFullScreenName, false);
+}
+
+void CVideoWindow::setUIActive(bool bUIActive)
+{
+    Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, cSystemInfoKey, cUIActiveName, bUIActive);
+}
+
+bool CVideoWindow::getUIActive()
+{
+    return Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, cSystemInfoKey, cUIActiveName, false);
 }
 
 #define PLAYER_WINDOW_WNDPROC_TAG 0xCA3C
@@ -1342,6 +1432,152 @@ void CVideoWindow::stopSystemMeter()
 {
     if(m_pSystemMeter.get() != NULL)
         m_pSystemMeter.reset();
+}
+
+
+void CVideoWindow::activateUI()
+{
+    setUIActive(true);
+    reactivateUI();
+    PaintWindow(TRUE);
+}
+
+void CVideoWindow::reactivateUI()
+{
+    debugPrintf(DBG, L"CVideoWindow::reactivateUI()\r\n");
+    if(SetTimer(m_hwnd, UI_ACTIVE_TIMER_ID, cUIActiveTimeMS, NULL) == 0)
+        debugPrintf(DBG, L"CVideoWindow::reactivateUI: UI active timer create failed!\r\n");
+}
+
+void CVideoWindow::inactivateUI()
+{
+    debugPrintf(DBG, L"CVideoWindow::inactivateUI()\r\n");
+    setUIActive(false);
+    if(!KillTimer(m_hwnd, UI_ACTIVE_TIMER_ID))
+        OS_Print(DBG, "Kill UI active timer failed!\r\n");
+    PaintWindow(TRUE);
+}
+
+
+void CVideoWindow::loadUIButtons(const std::wstring& fileName)
+{
+    bool hasAlpha = false;
+    int width;
+    int height;
+
+    if(m_uiButtons)
+        DeleteBitmap(m_uiButtons);
+
+    debugPrintf(DBG, L"CVideoWindow::loadUIBackground: Loading background picture\r\n");
+    m_uiButtons = Utils::LoadPicture(fileName.c_str(), hasAlpha, width, height);
+    if(!m_uiButtons)
+    {
+        debugPrintf(DBG, L"CVideoWindow::loadUIBackground: Loading background picture failed!\r\n");
+        return;
+    }
+    
+    if(width != OS_GetScreenWidth() || height != OS_GetScreenHeight())
+    {
+        DeleteBitmap(m_uiButtons);
+        m_uiButtons = NULL;
+    }
+}
+void CVideoWindow::processButtons(const POINT& pt)
+{
+    if(PtInRect(&m_RewButtonRect, pt))
+    {
+        debugPrintf(DBG, L"CVideoWindow::processButtons: REW button clicked\r\n");
+        IpcPostMsg(IpcTarget_AppMain, IpcTarget_MgrUSB, AppMain_IDM_AMAIN_MUSB_PREV_TRACK, 0, NULL);
+    }else if(PtInRect(&m_ForwardButtonRect, pt))
+    {
+        debugPrintf(DBG, L"CVideoWindow::processButtons: FORWARD button clicked\r\n");
+        IpcPostMsg(IpcTarget_AppMain, IpcTarget_MgrUSB, AppMain_IDM_AMAIN_MUSB_NEXT_TRACK, 0, NULL);
+    }else if(PtInRect(&m_PauseButtonRect, pt))
+    {
+        DWORD state;
+        switch(m_playerStatus.m_state)
+        {
+            case ST_PAUSE:
+            case ST_STOP:
+                debugPrintf(DBG, L"CVideoWindow::processButtons: RESUME button clicked\r\n");
+                state = ST_PLAY;
+                IpcPostMsg(IpcTarget_AppMain, IpcTarget_MgrUSB, AppMain_IDM_AMAIN_MUSB_CHANGE_PLAY_STATUS, sizeof(DWORD), &state);
+                break;
+            case ST_PLAY:
+                debugPrintf(DBG, L"CVideoWindow::processButtons: PAUSE button clicked\r\n");
+                state = ST_PAUSE;
+                IpcPostMsg(IpcTarget_AppMain, IpcTarget_MgrUSB, AppMain_IDM_AMAIN_MUSB_CHANGE_PLAY_STATUS, sizeof(DWORD), &state);
+                break;
+
+        }
+    }else
+    {
+        debugPrintf(DBG, L"CVideoWindow::processButtons: FULL SCREEN button clicked\r\n");
+        AdjustWindowSize(!getFullScreen());
+        return;
+    }
+    // Reset timer
+    reactivateUI();
+}
+
+void CVideoWindow::setClickedRect(HWND hwnd,const POINT& pt)
+{
+    if(PtInRect(&m_RewButtonRect, pt))
+    {
+        m_clickedRect = m_RewButtonRect;
+    }else if(PtInRect(&m_ForwardButtonRect, pt))
+    {
+        m_clickedRect = m_ForwardButtonRect;
+    }else if(PtInRect(&m_PauseButtonRect, pt))
+    {
+        m_clickedRect = m_PauseButtonRect;
+    }else
+    {
+        return;
+    }
+
+    HDC hdc = GetDC(hwnd);
+    InvertRect(hdc, &m_clickedRect);
+    ReleaseDC(hwnd, hdc);
+}
+
+void CVideoWindow::resetClickedRect(HWND hwnd)
+{
+    HDC hdc = GetDC(hwnd);
+    if(WIDTH(&m_clickedRect) && HEIGHT(&m_clickedRect))
+    {
+        InvertRect(hdc, &m_clickedRect);
+    }
+    ReleaseDC(hwnd, hdc);
+
+    SetRect(&m_clickedRect, 0, 0, 0, 0);
+}
+
+void CVideoWindow::processIpcMsg(IpcMsg& ipcMsg, bool sendMsg)
+{
+    if(ipcMsg.src != IpcTarget_MgrUSB)
+        return;
+
+    switch(ipcMsg.cmd)
+    {
+    case MgrUSB_PlayStatusUpdate:
+    case MgrUSB_PlayStatusResume:
+    case MgrUSB_PlayStatusStateChange:
+    case MgrUSB_PlayStatusSetCoverImage:
+        {
+            updatePlayerStatus();
+            break;
+        }
+    default:
+        debugPrintf(DBG, L"CVideoWindow::processIpcMsg(): src=%d, cmd=%d, extraSize=%d, extra=%d, sendMsg=%s\r\n", ipcMsg.src, ipcMsg.cmd, ipcMsg.extraSize, ipcMsg.extra, sendMsg ? L"TRUE" : L"FALSE");
+        break;
+    }
+}
+
+void CVideoWindow::updatePlayerStatus()
+{
+    debugPrintf(DBG, L"CVideoWindow::updatePlayerStatus()\r\n");
+    m_pPlayerStatus->read(&m_playerStatus, 0, sizeof(USBPlayerStatus));
 }
 
 // This allows a client to set the complete window size and position in one

@@ -6,6 +6,11 @@
 #include <exception>
 #include <stdarg.h>
 
+#include <wingdi.h>
+#include <windowsx.h>
+#include <imaging.h>
+#include <imgguids.h>
+
 
 namespace Utils {
 
@@ -325,6 +330,99 @@ bool checkRectCompleteCovered(HWND hWnd, RECT rect, const std::set<HWND>& skipWi
     }
     DeleteObject(selfRgn);
     return rgnType == NULLREGION;
+}
+
+bool HasAlphaChannel(HBITMAP hBmp)
+{
+    DIBSECTION ds;
+    GetObject(hBmp, sizeof(DIBSECTION), &ds);
+
+    return (ds.dsBm.bmBitsPixel == 32);
+}
+
+HBITMAP LoadPicture(const TCHAR* pathName, bool& hasAlpha, int& width, int& height)
+{
+    HBITMAP hBitmap = NULL;
+
+    IImagingFactory *pFactory = NULL;
+    IImage *pImage = NULL;
+    HDC memHdc = NULL;
+    ImageInfo imageInfo;
+    bool imageOk = false;
+    do 
+    {
+        if(CoCreateInstance(CLSID_ImagingFactory, NULL, CLSCTX_INPROC_SERVER,  IID_IImagingFactory , (void**)&pFactory) != S_OK)
+            break;
+        if(pFactory->CreateImageFromFile(pathName, &pImage) != S_OK)
+            break;
+
+        if(pImage->GetImageInfo(&imageInfo) != S_OK)
+            break;
+
+        HDC windowDC = GetDC(NULL);
+        if(!windowDC)
+            break;
+
+        memHdc = CreateCompatibleDC(windowDC);
+
+        if(!memHdc)
+        {
+            ReleaseDC(NULL, windowDC);
+            break;
+        }
+
+        hBitmap = CreateCompatibleBitmap(windowDC, imageInfo.Width, imageInfo.Height);
+        ReleaseDC(NULL, windowDC);
+
+        if(!hBitmap)
+            break;
+
+        RECT rect;
+        SetRect(&rect, 0, 0, imageInfo.Width, imageInfo.Height);
+        SelectObject(memHdc, hBitmap);
+        if(pImage->Draw(memHdc, &rect, NULL) != S_OK)
+            break;
+        imageOk = true;
+    } while (false);
+
+    if(memHdc)
+        DeleteDC(memHdc);
+
+    if(pImage)
+        pImage->Release();
+
+    if(pFactory)
+        pFactory->Release();
+
+    if(imageOk)
+    {
+        hasAlpha = IsAlphaPixelFormat(imageInfo.PixelFormat) == TRUE;
+        width = imageInfo.Width;
+        height = imageInfo.Height;
+        return hBitmap;
+    }
+
+    if(hBitmap)
+        DeleteBitmap(hBitmap);
+
+    // Try to load with SH routine
+    hBitmap = SHLoadDIBitmap(pathName);
+    if(!hBitmap)
+        return NULL;
+
+    hasAlpha = HasAlphaChannel(hBitmap);
+
+    BITMAP bm;
+    if(!GetObject(hBitmap, sizeof(bm), &bm))
+    {
+        DeleteBitmap(hBitmap);
+        return NULL;
+    }
+
+    width = bm.bmWidth;
+    height = bm.bmHeight;
+
+    return hBitmap;
 }
 
 // CSharedLock

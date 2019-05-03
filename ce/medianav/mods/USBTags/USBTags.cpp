@@ -45,6 +45,7 @@ HBITMAP createPictureBitmap(const void* data, size_t dataSize, int width, int he
 void updateCache(const USBPlayerStatus& info, bool foreignImage);
 void inplaceInfoString(wchar_t* dstString, const DWORD dstCharSize, const TagLib::String& value, const wchar_t* defaultValue);
 void readAlbumDimensions();
+bool sendIPCMessage(const IpcMsg& ipcMsg, int dst, bool sendMsg);
 
 #ifdef WITH_COPYRIGHT
 volatile wchar_t cCR_Sp = L' ';
@@ -370,26 +371,33 @@ void processIpcMsg(IpcMsg& ipcMsg, bool sendMsg)
             break;
     }
 
+    if(!sendIPCMessage(ipcMsg, IpcTarget_AppMain, sendMsg))
+        debugPrintf(DBG, L"USBTags: src=%d, cmd=%d, extraSize=%d, extra=%d, sendMsg=%s to IpcTarget_AppMain still fails. Giving up!\r\n", ipcMsg.src, ipcMsg.cmd, ipcMsg.extraSize, ipcMsg.extra, sendMsg ? L"TRUE" : L"FALSE");
+
+    if(!sendIPCMessage(ipcMsg, IpcTarget_MgrVid, sendMsg))
+        debugPrintf(DBG, L"USBTags: src=%d, cmd=%d, extraSize=%d, extra=%d, sendMsg=%s to IpcTarget_MgrVid still fails. Giving up!\r\n", ipcMsg.src, ipcMsg.cmd, ipcMsg.extraSize, ipcMsg.extra, sendMsg ? L"TRUE" : L"FALSE");
+}
+
+bool sendIPCMessage(const IpcMsg& ipcMsg, int dst, bool sendMsg)
+{
     bool bSent = false;
     for(int i = 0; i < 2 && !bSent; ++i)
     {
         if(sendMsg)
         {
-            bSent = IpcSendMsg(ipcMsg.src, IpcTarget_AppMain, ipcMsg.cmd, ipcMsg.extraSize, &ipcMsg.extra);
+            bSent = IpcSendMsg(ipcMsg.src, dst, ipcMsg.cmd, ipcMsg.extraSize, &ipcMsg.extra);
         }else
         {
-            bSent = IpcPostMsg(ipcMsg.src, IpcTarget_AppMain, ipcMsg.cmd, ipcMsg.extraSize, &ipcMsg.extra);
+            bSent = IpcPostMsg(ipcMsg.src, dst, ipcMsg.cmd, ipcMsg.extraSize, &ipcMsg.extra);
         }
 
         if(!bSent)
         {
             debugPrintf(DBG, L"USBTags: Destination handler cache is invalid! Reset!\r\n");
-            IpcSetProcessHandle(IpcTarget_AppMain, NULL);
+            IpcSetProcessHandle(dst, NULL);
         }
     }
-
-    if(!bSent)
-        debugPrintf(DBG, L"USBTags: src=%d, cmd=%d, extraSize=%d, extra=%d, sendMsg=%s still fails. Giving up!\r\n", ipcMsg.src, ipcMsg.cmd, ipcMsg.extraSize, ipcMsg.extra, sendMsg ? L"TRUE" : L"FALSE");
+    return bSent;
 }
 
 void inplaceInfoString(wchar_t* dstString, const DWORD dstCharSize, const TagLib::String& value, const wchar_t* defaultValue)

@@ -164,5 +164,15 @@ namespace Utils
         return reinterpret_cast<const unaligned_read<T> *>(ptr)->val;
     }
 #pragma pack(pop)
+
+    bool HasAlphaChannel(HBITMAP hBmp);
+    HBITMAP LoadPicture(const TCHAR* pathName, bool& hasAlpha, int& width, int& height);
+
+    inline std::wstring& makeFolderPath(std::wstring& str)
+    {
+        if(str.length() > 0 && str.at(str.length() - 1) != L'\\')
+            str += L'\\';
+        return str;
+    }
 };
 

@@ -112,6 +112,9 @@ static void startOnce()
     if(!g_onceChecker.isUnique())
         return;
     
+    std::wstring uiPath = Utils::makeFolderPath(std::wstring() + g_iniFile.GetValue(TEXT("Player"), TEXT("UIPath"), TEXT("\\Storage Card\\System\\mods\\UI\\")));
+    RegistryAccessor::setString(HKEY_LOCAL_MACHINE, TEXT("Software\\Microsoft\\DirectX\\DirectShow\\Video Renderer"), TEXT("UIPath"), uiPath);
+
     const CSimpleIniW::TKeyVal* cmnDebug = g_iniFile.GetSection(TEXT("CmnDebug"));
     if(cmnDebug)
     {
@@ -229,9 +232,7 @@ PLAYER_HELPER_API bool fixCodecsPath()
     
     RegistryData registryPathInfo;
 
-    std::wstring codecsPath = g_iniFile.GetValue(TEXT("Player"), TEXT("CodecsPath"), TEXT("\\Storage Card\\System\\mods\\codecs\\"));
-    if(codecsPath.length() > 0 && codecsPath.at(codecsPath.length() - 1) != L'\\')
-        codecsPath += L'\\';
+    std::wstring codecsPath = Utils::makeFolderPath(std::wstring() + g_iniFile.GetValue(TEXT("Player"), TEXT("CodecsPath"), TEXT("\\Storage Card\\System\\mods\\codecs\\")));
 
     // Demux
     registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D24C840C-C469-4368-A363-0913B44AEF5C}\\InprocServer32", L"", codecsPath + L"avidmx.dll"));
