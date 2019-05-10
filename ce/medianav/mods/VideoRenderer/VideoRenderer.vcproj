@@ -372,6 +372,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\player_ipc_defines.h"
+				>
+			</File>
+			<File
 				RelativePath=".\resource.h"
 				>
 			</File>

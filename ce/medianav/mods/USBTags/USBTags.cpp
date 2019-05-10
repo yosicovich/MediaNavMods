@@ -11,6 +11,7 @@
 #include <CmnDLL.h>
 #include <medianav.h>
 #include <smartptr.h>
+#include <SimpleIni.h>
 
 #include <fileref.h>
 #include <tfilestream.h>
@@ -25,7 +26,32 @@
 
 #include <string>
 
+#include <player_ipc_defines.h>
+
 using namespace MediaNav;
+
+struct PlayerConfigValues
+{
+    PlayerConfigValues()
+        :pauseOnWindow(false)
+        ,playOnFullscreen(false)
+        ,showClock(false)
+    {
+
+    }
+
+    bool operator == (const PlayerConfigValues& other)
+    {
+        return pauseOnWindow == other.pauseOnWindow
+            && playOnFullscreen == other.playOnFullscreen
+            && showClock == other.showClock;
+    }
+
+    bool pauseOnWindow;
+    bool playOnFullscreen;
+    bool showClock;
+};
+
 // Global Variables:
 HINSTANCE			g_hInst;			// current instance
 Utils::SystemWideUniqueInstance g_uniqueInstance(IPC_WNDCLASS);
@@ -34,6 +60,11 @@ smart_ptr<CSharedMemory> pTagMgrPlayerStatus;
 USBPlayerStatus g_cachedInfo;
 int coverWidth, coverHeight;
 bool g_foreignImage = false;
+
+CSimpleIni g_playerIniConfig;
+PlayerConfigValues g_playerConfig;
+
+UINT g_accOffMsg = 0;
 
 // Forward declarations of functions included in this code module:
 ATOM			USBTagsRegisterClass(HINSTANCE, LPTSTR);
@@ -46,6 +77,8 @@ void updateCache(const USBPlayerStatus& info, bool foreignImage);
 void inplaceInfoString(wchar_t* dstString, const DWORD dstCharSize, const TagLib::String& value, const wchar_t* defaultValue);
 void readAlbumDimensions();
 bool sendIPCMessage(const IpcMsg& ipcMsg, int dst, bool sendMsg);
+void loadPlayerConfig();
+void savePlayerConfig();
 
 #ifdef WITH_COPYRIGHT
 volatile wchar_t cCR_Sp = L' ';
@@ -242,6 +275,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
     if(!g_uniqueInstance.isUnique())
         return -1;
 
+    loadPlayerConfig();
+
     TagLib::ID3v1::Tag::setStringHandler(&g_id3v1Handler);
     TagLib::ID3v2::Tag::setLatin1StringHandler(&g_id3v2Handler);
 
@@ -262,6 +297,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	}
 
     readAlbumDimensions();
+
+    g_accOffMsg = RegisterWindowMessage(IPC_ULC_ACC_OFF_STATE_MSG);
 
 	// Main message loop:
 	while (GetMessage(&msg, NULL, 0, 0)) 
@@ -337,7 +374,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
 
         default:
-            return DefWindowProc(hWnd, message, wParam, lParam);
+            {
+                if(message == g_accOffMsg)
+                {
+                    debugPrintf(DBG, L"USBTags: ACC OFF message has been received\r\n");
+                    if(lParam == TRUE)
+                    {
+                        debugPrintf(DBG, L"USBTags: ACC is off\r\n");
+                        savePlayerConfig();
+                    }
+                    break;
+                }
+                return DefWindowProc(hWnd, message, wParam, lParam);
+            }
     }
     return 0;
 }
@@ -652,3 +701,42 @@ void readAlbumDimensions()
     coverWidth = Utils::RegistryAccessor::getInt(HKEY_LOCAL_MACHINE, L"\\LGE\\SystemInfo", L"ALBUMART_WIDTH", -1);
     coverHeight = Utils::RegistryAccessor::getInt(HKEY_LOCAL_MACHINE, L"\\LGE\\SystemInfo", L"ALBUMART_HEIGHT", -1);
 }
+
+void loadPlayerConfig()
+{
+    debugPrintf(DBG, L"USBTags: loadPlayerConfig() Read player config from %s!\r\n", PLAYER_CONFIG_FILE);
+    g_playerIniConfig.LoadFile(PLAYER_CONFIG_FILE);
+
+    g_playerConfig.pauseOnWindow = g_playerIniConfig.GetBoolValue(L"UI", L"PauseOnWindow", false);
+    g_playerConfig.playOnFullscreen = g_playerIniConfig.GetBoolValue(L"UI", L"PlayOnFullscreen", false);
+    g_playerConfig.showClock = g_playerIniConfig.GetBoolValue(L"UI", L"ShowClock", true);
+
+    debugPrintf(DBG, L"USBTags: loadPlayerConfig() Update registry!\r\n");
+    Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_REG_UI_PAUSE_ON_WINDOW, g_playerConfig.pauseOnWindow);
+    Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_PLAY_ON_FULLSCREEN, g_playerConfig.playOnFullscreen);
+    Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_SHOW_CLOCK, g_playerConfig.showClock);
+}
+
+void savePlayerConfig()
+{
+    PlayerConfigValues newConfig;
+    newConfig.pauseOnWindow = Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_REG_UI_PAUSE_ON_WINDOW, g_playerConfig.pauseOnWindow);
+    newConfig.playOnFullscreen = Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_PLAY_ON_FULLSCREEN, g_playerConfig.playOnFullscreen);
+    newConfig.showClock = Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_SHOW_CLOCK, g_playerConfig.showClock);
+
+    if(newConfig == g_playerConfig)
+    {
+        debugPrintf(DBG, L"USBTags: savePlayerConfig() No player config change!\r\n");
+        return;
+    }
+
+    debugPrintf(DBG, L"USBTags: savePlayerConfig() Update player config file!\r\n");
+
+    g_playerIniConfig.SetBoolValue(L"UI", L"PauseOnWindow", newConfig.pauseOnWindow);
+    g_playerIniConfig.SetBoolValue(L"UI", L"PlayOnFullscreen", newConfig.playOnFullscreen);
+    g_playerIniConfig.SetBoolValue(L"UI", L"ShowClock", newConfig.showClock);
+
+    g_playerIniConfig.SaveFile(PLAYER_CONFIG_FILE);
+}
+
+

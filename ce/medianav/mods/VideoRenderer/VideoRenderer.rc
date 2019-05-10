@@ -53,8 +53,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,1,4
- PRODUCTVERSION 9,1,3,1
+ FILEVERSION 1,0,1,5
+ PRODUCTVERSION 9,1,3,2
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -71,7 +71,7 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "www.medianav.ru"
             VALUE "FileDescription", "Medianav Video Renderer Window"
-            VALUE "FileVersion", "1.0.1.4"
+            VALUE "FileVersion", "1.0.1.5"
             VALUE "InternalName", "VideoRenderer"
             VALUE "LegalCopyright", "Copyright © 2017-2019 www.medianav.ru. All rights reserved."
             VALUE "OriginalFilename", "VideoRenderer.dll"

@@ -17,12 +17,14 @@
 //#define NO_HIDE
 #endif
 
+#include "player_ipc_defines.h"
 #include "os_api.h"
 #include "AuITE.h"
 #include "AuAllocator.h"
 #include "AuOverlay.h"
 #include "dshow\SecureConnection.h"
 #include <memory>
+#include <map>
 #include "SystemMeter.h"
 #include <CmnDLL.h>
 #include <medianav.h>
@@ -45,8 +47,6 @@ class CVideoWindow;
 // complete their implementation such as the handling of source and target
 // rectangles. The class also looks after creating the window with a custom
 // clip region in the shape of the word ActiveX (only applies to Windows/NT)
-
-#define VIDEO_RENDERER_REGKEY (TEXT("Software\\Microsoft\\DirectX\\DirectShow\\Video Renderer"))
 
 enum OSDInfo
 {
@@ -103,14 +103,27 @@ protected:
     RECT            m_ForwardButtonRect;
     RECT            m_PauseButtonRect;
 
+    RECT            m_pauseOnWindowButtonRect;
+    RECT            m_playOnFullScreenButtonRect;
+    RECT            m_showClockButtonRect;
+
+    RECT            m_clockRect;
+    int             m_minutesOffset;
+
+    typedef std::map<const TCHAR*, RECT> TSelectedRects;
+
+    TSelectedRects  m_selectedRects;
     RECT            m_clickedRect;
     smart_ptr<CSharedMemory> m_pPlayerStatus;
     USBPlayerStatus m_playerStatus;
+    std::wstring    m_clockText;
+    bool            m_clockSemicolon;
+    HFONT           m_textFont;
 
 	void CreateOverlay();
 	void DestroyOverlay();
 
-    void setFullScreen(BOOL bFullScreen);
+    void setFullScreen(bool bFullScreen);
     BOOL isNoShowState();
     void toggleOnScreenInfo();
     void switchOSDInfo();
@@ -121,13 +134,27 @@ protected:
     void inactivateUI();
     void setUIActive(bool bUIActive);
     bool getUIActive();
-    void processButtons(const POINT& pt);
+    void processButtons(HWND hwnd, const POINT& pt);
     void setClickedRect(HWND hwnd, const POINT& pt);
     void resetClickedRect(HWND hwnd);
+
+    bool getPauseOnWindow() const;
+    void setPauseOnWindow(bool bPauseOnWindow) const;
+    bool getPlayOnFullscreen() const;
+    void setPlayOnFullscreen(bool bPlayOnFullscreen) const;
+    bool getShowClock() const;
+    void setShowClock(bool bShowClock) const;
+
     
     void loadUIButtons(const std::wstring& fileName);
     void processIpcMsg(IpcMsg& ipcMsg, bool sendMsg);
     void updatePlayerStatus();
+    void goFullScreen();
+    void drawClock(HDC hdc);
+    void drawClock(HWND hwnd);
+    void updateClockText();
+
+    static void InvertWindowRect(HWND hwnd, const RECT &rect );
 
 public:
 	CAuOverlay		*m_pOverlay;
@@ -197,8 +224,8 @@ public:
                              LPARAM lParam);     // Other parameter
 
     void SetAspectRatio(int cx, int cy, int aspect_type, int cxCrop, int cyCrop);
-	void AdjustWindowSize(BOOL maximized);
-    BOOL getFullScreen();
+	void AdjustWindowSize(bool maximized);
+    bool getFullScreen();
     void checkSetWindowVisibility();
     void refreshWindowState();
 }; // CVideoWindow

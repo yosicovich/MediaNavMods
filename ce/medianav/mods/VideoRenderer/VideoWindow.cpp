@@ -44,6 +44,7 @@
 
 #define CHECK_SHOW_STATE_TIMER_ID 101
 #define UI_ACTIVE_TIMER_ID 102
+#define UI_CLOCK_TIMER_ID 103
 
 #ifdef TESTMODE
 #define CHECK_SHOW_STATE_TIMER_INTERVAL_MS 1000
@@ -56,6 +57,10 @@ static const DWORD cUIActiveTimeMS = 4000;
 
 #define UI_DEF_PATH L"\\Storage Card\\System\\mods\\UI\\"
 #define UI_BUTTONS L"buttons.png"
+
+#define UI_CLOCK_FONT_HEIGHT 63
+#define UI_CLOCK_FONT_NAME  L"Tahoma"
+#define UI_CLOCK_TEXT_COLOR RGB(255, 255, 255)
 
 CCritSec CVideoWindow::m_csMempool;
 
@@ -89,19 +94,68 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
     m_RewButtonRect(),
     m_ForwardButtonRect(),
     m_PauseButtonRect(),
+    m_pauseOnWindowButtonRect(),
+    m_playOnFullScreenButtonRect(),
+    m_showClockButtonRect(),
+    m_clockRect(),
+    m_minutesOffset(0),
     m_clickedRect(),
+    m_selectedRects(),
+    m_clockSemicolon(false),
+    m_textFont(NULL),
     m_pPlayerStatus(new CSharedMemory(cUSBPlayerStatusMutexName, cUSBPlayerStatusMemName, true, sizeof(USBPlayerStatus)))
 {
     // UI section
     {
         SetRect(&m_osdSwitchButtonRect, 0, 0, 50, 50);
+        
         SetRect(&m_RewButtonRect, 0, 77, 118, 404);
         SetRect(&m_ForwardButtonRect, 680, 77, 800, 404);
         SetRect(&m_PauseButtonRect, 0, 405, 800, 480);
 
+        SetRect(&m_pauseOnWindowButtonRect, 0, 0, 118, 76);
+        SetRect(&m_playOnFullScreenButtonRect, 120, 0, 238, 76);
+        SetRect(&m_showClockButtonRect, 240, 0, 358, 76);
+
+        if(getPauseOnWindow())
+            m_selectedRects.insert(std::make_pair(PLAYER_IPC_REG_UI_PAUSE_ON_WINDOW, m_pauseOnWindowButtonRect));
+
+        if(getPlayOnFullscreen())
+            m_selectedRects.insert(std::make_pair(PLAYER_IPC_UI_PLAY_ON_FULLSCREEN, m_playOnFullScreenButtonRect));
+
+        if(getShowClock())
+            m_selectedRects.insert(std::make_pair(PLAYER_IPC_UI_SHOW_CLOCK, m_showClockButtonRect));
+
         loadUIButtons(Utils::makeFolderPath(Utils::RegistryAccessor::getString(HKEY_LOCAL_MACHINE, VIDEO_RENDERER_REGKEY, L"UIPath", UI_DEF_PATH)) + UI_BUTTONS);
 
         updatePlayerStatus();
+    }
+
+    // Clock
+    {
+        LOGFONT logFont = {UI_CLOCK_FONT_HEIGHT, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE};
+        memset(logFont.lfFaceName , 0 ,sizeof(logFont.lfFaceName));
+        wcscpy_s(logFont.lfFaceName, LF_FACESIZE, UI_CLOCK_FONT_NAME);
+        m_textFont = CreateFontIndirect(&logFont);
+
+        SetRect(&m_clockRect, 660, 5, 800, 76);
+
+        HDC windowDC = GetDC(NULL);
+        if(windowDC)
+        {
+            HDC memHdc = CreateCompatibleDC(windowDC);
+            if(memHdc)
+            {
+                if(m_textFont != NULL)
+                    SelectObject(memHdc, m_textFont);
+                SIZE Size;
+                GetTextExtentPoint32(memHdc, L"00:", 3, &Size);
+                m_minutesOffset = Size.cx;
+                DeleteDC(memHdc);
+            }
+            ReleaseDC(NULL, windowDC);
+        }
+        updateClockText();
     }
 
     SetRectEmpty(&m_rcTarget);
@@ -121,6 +175,9 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
     if(SetTimer(m_hwnd, CHECK_SHOW_STATE_TIMER_ID, CHECK_SHOW_STATE_TIMER_INTERVAL_MS, NULL) == 0)
         OS_Print(DBG, "create show state timer failed!\r\n");
 
+    if(SetTimer(m_hwnd, UI_CLOCK_TIMER_ID, 1000, NULL) == 0)
+        debugPrintf(DBG, L"Unable to create clock timer\r\n");
+
     ActivateWindow();
 
 } // (Constructor)
@@ -131,6 +188,7 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
 //
 CVideoWindow::~CVideoWindow()
 {
+    KillTimer(m_hwnd, UI_CLOCK_TIMER_ID);
     KillTimer(m_hwnd, UI_ACTIVE_TIMER_ID);
     if(!KillTimer(m_hwnd, CHECK_SHOW_STATE_TIMER_ID))
         OS_Print(DBG, "Kill show state timer failed!\r\n");
@@ -138,6 +196,10 @@ CVideoWindow::~CVideoWindow()
     DoneWithWindow();
 	DestroyOverlay();
 	FreeBuffers();
+
+    if(m_textFont != NULL)
+        DeleteObject(m_textFont);
+
 } // (Destructor)
 
 void CVideoWindow::AllocateBuffers()
@@ -255,7 +317,7 @@ LPTSTR CVideoWindow::GetClassWindowStyles(DWORD *pClassStyles,
 } // GetClassWindowStyles
 
 
-void CVideoWindow::AdjustWindowSize(BOOL maximized)
+void CVideoWindow::AdjustWindowSize(bool maximized)
 {
 	if(maximized)
 	{
@@ -308,14 +370,14 @@ HRESULT CVideoWindow::DoShowWindow(LONG ShowCmd)
 		// Activates and displays a window. If the window is minimized or maximized,
 		// the system restores it to its original size and position. An application
 		// should specify this flag when displaying the window for the first time.
-		AdjustWindowSize(FALSE);
+		AdjustWindowSize(false);
 		bShow = TRUE;
 		break;
 	case SW_MAXIMIZE:
 		// Maximizes the specified window.
 	case SW_SHOWMAXIMIZED:
 		// Activates the window and displays it as a maximized window.
-		AdjustWindowSize(TRUE);
+		AdjustWindowSize(true);
 		bShow = TRUE;
 		break;
 
@@ -456,12 +518,18 @@ LRESULT CVideoWindow::OnReceiveMessage(HWND hwnd,          // Window handle
                     toggleOnScreenInfo();
                 }else
                 {
-                    if(getFullScreen() && !getUIActive())
+                    if(getFullScreen())
                     {
-                        activateUI();
+                        if(!getUIActive())
+                        {
+                            activateUI();
+                        }else
+                        {
+                            processButtons(hwnd, pt);
+                        }
                     }else
                     {
-                        processButtons(pt);
+                        goFullScreen();
                     }
                 }
             }
@@ -483,6 +551,15 @@ LRESULT CVideoWindow::OnReceiveMessage(HWND hwnd,          // Window handle
         case UI_ACTIVE_TIMER_ID:
             {
                 inactivateUI();
+                break;
+            }
+        case UI_CLOCK_TIMER_ID:
+            {
+                updateClockText();
+                if(getFullScreen() && getShowClock())
+                {
+                    drawClock(hwnd);
+                }
                 break;
             }
         }
@@ -572,13 +649,20 @@ LRESULT CVideoWindow::OnPaint(HWND hwnd)
         SelectObject(memDC, m_uiButtons);
         BitBlt(hdc, 0, 0, WIDTH(&ClientRect), HEIGHT(&ClientRect), memDC, 0, 0, SRCPAINT);
         DeleteDC(memDC);
+
+        if(WIDTH(&m_clickedRect) && HEIGHT(&m_clickedRect))
+        {
+            InvertRect(hdc, &m_clickedRect);
+        }
+
+        for(TSelectedRects::const_iterator it = m_selectedRects.begin(); it != m_selectedRects.end(); ++it)
+        {
+            InvertRect(hdc, &it->second);
+        }
     }
 
-
-    if(WIDTH(&m_clickedRect) && HEIGHT(&m_clickedRect))
-    {
-        InvertRect(hdc, &m_clickedRect);
-    }
+    if(getFullScreen() && getShowClock())
+        drawClock(hdc);
 
     if(m_OSD_enabled)
         OnScreenDisplay(NULL);
@@ -1310,12 +1394,12 @@ static const LPWSTR cSystemInfoKey = L"\\LGE\\SystemInfo";
 static const LPWSTR cFullScreenName = L"VIDEO_FULLSCREEN";
 static const LPWSTR cUIActiveName = L"VIDEO_UI_ACTIVE";
 
-void CVideoWindow::setFullScreen(BOOL bFullScreen)
+void CVideoWindow::setFullScreen(bool bFullScreen)
 {
-    Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, cSystemInfoKey, cFullScreenName, bFullScreen == TRUE ? true : false);
+    Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, cSystemInfoKey, cFullScreenName, bFullScreen);
 }
 
-BOOL CVideoWindow::getFullScreen()
+bool CVideoWindow::getFullScreen()
 {
     return Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, cSystemInfoKey, cFullScreenName, false);
 }
@@ -1482,7 +1566,7 @@ void CVideoWindow::loadUIButtons(const std::wstring& fileName)
         m_uiButtons = NULL;
     }
 }
-void CVideoWindow::processButtons(const POINT& pt)
+void CVideoWindow::processButtons(HWND hwnd, const POINT& pt)
 {
     if(PtInRect(&m_RewButtonRect, pt))
     {
@@ -1510,17 +1594,78 @@ void CVideoWindow::processButtons(const POINT& pt)
                 break;
 
         }
+    }else if(PtInRect(&m_pauseOnWindowButtonRect, pt))
+    {
+        debugPrintf(DBG, L"CVideoWindow::processButtons: 'Pause on window' button clicked\r\n");
+        if(getPauseOnWindow())
+        {
+            setPauseOnWindow(false);
+            m_selectedRects.erase(PLAYER_IPC_REG_UI_PAUSE_ON_WINDOW);
+        }else
+        {
+            m_selectedRects.insert(std::make_pair(PLAYER_IPC_REG_UI_PAUSE_ON_WINDOW, m_pauseOnWindowButtonRect));
+            setPauseOnWindow(true);
+        }
+        InvertWindowRect(hwnd, m_pauseOnWindowButtonRect);
+    }else if(PtInRect(&m_playOnFullScreenButtonRect, pt))
+    {
+        debugPrintf(DBG, L"CVideoWindow::processButtons: 'Play on fullscreen' button clicked\r\n");
+        if(getPlayOnFullscreen())
+        {
+            setPlayOnFullscreen(false);
+            m_selectedRects.erase(PLAYER_IPC_UI_PLAY_ON_FULLSCREEN);
+        }else
+        {
+            m_selectedRects.insert(std::make_pair(PLAYER_IPC_UI_PLAY_ON_FULLSCREEN, m_playOnFullScreenButtonRect));
+            setPlayOnFullscreen(true);
+        }
+        InvertWindowRect(hwnd, m_playOnFullScreenButtonRect);
+    }else if(PtInRect(&m_showClockButtonRect, pt))
+    {
+        debugPrintf(DBG, L"CVideoWindow::processButtons: 'Show clock' button clicked\r\n");
+        if(getShowClock())
+        {
+            setShowClock(false);
+            m_selectedRects.erase(PLAYER_IPC_UI_SHOW_CLOCK);
+            m_clockText = L"";
+            drawClock(hwnd);
+        }else
+        {
+            m_selectedRects.insert(std::make_pair(PLAYER_IPC_UI_SHOW_CLOCK, m_showClockButtonRect));
+            setShowClock(true);
+            updateClockText();
+            drawClock(hwnd);
+        }
+        InvertWindowRect(hwnd, m_showClockButtonRect);
     }else
     {
         debugPrintf(DBG, L"CVideoWindow::processButtons: FULL SCREEN button clicked\r\n");
-        AdjustWindowSize(!getFullScreen());
+        bool bFullScreen = getFullScreen();
+        if(bFullScreen && m_playerStatus.m_state == ST_PLAY && getPauseOnWindow())
+        {
+            DWORD state = ST_PAUSE;
+            IpcPostMsg(IpcTarget_AppMain, IpcTarget_MgrUSB, AppMain_IDM_AMAIN_MUSB_CHANGE_PLAY_STATUS, sizeof(DWORD), &state);
+        }
+
+        AdjustWindowSize(!bFullScreen);
         return;
     }
     // Reset timer
     reactivateUI();
 }
 
-void CVideoWindow::setClickedRect(HWND hwnd,const POINT& pt)
+void CVideoWindow::goFullScreen()
+{
+    debugPrintf(DBG, L"CVideoWindow::goFullScreen()\r\n");
+    if((m_playerStatus.m_state == ST_PAUSE || m_playerStatus.m_state == ST_STOP) && getPlayOnFullscreen())
+    {
+        DWORD state = ST_PLAY;
+        IpcPostMsg(IpcTarget_AppMain, IpcTarget_MgrUSB, AppMain_IDM_AMAIN_MUSB_CHANGE_PLAY_STATUS, sizeof(DWORD), &state);
+    }
+    AdjustWindowSize(true);
+}
+
+void CVideoWindow::setClickedRect(HWND hwnd, const POINT& pt)
 {
     if(PtInRect(&m_RewButtonRect, pt))
     {
@@ -1536,21 +1681,16 @@ void CVideoWindow::setClickedRect(HWND hwnd,const POINT& pt)
         return;
     }
 
-    HDC hdc = GetDC(hwnd);
-    InvertRect(hdc, &m_clickedRect);
-    ReleaseDC(hwnd, hdc);
+    InvertWindowRect(hwnd, m_clickedRect);
 }
 
 void CVideoWindow::resetClickedRect(HWND hwnd)
 {
-    HDC hdc = GetDC(hwnd);
     if(WIDTH(&m_clickedRect) && HEIGHT(&m_clickedRect))
     {
-        InvertRect(hdc, &m_clickedRect);
+        InvertWindowRect(hwnd, m_clickedRect);
+        SetRect(&m_clickedRect, 0, 0, 0, 0);
     }
-    ReleaseDC(hwnd, hdc);
-
-    SetRect(&m_clickedRect, 0, 0, 0, 0);
 }
 
 void CVideoWindow::processIpcMsg(IpcMsg& ipcMsg, bool sendMsg)
@@ -1578,6 +1718,93 @@ void CVideoWindow::updatePlayerStatus()
 {
     debugPrintf(DBG, L"CVideoWindow::updatePlayerStatus()\r\n");
     m_pPlayerStatus->read(&m_playerStatus, 0, sizeof(USBPlayerStatus));
+}
+
+bool CVideoWindow::getPauseOnWindow() const
+{
+    return Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_REG_UI_PAUSE_ON_WINDOW, false);
+}
+
+void CVideoWindow::setPauseOnWindow(bool bPauseOnWindow) const
+{
+    Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_REG_UI_PAUSE_ON_WINDOW, bPauseOnWindow);
+}
+
+bool CVideoWindow::getPlayOnFullscreen() const
+{
+    return Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_PLAY_ON_FULLSCREEN, false);
+}
+
+void CVideoWindow::setPlayOnFullscreen(bool bPlayOnFullscreen) const
+{
+    Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_PLAY_ON_FULLSCREEN, bPlayOnFullscreen);
+}
+
+bool CVideoWindow::getShowClock() const
+{
+    return Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_SHOW_CLOCK, true);
+}
+
+void CVideoWindow::setShowClock(bool bShowClock) const
+{
+    Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_SHOW_CLOCK, bShowClock);
+}
+
+void CVideoWindow::InvertWindowRect(HWND hwnd, const RECT &rect )
+{
+    HDC hdc = GetDC(hwnd);
+    InvertRect(hdc, &rect);
+    ReleaseDC(hwnd, hdc);
+}
+
+void CVideoWindow::drawClock(HDC hdc)
+{
+    HBRUSH hBrush;
+    hBrush = CreateSolidBrush(m_KeyColor);
+    EXECUTE_ASSERT(FillRect(hdc, &m_clockRect, hBrush));
+    EXECUTE_ASSERT(DeleteObject(hBrush));
+
+    if(m_clockText.size() >= 5)
+    {
+        if(m_textFont != NULL)
+            SelectObject(hdc, m_textFont);
+        SetTextColor(hdc, UI_CLOCK_TEXT_COLOR);
+
+        SetBkMode(hdc, TRANSPARENT);
+        ExtTextOut(hdc, m_clockRect.left, m_clockRect.top, ETO_CLIPPED, NULL, m_clockText.c_str(), 3, NULL);
+        
+        std::wstring minutes = m_clockText.substr(3);
+        ExtTextOut(hdc, m_clockRect.left + m_minutesOffset, m_clockRect.top, ETO_CLIPPED, NULL, minutes.c_str(), minutes.size(), NULL);
+    }
+}
+
+void CVideoWindow::drawClock(HWND hwnd)
+{
+    HDC hdc = GetDC(hwnd);
+    drawClock(hdc);
+    ReleaseDC(hwnd, hdc);
+}
+
+void CVideoWindow::updateClockText()
+{
+    SYSTEMTIME lt;
+
+    //Get current date
+    GetLocalTime(&lt);
+
+    wchar_t *pFormat;
+
+    if(m_clockSemicolon)
+        pFormat = L"%.2d:%.2d";
+    else
+        pFormat = L"%.2d %.2d";
+    
+    m_clockSemicolon = !m_clockSemicolon;
+
+    wchar_t buf[6];
+    swprintf_s(buf, 6, pFormat, lt.wHour, lt.wMinute);
+    
+    m_clockText = buf;
 }
 
 // This allows a client to set the complete window size and position in one
