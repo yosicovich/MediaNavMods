@@ -707,9 +707,9 @@ void loadPlayerConfig()
     debugPrintf(DBG, L"USBTags: loadPlayerConfig() Read player config from %s!\r\n", PLAYER_CONFIG_FILE);
     g_playerIniConfig.LoadFile(PLAYER_CONFIG_FILE);
 
-    g_playerConfig.pauseOnWindow = g_playerIniConfig.GetBoolValue(L"UI", L"PauseOnWindow", false);
-    g_playerConfig.playOnFullscreen = g_playerIniConfig.GetBoolValue(L"UI", L"PlayOnFullscreen", false);
-    g_playerConfig.showClock = g_playerIniConfig.GetBoolValue(L"UI", L"ShowClock", true);
+    g_playerConfig.pauseOnWindow = g_playerIniConfig.GetBoolValue(L"UI", PLAYER_CONFIG_PARAM_PauseOnWindow, false);
+    g_playerConfig.playOnFullscreen = g_playerIniConfig.GetBoolValue(L"UI", PLAYER_CONFIG_PARAM_PlayOnFullscreen, false);
+    g_playerConfig.showClock = g_playerIniConfig.GetBoolValue(L"UI", PLAYER_CONFIG_PARAM_ShowClock, true);
 
     debugPrintf(DBG, L"USBTags: loadPlayerConfig() Update registry!\r\n");
     Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_REG_UI_PAUSE_ON_WINDOW, g_playerConfig.pauseOnWindow);
@@ -732,9 +732,9 @@ void savePlayerConfig()
 
     debugPrintf(DBG, L"USBTags: savePlayerConfig() Update player config file!\r\n");
 
-    g_playerIniConfig.SetBoolValue(L"UI", L"PauseOnWindow", newConfig.pauseOnWindow);
-    g_playerIniConfig.SetBoolValue(L"UI", L"PlayOnFullscreen", newConfig.playOnFullscreen);
-    g_playerIniConfig.SetBoolValue(L"UI", L"ShowClock", newConfig.showClock);
+    g_playerIniConfig.SetBoolValue(L"UI", PLAYER_CONFIG_PARAM_PauseOnWindow, newConfig.pauseOnWindow);
+    g_playerIniConfig.SetBoolValue(L"UI", PLAYER_CONFIG_PARAM_PlayOnFullscreen, newConfig.playOnFullscreen);
+    g_playerIniConfig.SetBoolValue(L"UI", PLAYER_CONFIG_PARAM_ShowClock, newConfig.showClock);
 
     g_playerIniConfig.SaveFile(PLAYER_CONFIG_FILE);
 }
