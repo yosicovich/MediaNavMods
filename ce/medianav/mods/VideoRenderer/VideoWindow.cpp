@@ -503,9 +503,12 @@ LRESULT CVideoWindow::OnReceiveMessage(HWND hwnd,          // Window handle
     case WM_LBUTTONDOWN:
         m_longTapDetect = true;
         m_tapStartTime = GetTickCount();
-        pt.x = GET_X_LPARAM(lParam);
-        pt.y = GET_Y_LPARAM(lParam);
-        setClickedRect(hwnd, pt);
+        if(getUIActive())
+        {
+            pt.x = GET_X_LPARAM(lParam);
+            pt.y = GET_Y_LPARAM(lParam);
+            setClickedRect(hwnd, pt);
+        }
         break;
 	case WM_LBUTTONUP:
         {
