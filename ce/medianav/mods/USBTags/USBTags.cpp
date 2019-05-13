@@ -36,6 +36,7 @@ struct PlayerConfigValues
         :pauseOnWindow(false)
         ,playOnFullscreen(false)
         ,showClock(false)
+        ,quickAccess(false)
     {
 
     }
@@ -44,12 +45,14 @@ struct PlayerConfigValues
     {
         return pauseOnWindow == other.pauseOnWindow
             && playOnFullscreen == other.playOnFullscreen
-            && showClock == other.showClock;
+            && showClock == other.showClock
+            && quickAccess == other.quickAccess;
     }
 
     bool pauseOnWindow;
     bool playOnFullscreen;
     bool showClock;
+    bool quickAccess;
 };
 
 // Global Variables:
@@ -710,11 +713,13 @@ void loadPlayerConfig()
     g_playerConfig.pauseOnWindow = g_playerIniConfig.GetBoolValue(L"UI", PLAYER_CONFIG_PARAM_PauseOnWindow, false);
     g_playerConfig.playOnFullscreen = g_playerIniConfig.GetBoolValue(L"UI", PLAYER_CONFIG_PARAM_PlayOnFullscreen, false);
     g_playerConfig.showClock = g_playerIniConfig.GetBoolValue(L"UI", PLAYER_CONFIG_PARAM_ShowClock, true);
+    g_playerConfig.quickAccess = g_playerIniConfig.GetBoolValue(L"UI", PLAYER_CONFIG_PARAM_QuickAccess, false);
 
     debugPrintf(DBG, L"USBTags: loadPlayerConfig() Update registry!\r\n");
     Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_REG_UI_PAUSE_ON_WINDOW, g_playerConfig.pauseOnWindow);
     Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_PLAY_ON_FULLSCREEN, g_playerConfig.playOnFullscreen);
     Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_SHOW_CLOCK, g_playerConfig.showClock);
+    Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_QUICK_ACCESS, g_playerConfig.quickAccess);
 }
 
 void savePlayerConfig()
@@ -723,6 +728,7 @@ void savePlayerConfig()
     newConfig.pauseOnWindow = Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_REG_UI_PAUSE_ON_WINDOW, g_playerConfig.pauseOnWindow);
     newConfig.playOnFullscreen = Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_PLAY_ON_FULLSCREEN, g_playerConfig.playOnFullscreen);
     newConfig.showClock = Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_SHOW_CLOCK, g_playerConfig.showClock);
+    newConfig.quickAccess = Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_QUICK_ACCESS, g_playerConfig.quickAccess);
 
     if(newConfig == g_playerConfig)
     {
@@ -735,6 +741,7 @@ void savePlayerConfig()
     g_playerIniConfig.SetBoolValue(L"UI", PLAYER_CONFIG_PARAM_PauseOnWindow, newConfig.pauseOnWindow);
     g_playerIniConfig.SetBoolValue(L"UI", PLAYER_CONFIG_PARAM_PlayOnFullscreen, newConfig.playOnFullscreen);
     g_playerIniConfig.SetBoolValue(L"UI", PLAYER_CONFIG_PARAM_ShowClock, newConfig.showClock);
+    g_playerIniConfig.SetBoolValue(L"UI", PLAYER_CONFIG_PARAM_QuickAccess, newConfig.quickAccess);
 
     g_playerIniConfig.SaveFile(PLAYER_CONFIG_FILE);
 }

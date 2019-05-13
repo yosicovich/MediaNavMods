@@ -97,6 +97,7 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
     m_pauseOnWindowButtonRect(),
     m_playOnFullScreenButtonRect(),
     m_showClockButtonRect(),
+    m_quickAccessButtonRect(),
     m_clockRect(),
     m_minutesOffset(0),
     m_clickedRect(),
@@ -116,6 +117,7 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
         SetRect(&m_pauseOnWindowButtonRect, 0, 0, 118, 76);
         SetRect(&m_playOnFullScreenButtonRect, 120, 0, 238, 76);
         SetRect(&m_showClockButtonRect, 240, 0, 358, 76);
+        SetRect(&m_quickAccessButtonRect, 360, 0, 478, 76);
 
         if(getPauseOnWindow())
             m_selectedRects.insert(std::make_pair(PLAYER_IPC_REG_UI_PAUSE_ON_WINDOW, m_pauseOnWindowButtonRect));
@@ -125,6 +127,9 @@ CVideoWindow::CVideoWindow(TCHAR *pName,             // Object description
 
         if(getShowClock())
             m_selectedRects.insert(std::make_pair(PLAYER_IPC_UI_SHOW_CLOCK, m_showClockButtonRect));
+
+        if(getQuickAccess())
+            m_selectedRects.insert(std::make_pair(PLAYER_IPC_UI_QUICK_ACCESS, m_quickAccessButtonRect));
 
         loadUIButtons(Utils::makeFolderPath(Utils::RegistryAccessor::getString(HKEY_LOCAL_MACHINE, VIDEO_RENDERER_REGKEY, L"UIPath", UI_DEF_PATH)) + UI_BUTTONS);
 
@@ -522,7 +527,10 @@ LRESULT CVideoWindow::OnReceiveMessage(HWND hwnd,          // Window handle
                     {
                         if(!getUIActive())
                         {
-                            activateUI();
+                            if(getQuickAccess() || PtInRect(&m_osdSwitchButtonRect, pt))
+                                activateUI();
+                            else
+                                goWindowedMode();
                         }else
                         {
                             processButtons(hwnd, pt);
@@ -1637,21 +1645,39 @@ void CVideoWindow::processButtons(HWND hwnd, const POINT& pt)
             drawClock(hwnd);
         }
         InvertWindowRect(hwnd, m_showClockButtonRect);
+    }else if(PtInRect(&m_quickAccessButtonRect, pt))
+    {
+        debugPrintf(DBG, L"CVideoWindow::processButtons: 'Quick access' button clicked\r\n");
+        if(getQuickAccess())
+        {
+            setQuickAccess(false);
+            m_selectedRects.erase(PLAYER_IPC_UI_QUICK_ACCESS);
+        }else
+        {
+            m_selectedRects.insert(std::make_pair(PLAYER_IPC_UI_QUICK_ACCESS, m_quickAccessButtonRect));
+            setQuickAccess(true);
+        }
+        InvertWindowRect(hwnd, m_quickAccessButtonRect);
     }else
     {
         debugPrintf(DBG, L"CVideoWindow::processButtons: FULL SCREEN button clicked\r\n");
-        bool bFullScreen = getFullScreen();
-        if(bFullScreen && m_playerStatus.m_state == ST_PLAY && getPauseOnWindow())
-        {
-            DWORD state = ST_PAUSE;
-            IpcPostMsg(IpcTarget_AppMain, IpcTarget_MgrUSB, AppMain_IDM_AMAIN_MUSB_CHANGE_PLAY_STATUS, sizeof(DWORD), &state);
-        }
-
-        AdjustWindowSize(!bFullScreen);
+        goWindowedMode();
         return;
     }
     // Reset timer
     reactivateUI();
+}
+
+void CVideoWindow::goWindowedMode()
+{
+    bool bFullScreen = getFullScreen();
+    if(bFullScreen && m_playerStatus.m_state == ST_PLAY && getPauseOnWindow())
+    {
+        DWORD state = ST_PAUSE;
+        IpcPostMsg(IpcTarget_AppMain, IpcTarget_MgrUSB, AppMain_IDM_AMAIN_MUSB_CHANGE_PLAY_STATUS, sizeof(DWORD), &state);
+    }
+
+    AdjustWindowSize(!bFullScreen);
 }
 
 void CVideoWindow::goFullScreen()
@@ -1748,6 +1774,16 @@ bool CVideoWindow::getShowClock() const
 void CVideoWindow::setShowClock(bool bShowClock) const
 {
     Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_SHOW_CLOCK, bShowClock);
+}
+
+bool CVideoWindow::getQuickAccess() const
+{
+    return Utils::RegistryAccessor::getBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_QUICK_ACCESS, false);
+}
+
+void CVideoWindow::setQuickAccess(bool bQuickAccess) const
+{
+    Utils::RegistryAccessor::setBool(HKEY_LOCAL_MACHINE, PLAYER_IPC_REGKEY, PLAYER_IPC_UI_QUICK_ACCESS, bQuickAccess);
 }
 
 void CVideoWindow::InvertWindowRect(HWND hwnd, const RECT &rect )

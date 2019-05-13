@@ -10,5 +10,6 @@
 #define PLAYER_CONFIG_PARAM_PauseOnWindow L"PauseOnWindow"
 #define PLAYER_CONFIG_PARAM_PlayOnFullscreen L"PlayOnFullscreen"
 #define PLAYER_CONFIG_PARAM_ShowClock L"ShowClock"
+#define PLAYER_CONFIG_PARAM_QuickAccess L"QuickAccess"
 
 #define WITH_COPYRIGHT

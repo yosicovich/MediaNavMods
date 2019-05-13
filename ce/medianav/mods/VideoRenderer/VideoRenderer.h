@@ -106,6 +106,7 @@ protected:
     RECT            m_pauseOnWindowButtonRect;
     RECT            m_playOnFullScreenButtonRect;
     RECT            m_showClockButtonRect;
+    RECT            m_quickAccessButtonRect;
 
     RECT            m_clockRect;
     int             m_minutesOffset;
@@ -144,6 +145,8 @@ protected:
     void setPlayOnFullscreen(bool bPlayOnFullscreen) const;
     bool getShowClock() const;
     void setShowClock(bool bShowClock) const;
+    bool getQuickAccess() const;
+    void setQuickAccess(bool bQuickAccess) const;
 
     
     void loadUIButtons(const std::wstring& fileName);
@@ -153,6 +156,7 @@ protected:
     void drawClock(HDC hdc);
     void drawClock(HWND hwnd);
     void updateClockText();
+    void goWindowedMode();
 
     static void InvertWindowRect(HWND hwnd, const RECT &rect );
 
