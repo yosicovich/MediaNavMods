@@ -99,6 +99,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mp3demux", "mp3demux\mp3dem
 		{24E97CA5-D04C-49DF-A608-70A4217575DA} = {24E97CA5-D04C-49DF-A608-70A4217575DA}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "appmaingui", "appmaingui\appmaingui.vcproj", "{8747E69E-F617-4A47-9B28-499B02901DCD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1F71555E-8F6E-4929-B425-04E006387F07} = {1F71555E-8F6E-4929-B425-04E006387F07}
+		{C5D922B8-C79B-496F-9FF7-DF7156D51990} = {C5D922B8-C79B-496F-9FF7-DF7156D51990}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|DbAu13xx (MIPSII) = Debug|DbAu13xx (MIPSII)
@@ -255,6 +261,15 @@ Global
 		{AD10D026-29AA-47DF-A279-5361DE9AD0E7}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{AD10D026-29AA-47DF-A279-5361DE9AD0E7}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
 		{AD10D026-29AA-47DF-A279-5361DE9AD0E7}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{8747E69E-F617-4A47-9B28-499B02901DCD}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{8747E69E-F617-4A47-9B28-499B02901DCD}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{8747E69E-F617-4A47-9B28-499B02901DCD}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{8747E69E-F617-4A47-9B28-499B02901DCD}.Public-release|DbAu13xx (MIPSII).ActiveCfg = Public-release|DbAu13xx (MIPSII)
+		{8747E69E-F617-4A47-9B28-499B02901DCD}.Public-release|DbAu13xx (MIPSII).Build.0 = Public-release|DbAu13xx (MIPSII)
+		{8747E69E-F617-4A47-9B28-499B02901DCD}.Public-release|DbAu13xx (MIPSII).Deploy.0 = Public-release|DbAu13xx (MIPSII)
+		{8747E69E-F617-4A47-9B28-499B02901DCD}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{8747E69E-F617-4A47-9B28-499B02901DCD}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{8747E69E-F617-4A47-9B28-499B02901DCD}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

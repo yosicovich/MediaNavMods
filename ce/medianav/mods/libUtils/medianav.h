@@ -11,9 +11,9 @@ namespace MediaNav
 #pragma warning(disable: 4200)
 #pragma pack(push,1)
 
-    static const int MediaInfoStringLenght = 0x104;
+    static const int MaxStringBufferLength = 0x104;
 
-    typedef wchar_t MediaInfoStr[MediaInfoStringLenght];
+    typedef wchar_t MediaInfoStr[MaxStringBufferLength];
     struct PlayerTimeData
     {
         BYTE m_curMin;
@@ -104,4 +104,76 @@ namespace MediaNav
         Utils::CSharedLock m_lock;
         hShmMem m_hMem;
     };
+
+    namespace MicomManager
+    {
+        static const wchar_t* cMicomMemMutexName = L"MgrMcmMx";// This is our only define
+        static const wchar_t* cMicomMemName = L"MgrMcmShm";
+#pragma warning(disable: 4200)
+#pragma pack(push,1)
+        
+        struct MicomManagerInfo
+        {
+            // Total 2936
+            BYTE dummy[2700];
+            BYTE dummy2[97];
+
+            BYTE m_bFlag3;
+            BYTE m_volAudio;
+            BYTE m_volRing;
+            BYTE m_volPhone;
+            BYTE m_volNavi;
+            BYTE m_volTA;
+            BYTE m_sndVolumeCurve;
+            BYTE m_sndFade;
+            BYTE m_sndBalance;
+            BYTE m_eqBass;
+            BYTE m_eqMiddle;
+            BYTE m_eqTreble;
+            BYTE m_bLoudness;
+            BYTE m_iLCDBrightness;
+            BYTE m_AFB;
+            BYTE m_iLCDMapBrightness;
+            BYTE m_AFD;
+            WORD m_speedCm_s;
+            BYTE m_nIOStatus;// ???
+            BYTE m_B01;// Align
+            BYTE m_bFlag1;// Unknown
+            char m_fcode[4];// security code
+            BYTE m_bFlag2; // Unknown
+            BYTE m_bAccOn;
+            BYTE m_aB09[7];
+            double m_drive1;
+            double m_drive2;
+            DWORD m_ecoTripSeconds;
+            DWORD m_ecoTripDays;
+            DWORD m_eco1;
+            DWORD m_eco2;
+            double m_eco3;
+            double m_eco4;// 102.2
+            double m_eco5;
+            double m_eco6; // 409.39 by default
+            DWORD m_eco7;
+            DWORD m_eco8;
+            DWORD m_ecoMaxPoints;
+            DWORD m_ecoPoints;
+            double m_dECOFreeDistance;
+            DWORD m_resTime;
+            BYTE  m_bResActive;
+            BYTE  m_B6D;
+            BYTE  m_B6E;
+            BYTE  m_B6F;
+            // 0xB70
+            BYTE  m_4x4Info1;
+            BYTE  m_4x4Info2;
+            BYTE  m_bUPAFrontEnabled;
+            BYTE  m_bUPARearEnabled;
+            BYTE  m_bUPASoundEnabled;
+            BYTE  m_eUPASoundType;
+            BYTE  m_vUPASoundVolume;
+            BYTE  m_B77; // Align
+        };
+#pragma pack(pop)
+
+    }
 }

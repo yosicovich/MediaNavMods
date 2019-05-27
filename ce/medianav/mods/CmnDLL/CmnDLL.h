@@ -1,6 +1,7 @@
 #pragma once
 #include <windows.h>
 
+#pragma pack(push,1)
 struct IpcMsg
 {
     IpcMsg()
@@ -19,6 +20,8 @@ struct IpcMsg
     DWORD extraSize;
     DWORD extra;
 };
+#pragma pack(pop)
+
 typedef void* hShmMem;
 
 #define DbgModules 42

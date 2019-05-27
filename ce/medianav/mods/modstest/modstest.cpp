@@ -17,6 +17,7 @@
 #include <imgguids.h>
 #include <utils.h>
 #include <MicomAccessor.h>
+#include <accmeter.h>
 
 #define MAX_LOADSTRING 100
 
@@ -244,12 +245,40 @@ void micomTest()
     }
 }
 
+void micomMgrTest()
+{
+    using namespace MediaNav::MicomManager;
+    MediaNav::CSharedMemory shm(cMicomMemMutexName, cMicomMemName, true, 0);
+    MicomManagerInfo info;
+    shm.read(&info, 0, sizeof(info));
+    HANDLE hFile = CreateFile(L"\\MD\\micom.bin", GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    DWORD bytesRead = 0;
+    WriteFile(hFile, &info, sizeof(info), &bytesRead, NULL);
+    CloseHandle(hFile);
+    MediaNav::AccMeter accMeter;
+    MediaNav::AccMeter::TAccMeasureEdges edges;
+    edges.push_back(1667); //60km/h
+    edges.push_back(2222); //80km/h
+    edges.push_back(2778); //100km/h
+    accMeter.startMeasure(edges);
+    while(accMeter.isMeasuring())
+        ;
+    accMeter.startMeasure(edges);
+    while(accMeter.isMeasuring())
+        ;
+    accMeter.startMeasure(edges);
+    while(accMeter.isMeasuring())
+        ;
+    MediaNav::AccMeter::TAccMeasureResult result = accMeter.getLastResult();
+}
+
 int WINAPI WinMain(HINSTANCE hInstance,
                    HINSTANCE hPrevInstance,
                    LPTSTR    lpCmdLine,
                    int       nCmdShow)
 {
-    micomTest();
+    micomMgrTest();
+    //micomTest();
     //sndTest();
     //return 0;
     //ksa_test();
