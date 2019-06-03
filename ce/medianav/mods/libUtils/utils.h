@@ -174,5 +174,33 @@ namespace Utils
             str += L'\\';
         return str;
     }
+
+    inline std::wstring getModulePath(HMODULE hModule)
+    {
+        wchar_t *pathBuf[MAX_PATH];
+        DWORD nSize = GetModuleFileName(hModule, reinterpret_cast<wchar_t *>(pathBuf), MAX_PATH);
+        if(nSize == MAX_PATH)
+            return TEXT("");
+        std::wstring path(reinterpret_cast<wchar_t *>(pathBuf), nSize);
+        size_t lastBackSlash = path.find_last_of(L'\\');
+        if(lastBackSlash == std::wstring::npos)
+            return TEXT("");
+        return path.substr(0, lastBackSlash + 1);
+    }
+
+    inline void oswprintf(std::wostream & oStream, const wchar_t* pFormat, ... )
+    {
+        va_list vaArgs;
+        va_start( vaArgs, pFormat );
+        wchar_t textBuf[1024];
+        int wrote = _vsnwprintf(reinterpret_cast<wchar_t*>(&textBuf), 1024, pFormat, vaArgs);
+        if(wrote <0 || wrote > 1024)
+            oStream << TEXT("<text buffer overflow required size:") << wrote << TEXT(">");
+        else
+            oStream << textBuf;
+        va_end(vaArgs);
+
+    }
+
 };
 

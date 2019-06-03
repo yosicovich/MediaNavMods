@@ -5,13 +5,6 @@
 #include "appmaingui.h"
 
 #include "utils.h"
-#include "pkfuncs.h"
-#include "dbgapi.h"
-#include "oemioctl.h"
-#include "db13xx.h"
-#include <set>
-#include "SimpleIni.h"
-#include <pwindbas.h>
 #include <CmnDLL.h>
 
 wchar_t* CResManager_extImageTable[] = {
@@ -56,7 +49,7 @@ void CEcoCoachingDlg::createControls(CGUIEmptyDlg* pPrevDialog)
     //addTextControl(m_testStatic, 457, ControlCoords(200, 60, 400, 66), 19, TEXT("TEST TEST"), 0x2A40F8, TEXT_HALIGN_CENTER, 0);
     addButtonControl(m_testButton, 457, ControlCoords(0, 419, 108, 61), 1000, 1);
     m_dlgWindow.addTextButtonControl(m_testTextButton, 1600/*456*/, ControlCoords(109, 419, 691, 61), 1001, 8, CMultiLanguage::singleton()->getMultiLangStr(1009), NULL, ButtonTextFontColorDesc(0xFFFFFF, 0x555555, 0x53595C, 0), 0x825, TRUE);
-    m_dlgWindow.addImageControl(m_testImage, 458, ControlCoords(108, 419, 1, 61), 4, TRUE, 0, 0, 0);
+    m_dlgWindow.addImageControl(m_testImage, 458, ControlCoords(108, 419, 1, 61), 4, TRUE, 0);
 
     m_dlgWindow.addTextButtonControl(m_radioButton, 1602, ControlCoords(76, 114, 210, 137), 1002, 9, CMultiLanguage::singleton()->getMultiLangStr(1001), &ControlCoords(14, 91, 180, 35), ButtonTextFontColorDesc(0xFFFFFF, 0, 0x46494C, 0xFFFFFF), 0x801, TRUE);
     m_dlgWindow.addTextButtonControl(m_naviButton, 462, ControlCoords(295, 214, 253, 166), 1003, 9, CMultiLanguage::singleton()->getMultiLangStr(1008), &ControlCoords(5, 118, 243, 35), ButtonTextFontColorDesc(0xFFFFFF, 0, 0x46494C, 0), 0x801, FALSE);
@@ -72,7 +65,7 @@ void CEcoCoachingDlg::initControls(CGUIEmptyDlg* pPrevDialog)
     //m_testStatic.setText(TEXT("TEST TEST"), false);
 }
 
-bool CEcoCoachingDlg::onBtnClick(DWORD controlID, ButtonClickType clickType)
+BOOL CEcoCoachingDlg::onBtnClick(DWORD controlID, ButtonClickType clickType)
 {
     switch(controlID)
     {
@@ -86,6 +79,5 @@ bool CEcoCoachingDlg::onBtnClick(DWORD controlID, ButtonClickType clickType)
             return true;
         }
     }
-    return false;
+    return FALSE;
 }
-

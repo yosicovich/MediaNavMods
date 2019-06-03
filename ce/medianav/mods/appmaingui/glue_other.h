@@ -16,6 +16,10 @@
 #define CResManager_destructor_CResManager 0x0001F3B8
 #define CResManager__imageTable 0x0018A784
 
+#define CMgrSys_setAccOff 0x000D0140
+#define CMgrSys_save 0x000D0CB4
+#define CMgrSys_m_instance 0x001902DC
+
 struct CSettings
 {
     static CSettings* singleton()
@@ -57,7 +61,7 @@ struct CSettings
     int field_7C;
     int field_80;
     int m_hMapMcmShm;
-    int m_pMcmShr;
+    MediaNav::MicomManager::MicomManagerInfo *m_pMcmShr;
     int m_hMapIpod;
     int m_pIpodMem;
     int m_hMapIpodList;
@@ -124,8 +128,12 @@ public:
     
     const wchar_t* getMultiLangStr(DWORD strID)
     {
-        return reinterpret_cast<const wchar_t*(*)(CMultiLanguage*, DWORD)>(CMultiLanguage__getMultiLangStr)(this, strID);
-
+        const wchar_t* str = reinterpret_cast<const wchar_t*(*)(CMultiLanguage*, DWORD)>(CMultiLanguage__getMultiLangStr)(this, strID);
+#ifdef DEV_MAKET
+        if(!str || wcslen(str) == 0)
+            return CDevMaket::singleton()->getMultiLangStr(strID);
+#endif
+        return str;
     }
 
     inline int getLangID() const
@@ -204,7 +212,7 @@ protected:
     DWORD m_maxImages;
     int m_uiType;
     DWORD m_0x4D0;
-    DWORD m_0x4D4;
+    DWORD m_topLoadedImageID;
     HDC m_hdc;
     HBITMAP *m_imageCache;
     wchar_t m_imagesPath[/*MediaNav::MaxStringBufferLength*/ 0x104];
@@ -228,4 +236,23 @@ public:
     virtual const wchar_t* getImagePath(DWORD imageID);
 private:
     static wchar_t* m_imageTable[];
+    DWORD m_oldMaxImages;
+};
+
+class CMgrSys
+{
+public:
+    static CMgrSys* singleton()
+    {
+        return *reinterpret_cast<CMgrSys**>(CMgrSys_m_instance);
+    }
+    void setAccOff(BOOL bAccOff)
+    {
+        reinterpret_cast<void (*)(CMgrSys*, BOOL)>(CMgrSys_setAccOff)(this, bAccOff);
+    }
+
+    void save()
+    {
+        reinterpret_cast<void (*)(CMgrSys*)>(CMgrSys_save)(this);
+    }
 };

@@ -3,3 +3,4 @@ EXPORTS
    ?singleton@?$CGUIFixedEmptyDlg@VCEcoCoachingDlg@@@@SAPAVCEcoCoachingDlg@@XZ   @1
    ?singleton@CResManagerExt@@SAPAV1@XZ @2
    ?singleton@?$CGUIFixedEmptyDlg@VCVehicleDlg@@@@SAPAVCVehicleDlg@@XZ   @3
+   ?singleton@?$CGUIFixedEmptyDlg@VCDevMaketDlg@@@@SAPAVCDevMaketDlg@@XZ   @4

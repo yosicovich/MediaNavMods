@@ -8,3 +8,4 @@ enum UIType
     UIType_M0_INV,
     UIType_M1_INV,
 };
+

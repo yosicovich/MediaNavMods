@@ -1,7 +1,10 @@
+#pragma once
+
 #include "stdafx.h"
 #include "glue.h"
 #include "glue_other.h"
 #include "utils.h"
+#include <SimpleIni.h>
 
 template<typename T> class CGUIFixedEmptyDlg: public CGUIEmptyDlg
 {
@@ -58,7 +61,7 @@ public:
     CEcoCoachingDlg();
     virtual void createControls(CGUIEmptyDlg* pPrevDialog);
     virtual void initControls(CGUIEmptyDlg* pPrevDialog);
-    virtual bool onBtnClick(DWORD controlID, ButtonClickType clickType);
+    virtual BOOL onBtnClick(DWORD controlID, ButtonClickType clickType);
 private:
     CGUITextControl m_testStatic;
     CGUIButtonControl m_testButton;

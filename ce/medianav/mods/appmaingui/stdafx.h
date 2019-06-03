@@ -65,5 +65,6 @@
 #define DBG 0
 #endif
 
+#define DEV_MAKET
 
 // TODO: reference additional headers your program requires here

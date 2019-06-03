@@ -321,7 +321,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\CDevDlg.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\CDevMaketDlg.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\common.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\CVehicleDlg.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\CVehiclePerfDlg.cpp"
 				>
 			</File>
 			<File
@@ -371,11 +387,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\CDevDlg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\CDevMaketDlg.h"
+				>
+			</File>
+			<File
 				RelativePath=".\common.h"
 				>
 			</File>
 			<File
 				RelativePath=".\CVehicleDlg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\CVehiclePerfDlg.h"
 				>
 			</File>
 			<File
@@ -401,6 +429,10 @@
 			UniqueIdentifier="{A15F959D-F56A-4F01-B4E0-17EAA795F902}"
 			>
 		</Filter>
+		<File
+			RelativePath=".\CDevMaketDlg.ini"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
