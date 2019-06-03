@@ -95,7 +95,7 @@ struct CSettings
     int SDVC_TYPE;
     int CNF_CMK;
     int LDNS_EN;
-    int ROAD_EN;
+    BOOL ROAD_EN;
     int HEBREW_EN;
     int TOTCONSUMPTION_EN;
     int RVC_EN;
@@ -109,7 +109,7 @@ struct CSettings
     int HMI_CNF_TEMP;
     int HMI_CNF_AIR;
     int HMI_CNF_ENG;
-    int HMI_CNF_ECO;
+    BOOL HMI_CNF_ECO;
     int PTT_EN;
     int SWRC_TYPE;
     int BOOT_LOGO;

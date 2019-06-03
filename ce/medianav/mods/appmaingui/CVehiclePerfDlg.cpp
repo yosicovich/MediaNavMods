@@ -118,7 +118,7 @@ BOOL CVehiclePerfDlg::onExit()
 }
 
 static const int cStartDetectEdge = 55;// 2 km/h
-#define SPEED_EMU
+//#define SPEED_EMU
 BOOL CVehiclePerfDlg::onTimer(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     if(uMsg != WM_TIMER )
@@ -134,7 +134,7 @@ BOOL CVehiclePerfDlg::onTimer(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
             speed += 28;
 #else
         int speed;
-        speed = CSettings::m_pMcmShr->m_speedCm_s;
+        speed = CSettings::singleton()->m_pMcmShr->m_speedCm_s;
 #endif
         
         if(speed < cStartDetectEdge)

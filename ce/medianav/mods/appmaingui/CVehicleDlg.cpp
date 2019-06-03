@@ -49,9 +49,9 @@ void CVehicleDlg::createControls(CGUIEmptyDlg* pPrevDialog)
     m_infoButton.m_bAdvancedClicks = TRUE;
 #endif
 
+    addButtonControl(m_backButton, UI_4WD_SOFTKEY_HOME_BTN, ControlCoords(0, 419, 109, 61), 1004, FALSE);
     if(pSettings->HMI_CNF_ECO && pSettings->ROAD_EN)
     {
-        addButtonControl(m_backButton, UI_4WD_SOFTKEY_HOME_BTN, ControlCoords(0, 419, 109, 61), 1004, FALSE);
     }else
     {
         addButtonControl(m_backButton, UI_4WD_SOFTKEY_BACK_BTN, ControlCoords(0, 419, 109, 61), 1003, FALSE);
@@ -89,6 +89,9 @@ void CVehicleDlg::initControls(CGUIEmptyDlg* pPrevDialog)
         m_infoButton.setFontColors(fontColors);
         m_perfButton.setFontColors(fontColors);
     }
+
+    m_ecoButton.setEnabled(pSettings->HMI_CNF_ECO, FALSE);
+    m_infoButton.setEnabled(pSettings->ROAD_EN, FALSE);
 }
 
 BOOL CVehicleDlg::onBtnClick(DWORD controlID, ButtonClickType clickType)
