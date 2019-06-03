@@ -42,6 +42,36 @@ namespace PatchUtils {
 
     };
 
+	class MIPSPCRelJump : public CodePatchCase
+	{
+	public:
+		MIPSPCRelJump(uint32_t applyVA, uint32_t targetAddr)
+			:CodePatchCase(applyVA, sizeof(uint32_t))
+		{
+			createCall(targetAddr);
+		}
+
+	private:
+		void createCall(uint32_t targetAddr)
+		{
+			struct PCRelJump
+			{
+				int16_t offset;
+				uint16_t instr;
+			};
+
+			PCRelJump *jumpInstr = reinterpret_cast<PCRelJump *>(dataBuf.get());
+			DWORD applyVA = getApplyVA();
+			int32_t jumpOffset = (targetAddr - (applyVA + sizeof(uint32_t))) / 4;
+			if(abs(jumpOffset) > 1 << 15)
+				throw std::exception("MIPSPCRelJump: Target address is to far away for this type of call");
+			// 0x1000XXXX where XXXX is signed 16bit offset in words
+			jumpInstr->offset = jumpOffset;
+			jumpInstr->instr = 0x1000;
+		}
+
+	};
+
     class MIPSNop : public CodePatchCase
     {
     public:
@@ -78,5 +108,30 @@ namespace PatchUtils {
         }
     };
 
+	class MIPSPCRelJumpWithPadding : public MIPSNop
+	{
+	public:
+		MIPSPCRelJumpWithPadding(uint32_t startVA, uint32_t stopVA, uint32_t targetAddr, bool bottomPlacement = true)
+			:MIPSNop(startVA, stopVA)
+		{
+			MIPSPCRelJump call(startVA, targetAddr);
+			if (getDataSize() < call.getDataSize())
+				throw std::exception("MIPSPCRelJumpWithPadding: The area is too small to inplace jump pattern");
+
+			if (bottomPlacement)
+			{
+				call = MIPSPCRelJump(startVA + getDataSize() - call.getDataSize(), targetAddr);
+				memcpy(&(dataBuf.get()[bufSize - call.getDataSize()]), call.getData(), call.getDataSize());
+			}
+			else
+			{
+				memcpy(dataBuf.get(), call.getData(), call.getDataSize());
+			}
+
+			clearRelocations(call.getDeleteRelocations());
+			if (!addRelocations(call.getNewRelocations()))
+				throw std::exception("Relocation already defined!");
+		}
+	};
 
 }; //namespace PatchUtils

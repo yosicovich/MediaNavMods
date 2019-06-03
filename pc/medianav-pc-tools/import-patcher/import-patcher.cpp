@@ -34,8 +34,8 @@ int main(int argc, char* argv[])
     PEFile pe(argv[1]);
     
     // Add import
-    std::vector<std::string> functions = {
-        "extCheckMediaFilesExtList"
+    PE_IMPORT_ENTRIES functions = {
+		{"extCheckMediaFilesExtList", 0}
     };
     pe.addImport("player_helper.dll", functions);
 
@@ -61,8 +61,8 @@ void patchAppMain(const std::string& srcFile, const std::string& dstFile)
     PEFile pe(srcFile.c_str());
 
     // Add import
-    std::vector<std::string> functions = {
-        "extCheckMediaFilesExtList"
+	PE_IMPORT_ENTRIES functions = {
+		{"extCheckMediaFilesExtList", 0}
     };
     pe.addImport("player_helper.dll", functions);
 
@@ -121,6 +121,60 @@ void patchAppMain(const std::string& srcFile, const std::string& dstFile)
 //        pe.patchSection(0x0012F80B, &patch, sizeof(BYTE));
 
     }
+
+	// DEBUG
+#ifdef _DEBUG
+	{
+		// Disable starup argument checking.
+		{
+			MIPSPCRelJumpWithPadding call(0x0012A6F4, 0x0012A72C, 0x0012A730, false);
+			pe.patch(call);
+		}
+
+		{
+			wchar_t* langDllRus = L"\\MD\\VTEST\\gui\\DATA\\LangDllRus.dll\0";
+			pe.patchSection(0x00151D64, langDllRus, (wcslen(langDllRus) + 1) * 2);
+		}
+
+	}
+#endif
+	// GUI hack
+	{
+		pe.saveAndReload(dstFile);
+		// Add import
+		PE_IMPORT_ENTRIES functions = {
+//			{"?singleton@?$CGUIFixedEmptyDlg@VCDevMaketDlg@@@@SAPAVCDevMaketDlg@@XZ", 4},
+			{"?singleton@CResManagerExt@@SAPAV1@XZ", 2},
+			{"?singleton@?$CGUIFixedEmptyDlg@VCVehicleDlg@@@@SAPAVCVehicleDlg@@XZ", 3},
+		};
+		pe.addImport("appmaingui.dll", functions);
+		pe.saveAndReload(dstFile);
+
+		/*{
+			MIPSTableCallWithPadding call(0x0001EDE4, 0x0001EE24, pe.getImportFunctionVA("appmaingui.dll", "?singleton@?$CGUIFixedEmptyDlg@VCDevMaketDlg@@@@SAPAVCDevMaketDlg@@XZ"), false);
+			pe.patch(call);
+		}*/
+
+		{
+			MIPSTableCallWithPadding call(0x0001F4C0, 0x0001F500, pe.getImportFunctionVA("appmaingui.dll", "?singleton@CResManagerExt@@SAPAV1@XZ"), false);
+			pe.patch(call);
+		}
+
+		{
+			MIPSTableCallWithPadding call(0x0002593C, 0x000259C0, pe.getImportFunctionVA("appmaingui.dll", "?singleton@?$CGUIFixedEmptyDlg@VCVehicleDlg@@@@SAPAVCVehicleDlg@@XZ"), false);
+			pe.patch(call);
+		}
+
+		// Always show vehicle menu
+		{
+			DWORD cmd = 0xAE294A38; // sw  $t1, 0x4A38($s1)
+			pe.patchSection(0x0002237C, &cmd, sizeof(DWORD));
+			cmd = 0x24080001; //li  $t0, 1
+			pe.patchSection(0x00022350, &cmd, sizeof(DWORD));
+			//cmd = 0xAE224A30; // sw      $v0, 0x4A30($s1)
+			//pe.patchSection(0x00022358, &cmd, sizeof(DWORD));
+		}
+	}
     pe.saveToFile(dstFile.c_str());
 }
 
@@ -129,9 +183,9 @@ void patchMgrUsb(const std::string& srcFile, const std::string& dstFile)
     PEFile pe(srcFile.c_str());
 
     // Add import
-    std::vector<std::string> functions = {
-        "extCheckMediaFileMatch",
-        "extCheckMediaFileMatch2"
+	PE_IMPORT_ENTRIES functions = {
+		{"extCheckMediaFileMatch", 0}
+		,{"extCheckMediaFileMatch2", 0}
     };
     pe.addImport("player_helper.dll", functions);
 
@@ -268,5 +322,36 @@ void patchMicomManager(const std::string& srcFile, const std::string& dstFile)
         pe.patchSection(0x0002225C, &lo, sizeof(WORD));
     }
     */
+
+#ifdef _DEBUG
+	// No CodeChecker
+	{
+		WORD val = 0x1000; // b xxxxx
+		pe.patchSection(0x00022006, &val, sizeof(WORD));
+	}
+
+#endif
+
+#if 0
+	// Volume reset
+	{
+		BYTE defVolume = 20;
+		BYTE tresholdVolume = defVolume + 1;
+
+		pe.patchSection(0x00013140, &tresholdVolume, sizeof(BYTE));
+		pe.patchSection(0x0001314C, &defVolume, sizeof(BYTE));
+
+		pe.patchSection(0x00013BE0, &tresholdVolume, sizeof(BYTE));
+		pe.patchSection(0x00013BEC, &defVolume, sizeof(BYTE));
+
+		pe.patchSection(0x000123DC, &defVolume, sizeof(BYTE));
+		pe.patchSection(0x000123EC, &tresholdVolume, sizeof(BYTE));
+		pe.patchSection(0x0001240C, &tresholdVolume, sizeof(BYTE));
+		pe.patchSection(0x00012430, &tresholdVolume, sizeof(BYTE));
+		pe.patchSection(0x00012458, &tresholdVolume, sizeof(BYTE));
+		pe.patchSection(0x00012480, &tresholdVolume, sizeof(BYTE));
+	}
+#endif
+
     pe.saveToFile(dstFile.c_str());
 }
