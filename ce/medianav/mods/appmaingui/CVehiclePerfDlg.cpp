@@ -2,6 +2,10 @@
 
 const wchar_t* CVehiclePerfDlg::cUndefResult = TEXT("--.-");
 
+const wchar_t* CVehiclePerfDlg::cZeroTime = TEXT("00.0");
+
+const wchar_t* CVehiclePerfDlg::cZeroSpeed = TEXT("0");
+
 CVehiclePerfDlg::CVehiclePerfDlg()
     :m_dwStartTime(0)
     ,m_prevSpeed(0)
@@ -10,6 +14,7 @@ CVehiclePerfDlg::CVehiclePerfDlg()
     ,m_b100Got(false)
     ,m_speedDisplayCounter(0)
     ,m_measureFlashCounter(0)
+    ,m_stopped(false)
 {
     m_screenID = 200;
 }
@@ -45,9 +50,9 @@ void CVehiclePerfDlg::createControls(CGUIEmptyDlg* pPrevDialog)
     addTextControl(m_values[2], -1, ControlCoords(600, 313, 59, 35), 10, cUndefResult, FONT_COLOR_PERF_VAL, TEXT_UNKNOWN_FLAG | TEXT_HALIGN_RIGHT, FALSE);
     m_values[2].setRedrawBackground(true);
 
-    addTextControl(m_time, -1, ControlCoords(315, 110, 120, 50), 15, TEXT("00.0"), FONT_COLOR_WHITE, TEXT_UNKNOWN_FLAG | TEXT_HALIGN_RIGHT | TEXT_VALIGN_BOTTOM, FALSE);
+    addTextControl(m_time, -1, ControlCoords(315, 110, 120, 50), 15, cZeroTime, FONT_COLOR_WHITE, TEXT_UNKNOWN_FLAG | TEXT_HALIGN_RIGHT | TEXT_VALIGN_BOTTOM, FALSE);
     m_time.setRedrawBackground(true);
-    addTextControl(m_speed, -1, ControlCoords(355, 210, 100, 55), 21, TEXT("0"), FONT_COLOR_WHITE, TEXT_UNKNOWN_FLAG | TEXT_HALIGN_RIGHT | TEXT_VALIGN_BOTTOM, FALSE);
+    addTextControl(m_speed, -1, ControlCoords(355, 210, 100, 55), 21, cZeroSpeed, FONT_COLOR_WHITE, TEXT_UNKNOWN_FLAG | TEXT_HALIGN_RIGHT | TEXT_VALIGN_BOTTOM, FALSE);
     m_speed.setRedrawBackground(true);
    
     addButtonControl(m_resetButton, UI_EVOTECH_4WD_RST_BTN, ControlCoords(350, 355, 100, 55), 1003, FALSE);
@@ -117,8 +122,10 @@ BOOL CVehiclePerfDlg::onExit()
     return TRUE;
 }
 
-static const int cStartDetectEdge = 55;// 2 km/h
-//#define SPEED_EMU
+#ifndef PUBLIC_RELEASE
+#define SPEED_EMU
+#endif
+
 BOOL CVehiclePerfDlg::onTimer(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     if(uMsg != WM_TIMER )
@@ -127,17 +134,48 @@ BOOL CVehiclePerfDlg::onTimer(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
     if(wParam == cMeasureTimerID)
     {
 #ifdef SPEED_EMU
-        static int speed;
-        if(m_dwStartTime == 0)
-            speed = 55;
+        static int speed = 0;
+#if 1
+        if(!m_stopped)
+            speed = 0;
         else
             speed += 28;
+#endif
+#if 0
+        if(!m_stopped)
+        {
+            if(speed <= 825)
+            {
+                speed -= 28 ;
+                if(speed < 0)
+                {
+                    speed = 0;
+                }
+            }
+            else 
+                speed = 825;
+        }
+        else
+            speed += 28;
+#endif
 #else
         int speed;
         speed = CSettings::singleton()->m_pMcmShr->m_speedCm_s;
 #endif
         
+        if(++m_speedDisplayCounter == cSpeedDisplayCount)
+        {
+            setSpeedText(speed);
+            m_speedDisplayCounter = 0;
+        }
+
         if(speed < cStartDetectEdge)
+        {
+            m_stopped = true;
+            return TRUE;
+        }
+
+        if(!m_stopped)
             return TRUE;
 
         if(m_dwStartTime == 0)
@@ -146,23 +184,18 @@ BOOL CVehiclePerfDlg::onTimer(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
             m_prevSpeed = speed;
         }
 
-        if(speed < m_prevSpeed)
+        if(speed >= cStartDetectEdge && speed < m_prevSpeed)
         {
-            stopMeasure();
-            return TRUE;// Slow down condition. The measurement is definitely over.
+            if(m_prevSpeed - speed > cStartDetectEdge)
+                stopMeasure();// Slow down condition. The measurement is definitely over.
+            return TRUE;
         }
 
         m_prevSpeed = speed;
         DWORD dTimeElapsed = GetTickCount() - m_dwStartTime;
         double timeElapsed = static_cast<double>(dTimeElapsed) /1000;
          
-        // Update speed/time here
         m_time.setText(timeElapsed, 1, TRUE);
-        if(++m_speedDisplayCounter == cSpeedDisplayCount)
-        {
-            setSpeedText(speed);
-            m_speedDisplayCounter = 0;
-        }
 
         if(!m_b60Got && speed >= 1667) //60km/h
         {
@@ -212,6 +245,7 @@ void CVehiclePerfDlg::startMeasure()
 {
     m_dwStartTime = 0;
     m_prevSpeed = 0;
+    m_stopped = false;
 
     m_b60Got = false;
     m_b80Got = false;
@@ -225,6 +259,8 @@ void CVehiclePerfDlg::startMeasure()
     {
         m_values[i].setText(cUndefResult, TRUE);
     }
+    m_time.setText(cZeroTime, TRUE);
+    m_speed.setText(cZeroSpeed, TRUE);
 
     if(!SetTimer(m_hWnd, cMeasureTimerID, 100, NULL))
     {
