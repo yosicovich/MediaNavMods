@@ -49,7 +49,11 @@
 #ifdef _DEBUG
 #define TESTMODE
 #else
+#ifdef PUBLIC_RELEASE
 //#define TESTMODE
+#else
+//#define TESTMODE
+#endif
 #define STABLE_ONLY
 #endif
 

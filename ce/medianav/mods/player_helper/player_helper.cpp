@@ -55,6 +55,10 @@ static std::vector<std::wstring> g_iniFilesTable;
 static void globalEnvInit()
 {
     // Populate  ini files table in search order
+#ifndef PUBLIC_RELEASE
+    if(detectPath(TEXT("MD"), 3))
+        g_iniFilesTable.push_back(TEXT("\\MD\\mods.ini"));
+#endif
     g_iniFilesTable.push_back(TEXT("\\Storage Card2\\mods.ini"));
     g_iniFilesTable.push_back(TEXT("\\Storage Card\\System\\mods\\mods.ini"));
 
@@ -150,21 +154,13 @@ static void startOnce()
     if(waitForMD)
     {
         debugPrintf(DBG, TEXT("startOnce(): Detect MD for %d seconds\r\n"), waitForMD);
-        DWORD endTime = GetTickCount() + waitForMD * 1000;
-        while(GetTickCount() <= endTime)
-        {
-            if(checkMDPresent())
-            {
-                debugPrintf(DBG, TEXT("startOnce(): MD detected\r\n"));
-                break;
-            }
-            Sleep(100);
-        }
+        if(detectPath(TEXT("MD"), waitForMD))
+            debugPrintf(DBG, TEXT("startOnce(): MD detected\r\n"));
     }
     // Populate
 
     // 1. Default once
-    if(!g_iniFile.GetBoolValue(TEXT("Debug"), TEXT("NoDefaultStarts"), false) && (!g_iniFile.GetBoolValue(TEXT("Debug"), TEXT("NoDefaultStartsWithMD"), false) || !checkMDPresent()))
+    if(!g_iniFile.GetBoolValue(TEXT("Debug"), TEXT("NoDefaultStarts"), false) && (!g_iniFile.GetBoolValue(TEXT("Debug"), TEXT("NoDefaultStartsWithMD"), false) || !isPathPresent(TEXT("MD"))))
     {
         startPorcesses.push_back(StartProcessEntry(TEXT("\\Storage Card\\System\\mods\\USBTags.exe"), TEXT("")));
     }
@@ -201,12 +197,13 @@ static void startOnce()
     {
         SetSystemMemoryDivision(cStarageSizeMB*1024*1024 / pageSize);
     }
-#endif
-}
 
-bool checkMDPresent()
-{
-    return GetFileAttributes(TEXT("MD")) != INVALID_FILE_ATTRIBUTES;
+    if(g_iniFile.GetBoolValue(TEXT("Debug"), TEXT("WantDesktop"), false))
+    {
+        CreateProcess(TEXT("\\windows\\explorer.exe"), NULL, NULL, NULL, FALSE, 0, NULL, NULL, NULL, NULL);
+        exit(0);
+    }
+#endif
 }
 
 // Fix codec paths

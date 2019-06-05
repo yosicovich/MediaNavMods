@@ -473,11 +473,13 @@ public:
     void addImageControl(CGUIImageControl& pControl, int imageIndex, ControlCoords& coords, int flags/*unknown probably ignored*/, BOOL bImageTransparent, BOOL bNativeFormatImage)
     {
         reinterpret_cast<void(*)(CGUIDlgWindow*, CGUIImageControl&, int, ControlCoords&, int, BOOL, int, int, int)>(CGUIDlgWindow__addImageControl)(this, pControl, imageIndex, coords, flags, bImageTransparent, 0, 0, bNativeFormatImage);
+        pControl.setRedrawBackground(bImageTransparent == TRUE);
     }
 
     void addTextButtonControl(CGUITextButtonControl& pControl, int imageIndex, ControlCoords& coords, int eventID, int fontSize, const wchar_t *pButtonText, ControlCoords* textCoords, ButtonTextFontColorDesc& fontColor, int textFlags, BOOL bTransparent)
     {
         reinterpret_cast<void(*)(CGUIDlgWindow*, CGUITextButtonControl&, int, ControlCoords&, int, int, const wchar_t *, ControlCoords*, ButtonTextFontColorDesc&, int, int, BOOL, int)>(CGUIDlgWindow_addTextButtonControl)(this, pControl, imageIndex, coords, eventID, fontSize, pButtonText, textCoords, fontColor, textFlags, 0, bTransparent, 0);
+        pControl.setRedrawBackground(bTransparent == TRUE);
     }
 
     void addControl(CGUIControl& pControl)
@@ -701,16 +703,19 @@ public:
     void addButtonControl(CGUIButtonControl& pControl, int imageIndex, ControlCoords& coords, int controlID, BOOL bImageTransparent)
     {
         reinterpret_cast<void(*)(CGUIEmptyDlg*, CGUIButtonControl&, int, ControlCoords& coords, int, BOOL)>(CGUIEmptyDlg_addButtonControl)(this, pControl, imageIndex, coords, controlID, bImageTransparent);
+        pControl.setRedrawBackground(bImageTransparent == TRUE);
     }
     
     void addSwitchButtonControl(CGUISwitchButtonControl& pControl, int imageIndex, ControlCoords& coords, int controlID, BOOL bImageTransparent)
     {
         reinterpret_cast<void(*)(CGUIEmptyDlg*, CGUISwitchButtonControl&, int, ControlCoords& coords, int, BOOL)>(CGUIEmptyDlg_addButtonControl)(this, pControl, imageIndex, coords, controlID, bImageTransparent);
+        pControl.setRedrawBackground(bImageTransparent == TRUE);
     }
 
     void addProgressBarControl(CGUIProgressBarControl& pControl, int imageIndex, ControlCoords& coords, int controlID, BOOL bImageTransparent)
     {
         reinterpret_cast<void(*)(CGUIEmptyDlg*, CGUIProgressBarControl&, int, ControlCoords& coords, int, BOOL)>(CGUIEmptyDlg_addProgressBarControl)(this, pControl, imageIndex, coords, controlID, bImageTransparent);
+        pControl.setRedrawBackground(bImageTransparent == TRUE);
     }
 
     const WNDCLASS* registerClass(HINSTANCE hInstance, WNDPROC wndProc)

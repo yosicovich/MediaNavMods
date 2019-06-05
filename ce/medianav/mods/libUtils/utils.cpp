@@ -425,6 +425,21 @@ HBITMAP LoadPicture(const TCHAR* pathName, bool& hasAlpha, int& width, int& heig
     return hBitmap;
 }
 
+bool detectPath(const std::wstring& path, DWORD timeoutS)
+{
+    DWORD endTime = GetTickCount() + timeoutS * 1000;
+    while(GetTickCount() <= endTime)
+    {
+        if(isPathPresent(path))
+        {
+            return true;
+        }
+        Sleep(100);
+    }
+    return false;
+
+}
+
 // CSharedLock
 CSharedLock::CSharedLock(const wchar_t* name)
 :m_hMutex(NULL)

@@ -202,5 +202,11 @@ namespace Utils
 
     }
 
+    inline bool isPathPresent(const std::wstring& path)
+    {
+        return GetFileAttributes(path.c_str()) != INVALID_FILE_ATTRIBUTES;
+    }
+
+    bool detectPath(const std::wstring& path, DWORD timeoutS);
 };
 

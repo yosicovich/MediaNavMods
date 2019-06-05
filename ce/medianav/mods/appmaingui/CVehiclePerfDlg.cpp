@@ -55,7 +55,8 @@ void CVehiclePerfDlg::createControls(CGUIEmptyDlg* pPrevDialog)
     addTextControl(m_speed, -1, ControlCoords(355, 210, 100, 55), 21, cZeroSpeed, FONT_COLOR_WHITE, TEXT_UNKNOWN_FLAG | TEXT_HALIGN_RIGHT | TEXT_VALIGN_BOTTOM, FALSE);
     m_speed.setRedrawBackground(true);
    
-    addButtonControl(m_resetButton, UI_EVOTECH_4WD_RST_BTN, ControlCoords(350, 355, 100, 55), 1003, FALSE);
+    //addButtonControl(m_resetButton, UI_EVOTECH_4WD_RST_BTN, ControlCoords(350, 355, 100, 55), 1003, FALSE);
+    addButtonControl(m_resetButton, UI_EVOTECH_4WD_RST_BTN, ControlCoords(239, 311, 322, 87), 1003, TRUE);
 
     if(pSettings->HMI_CNF_ECO || pSettings->ROAD_EN)
     {

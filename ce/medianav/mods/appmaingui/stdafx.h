@@ -50,9 +50,14 @@
 #define TESTMODE
 #define DEV_MAKET
 #else
+#ifdef PUBLIC_RELEASE
 //#define TESTMODE
 //#define DEV_MAKET
 #define STABLE_ONLY
+#else
+#define TESTMODE
+#define DEV_MAKET
+#endif
 #endif
 
 #ifdef TESTMODE

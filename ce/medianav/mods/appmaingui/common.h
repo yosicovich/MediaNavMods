@@ -24,6 +24,7 @@ template<typename T> T* simpleSingleton()
 
 #define UI_HOME_BG 45
 #define UI_ECO_BG 51
+#define UI_HOME_RADIO_BTN 84
 
 #define UI_ECO_RESET_BTN 426
 #define UI_ECO_DOT 427

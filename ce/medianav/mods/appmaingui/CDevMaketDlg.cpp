@@ -126,10 +126,7 @@ BOOL CDevMaketDlg::onBtnClick(DWORD controlID, ButtonClickType clickType)
             AppMain::goHome();
         break;
     case 1003:
-        CMgrSys::singleton()->setAccOff(TRUE);
-        CMgrSys::singleton()->save();
-        PostMessage(CSettings::singleton()->m_appMainHWND, WM_CLOSE, 0, 0);
-        CreateProcess(TEXT("\\windows\\explorer.exe"), NULL, NULL, NULL, FALSE, 0, NULL, NULL, NULL, NULL);
+        AppMain::exitToDesktop();
         break;
     }
     return FALSE;
@@ -159,8 +156,6 @@ bool CDevMaketDlg::createImageControl(int idx)
     CGUIImageControl* pImage = new CGUIImageControl();
     m_imageControls.push_back(pImage);
     m_dlgWindow.addImageControl(*pImage, imageID, ControlCoords(x, y, width, height), flags, transparent ? TRUE : FALSE, FALSE);
-    if(transparent)
-        pImage->setRedrawBackground(true);
     Utils::oswprintf(m_codeStream, TEXT("m_dlgWindow.addImageControl(m_%s, %d, ControlCoords(%d, %d, %d, %d), 0x%04X, %s, FALSE);\r\n"), ctlSection.c_str(), imageID, x, y, width, height, flags, transparent ? TEXT("TRUE") : TEXT("FALSE"));
     if(transparent)
         Utils::oswprintf(m_codeStream, TEXT("m_%s.setRedrawBackground(true);\r\n"), ctlSection.c_str());
@@ -226,8 +221,6 @@ bool CDevMaketDlg::createButtonControl(int idx)
     CGUIButtonControl* pBtn = new CGUIButtonControl();
     m_buttonControls.push_back(pBtn);
     addButtonControl(*pBtn, imageID, ControlCoords(x, y, width, height), eventID, transparent ? TRUE : FALSE);
-    if(transparent)
-        pBtn->setRedrawBackground(true);
     Utils::oswprintf(m_codeStream, TEXT("addButtonControl(m_%s, %d, ControlCoords(%d, %d, %d, %d), %d, %s);\r\n"), ctlSection.c_str(), imageID, x, y, width, height, eventID, transparent ? TEXT("TRUE") : TEXT("FALSE"));
     if(transparent)
         Utils::oswprintf(m_codeStream, TEXT("m_%s.setRedrawBackground(true);\r\n"), ctlSection.c_str());
@@ -291,8 +284,6 @@ bool CDevMaketDlg::createTextButtonControl(int idx)
     CGUITextButtonControl* pTextBtn = new CGUITextButtonControl();
     m_textButtonControls.push_back(pTextBtn);
     m_dlgWindow.addTextButtonControl(*pTextBtn, imageID, ControlCoords(x, y, width, height), eventID, fontSize, CMultiLanguage::singleton()->getMultiLangStr(strID), pTextCoords, colors, textFlags, transparent ? TRUE : FALSE);
-    if(transparent)
-        pTextBtn->setRedrawBackground(true);
     /*int buttonFlags = m_iniConfig.GetLongValue(ctlSection.c_str(), TEXT("buttonFlags"), -1);
     if(buttonFlags != -1)
         pTextBtn->setButtonFlags(buttonFlags);*/

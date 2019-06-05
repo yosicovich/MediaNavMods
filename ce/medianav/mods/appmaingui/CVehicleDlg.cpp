@@ -40,15 +40,6 @@ void CVehicleDlg::createControls(CGUIEmptyDlg* pPrevDialog)
     m_dlgWindow.addTextButtonControl(m_perfButton, UI_EVOTECH_4WD_PERF_BTN, ControlCoords(beginX, coordY, UI_SMALL_ICON_WIDTH, UI_SMALL_ICON_HEIGHT), 1005, 9, CMultiLanguage::singleton()->getMultiLangStr(TEXT_4000), &UI_SMALL_ICON_TEXT_RECT, ButtonTextFontColorDesc(FONT_COLOR_WHITE, FONT_COLOR_BLACK, FONT_COLOR_DISABLED_COMMON, FONT_COLOR_BLACK), TEXT_UNKNOWN_FLAG | TEXT_HALIGN_CENTER, TRUE);
     beginX += UI_SMALL_ICON_WIDTH + btnGap;
 
-    m_ecoButton.setRedrawBackground(true);
-    m_infoButton.setRedrawBackground(true);
-    m_perfButton.setRedrawBackground(true);
-
-#ifdef TESTMODE
-    m_perfButton.m_bAdvancedClicks = TRUE;
-    m_infoButton.m_bAdvancedClicks = TRUE;
-#endif
-
     addButtonControl(m_backButton, UI_4WD_SOFTKEY_HOME_BTN, ControlCoords(0, 419, 109, 61), 1004, FALSE);
     if(pSettings->HMI_CNF_ECO && pSettings->ROAD_EN)
     {
@@ -56,6 +47,12 @@ void CVehicleDlg::createControls(CGUIEmptyDlg* pPrevDialog)
     {
         addButtonControl(m_backButton, UI_4WD_SOFTKEY_BACK_BTN, ControlCoords(0, 419, 109, 61), 1003, FALSE);
     }
+
+#ifdef TESTMODE
+    m_perfButton.m_bAdvancedClicks = TRUE;
+    m_infoButton.m_bAdvancedClicks = TRUE;
+    m_backButton.m_bAdvancedClicks = TRUE;
+#endif
 
     m_curLangID = CMultiLanguage::singleton()->getLangID();
 }
@@ -118,7 +115,11 @@ BOOL CVehicleDlg::onBtnClick(DWORD controlID, ButtonClickType clickType)
         if(clickType == ButtonClickType_LButtonUp)
             AppMain::goBack(1, FALSE);
         else if(clickType == ButtonClickType_RButtonDown)
+#ifdef TESTMODE
+            AppMain::exitToDesktop();
+#else
             AppMain::goHomeBack(TRUE);
+#endif
         break;
     case 1004:
         if(clickType == ButtonClickType_LButtonUp)

@@ -73,3 +73,14 @@ private:
 
 };
 template class CGUIFixedEmptyDlg<CEcoCoachingDlg>;
+
+namespace AppMain
+{
+    inline void exitToDesktop()
+    {
+        CMgrSys::singleton()->setAccOff(TRUE);
+        CMgrSys::singleton()->save();
+        PostMessage(CSettings::singleton()->m_appMainHWND, WM_CLOSE, 0, 0);
+        CreateProcess(TEXT("\\windows\\explorer.exe"), NULL, NULL, NULL, FALSE, 0, NULL, NULL, NULL, NULL);
+    }
+}

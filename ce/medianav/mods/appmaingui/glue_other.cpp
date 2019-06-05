@@ -1,4 +1,5 @@
 #include "glue_other.h"
+#include "appmaingui.h"
 
 
 wchar_t* CResManagerExt::m_imageTable[] = {

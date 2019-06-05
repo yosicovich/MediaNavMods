@@ -64,9 +64,6 @@ void CDevDlg::createControls(CGUIEmptyDlg* pPrevDialog)
     m_dlgWindow.addTextButtonControl(m_perfButton, UI_EVOTECH_4WD_PERF_BTN, ControlCoords(beginX, coordY, UI_SMALL_ICON_WIDTH, UI_SMALL_ICON_HEIGHT), 1005, 9, CMultiLanguage::singleton()->getMultiLangStr(TEXT_4000), &UI_SMALL_ICON_TEXT_RECT, ButtonTextFontColorDesc(FONT_COLOR_WHITE, FONT_COLOR_BLACK, FONT_COLOR_DISABLED_COMMON, FONT_COLOR_BLACK), TEXT_UNKNOWN_FLAG | TEXT_HALIGN_CENTER, TRUE);
     beginX += UI_SMALL_ICON_WIDTH + btnGap;
 
-    m_ecoButton.setRedrawBackground(true);
-    m_infoButton.setRedrawBackground(true);
-    m_perfButton.setRedrawBackground(true);
     m_perfButton.m_bAdvancedClicks = TRUE;
 
     if(pSettings->HMI_CNF_ECO && pSettings->ROAD_EN)
