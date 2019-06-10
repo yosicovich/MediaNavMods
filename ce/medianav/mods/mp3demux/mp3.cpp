@@ -177,6 +177,8 @@ const DWORD cMPASlotSizes[3] =
 #define VBR_SCALE_FLAG  0x0008
 
 DWORD MP3Atom::m_scanWithin = Utils::RegistryAccessor::getInt(HKEY_CLASSES_ROOT, TEXT("\\CLSID\\{") TEXT(MP3_DEMUX_UUID) TEXT("}\\Pins\\Input"), TEXT("Mp3FileScanWithin"), 0);
+DWORD MP3Atom::m_continuesZeroEdge = Utils::RegistryAccessor::getInt(HKEY_CLASSES_ROOT, TEXT("\\CLSID\\{") TEXT(MP3_DEMUX_UUID) TEXT("}\\Pins\\Input"), TEXT("Mp3ContinuesZero"), 100);
+DWORD MP3Atom::m_zeroSkipStep = Utils::RegistryAccessor::getInt(HKEY_CLASSES_ROOT, TEXT("\\CLSID\\{") TEXT(MP3_DEMUX_UUID) TEXT("}\\Pins\\Input"), TEXT("Mp3ZeroSkipStep"), 1024);
 
 static const int cMPAJoinFramesCount = 64; // Join this number of frames to a chunk to reduce media read operations overhead.
 static const int cMPAMinimalConsequentFrames = 10; // Number of consequent valid frames to be sure the file is MP3.
@@ -424,6 +426,7 @@ void MP3Atom::ScanChildrenAt(LONGLONG llOffset)
     }
     // The file is most likely MPEG stream. Try to find out the stream beginning.
     int totalFaultFrameDetections = 0;
+    DWORD continuesZeroCount = 0;
 
     while (llOffset < m_llLength)
     {
@@ -472,6 +475,32 @@ void MP3Atom::ScanChildrenAt(LONGLONG llOffset)
             if(hdr[0] != 0 && llOffset >= m_scanWithin)
                 break; // Most likely bad data. Stop further parsing.
             ++llOffset;
+            if(++continuesZeroCount == m_continuesZeroEdge)
+            {
+                // Skip zeros improved logic
+                continuesZeroCount = 0;
+                bool exitLoop = true;
+                llOffset += m_zeroSkipStep;
+                while(llOffset < m_llLength && llOffset < m_scanWithin)
+                {
+                    DWORD tmp;
+                    if(Read(llOffset, sizeof(DWORD), &tmp) != S_OK)
+                    {
+                        break;
+                    }
+                    
+                    if(tmp != 0)
+                    {
+                        exitLoop = false;
+                        llOffset -= m_zeroSkipStep;
+                        break;
+                    }
+                    llOffset += m_zeroSkipStep;
+                }
+
+                if(exitLoop)
+                    break;
+            }
             continue;
         }
 

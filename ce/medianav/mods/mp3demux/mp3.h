@@ -28,6 +28,8 @@ public:
     virtual void ScanChildrenAt(LONGLONG llOffset);
 private:
     static DWORD m_scanWithin;
+    static DWORD m_continuesZeroEdge;
+    static DWORD m_zeroSkipStep;
 };
 // --- movie and track headers ---------------------------
 class MP3Movie;
