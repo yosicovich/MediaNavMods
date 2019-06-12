@@ -3,6 +3,9 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <cctype>
+#include <algorithm>
+
 
 #ifdef TESTMODE
 #define logPrintf NKDbgPrintfW
@@ -142,14 +145,29 @@ namespace Utils
         static CLock m_accessLock;
     };
 
-    DWORD getCurrentProcessImageBase();
-    DWORD getCurrentProcessCodeBase();
-    void toUpper(std::wstring& str);
+    template<typename T> T& toUpper(T& str)
+    {
+        std::transform(str.begin(), str.end(), str.begin(), std::toupper);
+        return str;
+    }
+    
+    template<typename T> T trim(const T& str)
+    {
+        size_t first = str.find_first_not_of(' ');
+        if (T::npos == first)
+        {
+            return str;
+        }
+        size_t last = str.find_last_not_of(' ');
+        return str.substr(first, (last - first + 1));
+    }
 
     void dumpBinary(const void* buf, size_t size);
     void dumpGUID(const GUID* guid);
 
     std::wstring convertToWString(const std::string& str);
+    std::string convertToAString(const std::wstring& str);
+    std::vector<std::wstring> splitWString(const std::wstring& str, wchar_t token);
 
     bool checkRectCompleteCovered(HWND hWnd, RECT rect, const std::set<HWND>& skipWindows = std::set<HWND>());
 
@@ -188,6 +206,16 @@ namespace Utils
         return path.substr(0, lastBackSlash + 1);
     }
 
+    inline std::wstring getModuleName(HMODULE hModule)
+    {
+        wchar_t *pathBuf[MAX_PATH];
+        DWORD nSize = GetModuleFileName(hModule, reinterpret_cast<wchar_t *>(pathBuf), MAX_PATH);
+        if(nSize == MAX_PATH)
+            return TEXT("");
+        std::wstring name(reinterpret_cast<wchar_t *>(pathBuf), nSize);
+        return name;
+    }
+
     inline void oswprintf(std::wostream & oStream, const wchar_t* pFormat, ... )
     {
         va_list vaArgs;
@@ -208,5 +236,6 @@ namespace Utils
     }
 
     bool detectPath(const std::wstring& path, DWORD timeoutS);
+
 };
 

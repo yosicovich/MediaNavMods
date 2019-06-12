@@ -15,7 +15,6 @@
 
 static void globalEnvInit();
 static void startOnce();
-bool checkMDPresent();
 
 
 PLAYER_HELPER_API bool fixCodecsPath();

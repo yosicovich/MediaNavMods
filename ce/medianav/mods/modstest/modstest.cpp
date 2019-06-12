@@ -18,6 +18,7 @@
 #include <utils.h>
 #include <MicomAccessor.h>
 #include <accmeter.h>
+#include <PETools.h>
 
 #define MAX_LOADSTRING 100
 
@@ -272,12 +273,55 @@ void micomMgrTest()
     MediaNav::AccMeter::TAccMeasureResult result = accMeter.getLastResult();
 }
 
+BOOL KernelIoControlHook(DWORD dwIoControlCode, LPVOID lpInBuf, DWORD nInBufSize, LPVOID lpOutBuf, DWORD nOutBufSize, LPDWORD lpBytesReturned)
+{
+    logPrintf(TEXT("KernelIoControlHook\r\n"));
+    return KernelIoControl(dwIoControlCode, lpInBuf, nInBufSize, lpOutBuf, nOutBufSize, lpBytesReturned);
+}
+
+BOOL DeviceIoControlHook (HANDLE hDevice, DWORD dwIoControlCode, LPVOID lpInBuf, DWORD nInBufSize, LPVOID lpOutBuf, DWORD nOutBufSize, LPDWORD lpBytesReturned, LPOVERLAPPED lpOverlapped)
+{
+    return TRUE;
+}
+
+void processTest()
+{
+    std::wstring exe = Utils::getModuleName(NULL);
+    PETools::ImportsAccesor patcher;
+    const PETools::ImportsAccesor::TImportsMap& imports = patcher.getImports();
+    for(PETools::ImportsAccesor::TImportsMap::const_iterator it = imports.begin(); it != imports.end(); ++it)
+    {
+        logPrintf(TEXT("DLL: %S\r\n"), it->first.c_str());
+        for(size_t i = 0; i < it->second.Functions.size(); ++i)
+        {
+            if(!it->second.Functions[i].FunctionName.empty())
+            {
+                logPrintf(TEXT("\tFunction: %S - 0x%08X\r\n"), it->second.Functions[i].FunctionName.c_str(), *reinterpret_cast<DWORD *>(it->second.Functions[i].VirtualAddress));
+            }
+            else
+            {
+                logPrintf(TEXT("\tFunction: 0x%04X - 0x%08X\r\n"), it->second.Functions[i].FunctionId, *reinterpret_cast<DWORD *>(it->second.Functions[i].VirtualAddress));
+            }
+
+        }
+    }
+    
+    std::wstring str = Utils::toUpper(std::wstring(TEXT("abc.dll")));
+
+    *patcher.getFunctionPtr("COREDLL.DLL", 557) = KernelIoControlHook;
+    //*reinterpret_cast<DWORD*>(patcher.getFunctionPtr("COREDLL.DLL", 557)) = KernelIoControlHook;
+
+    KernelIoControl(123, NULL, 0, NULL,0,NULL);
+    return;
+}
+
 int WINAPI WinMain(HINSTANCE hInstance,
                    HINSTANCE hPrevInstance,
                    LPTSTR    lpCmdLine,
                    int       nCmdShow)
 {
-    micomMgrTest();
+    processTest();
+    //micomMgrTest();
     //micomTest();
     //sndTest();
     //return 0;

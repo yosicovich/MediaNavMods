@@ -1,10 +1,8 @@
 #include "utils.h"
-#include <Tlhelp32.h>
-#include <cctype>
-#include <algorithm>
 #include <cassert>
 #include <exception>
 #include <stdarg.h>
+#include <sstream>
 
 #include <wingdi.h>
 #include <windowsx.h>
@@ -150,51 +148,6 @@ std::vector<std::wstring> RegistryAccessor::getSubKeys(HKEY hRootKey, const std:
 }
 
     
-DWORD getCurrentProcessImageBase()
-{
-    PROCESSENTRY32 entry;
-    entry.dwSize = sizeof(PROCESSENTRY32);
-     
-    DWORD curProcessID = GetCurrentProcessId();
-    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
-        
-    DWORD imageBase = (DWORD)-1;
-
-    if(snapshot != INVALID_HANDLE_VALUE && Process32First(snapshot, &entry) == TRUE)
-    {
-        do
-        {
-            if(entry.th32ProcessID == curProcessID)
-            {
-                imageBase = entry.th32MemoryBase;
-                break;
-            }
-        }while (Process32Next(snapshot, &entry) == TRUE);
-        CloseToolhelp32Snapshot(snapshot);
-    }
-    return imageBase;
-}
-
-DWORD getCurrentProcessCodeBase()
-{
-    SYSTEM_INFO sinf;
-    GetSystemInfo(&sinf);
-    void* baseAddr = sinf.lpMinimumApplicationAddress;
-    MEMORY_BASIC_INFORMATION mem;
-    while(VirtualQuery(baseAddr, &mem, sizeof(mem)) == sizeof(mem))
-    {
-        if(mem.Protect & (PAGE_READONLY | PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE))
-            return (DWORD)mem.BaseAddress;
-        baseAddr = (void*)((DWORD)mem.BaseAddress + mem.RegionSize);
-    }
-    return -1;
-}
-
-void toUpper(std::wstring& str)
-{
-    std::for_each(str.begin(), str.end(),std::toupper);
-}
-
 SystemWideUniqueInstance::SystemWideUniqueInstance(const std::wstring& name)
 :lock_(name.c_str())
 ,isUnique_(lock_.WaitLock(0))
@@ -305,6 +258,41 @@ std::wstring convertToWString(const std::string& str)
     };
 
     return std::wstring(reinterpret_cast<wchar_t *>(&resultWStr[0]), resultWStr.size());
+}
+
+std::string convertToAString(const std::wstring& str)
+{
+    if(!str.size()) 
+        return std::string();
+
+    size_t cch;
+
+    std::vector<char> resultAStr;
+
+    if(cch = wcstombs(NULL, str.c_str(), str.size()))//get buffer required in characters
+    {
+        if(cch == -1)
+            return std::string();
+        resultAStr.resize(cch);
+        if(wcstombs(reinterpret_cast<char *>(&resultAStr[0]), str.c_str(), str.size()) != cch)
+        {
+            return std::string();
+        }
+    }
+
+    return std::string(reinterpret_cast<char *>(&resultAStr[0]), resultAStr.size());
+}
+
+std::vector<std::wstring> splitWString(const std::wstring& str, wchar_t token)
+{
+    std::vector<std::wstring> results;
+    std::wistringstream iStr(str);
+    std::wstring sTmp;    
+    while (getline(iStr, sTmp, token)) 
+    {
+        results.push_back(sTmp);
+    }
+    return results;
 }
 
 bool checkRectCompleteCovered(HWND hWnd, RECT rect, const std::set<HWND>& skipWindows/* = std::set<HWND>()*/)
