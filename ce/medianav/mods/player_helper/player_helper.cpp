@@ -1,13 +1,7 @@
-// player_helper.cpp : Defines the entry point for the DLL application.
-//
-
 #include "stdafx.h"
 #include "player_helper.h"
 
 #include "utils.h"
-#include "pkfuncs.h"
-#include "dbgapi.h"
-#include "oemioctl.h"
 #include "db13xx.h"
 #include <set>
 #include "SimpleIni.h"
@@ -221,7 +215,7 @@ struct RegistryEntry
 
 typedef std::vector<RegistryEntry> RegistryData;
 
-PLAYER_HELPER_API bool fixCodecsPath()
+bool fixCodecsPath()
 {
     std::wstring value;
     if(RegistryAccessor::getString(HKEY_CLASSES_ROOT, L"\\CLSID\\{0ba13ea1-70e5-11db-9690-00e08161165f}\\InprocServer32", L"", L"") != L"VideoRenderer.dll")
@@ -264,113 +258,7 @@ PLAYER_HELPER_API bool fixCodecsPath()
      return true;
 }
 
-#ifdef TESTMODE
-void mempool_test()
-{
-	DEVMGR_DEVICE_INFORMATION di;
-	di.dwSize = sizeof(di);
-
-	HANDLE findHandle = FindFirstDevice(DeviceSearchByLegacyName, L"MEM*", &di);
-	DWORD err = GetLastError();
-	FindClose(findHandle);
-
-	BOOL bVal = DeactivateDevice(di.hDevice);
-
-    /*RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\mempool\\Regions\\ITE", L"Base", 0x31800000);
-    RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\mempool\\Regions\\ITE", L"Size", 0x01000000);
-    RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\mempool\\Regions\\ITE", L"Index", 0x00000001);
-
-    RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\mempool\\Regions\\EXT", L"Base", 0x39800000);
-    RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\mempool\\Regions\\EXT", L"Size", 0x06800000);
-    RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\mempool\\Regions\\EXT", L"Index", 0x00000003);
-
-    RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\mempool\\Regions\\MAE", L"Base", 0x30800000);
-    RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\mempool\\Regions\\MAE", L"Size", 0x01000000);
-    RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\mempool\\Regions\\MAE", L"Index", 0x00000000);
-
-    RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\mempool\\Regions\\LCD", L"Base", 0x30000000);
-    RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\mempool\\Regions\\LCD", L"Size", 0x00800000);
-    RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\mempool\\Regions\\LCD", L"Index", 0x00000002);*/
-
-	HANDLE devHandle = ActivateDeviceEx(di.szDeviceKey,NULL,0,NULL);	
-	//HANDLE devHandle = ActivateDeviceEx(L"\\Drivers\\BuiltIn\\MSD",NULL,0,NULL);
-}
-#define GWL_HWNDPARENT (-8)
-
-BOOL CALLBACK EnumWindowsProc(_In_ HWND   hwnd, _In_ LPARAM lParam)
-{
-    DWORD wndProc = GetWindowLong(hwnd, GWL_WNDPROC);
-    DWORD owner = GetWindowLong(hwnd, GWL_HWNDPARENT);
-    wchar_t className[256];
-    className[255] = 0;
-    int classNameSize = GetClassName(hwnd, (LPWSTR)&className, 255);
-    return TRUE;
-}
-
-PLAYER_HELPER_API void test()
-{
-    globalEnvInit();
-    startOnce();
-    fixCodecsPath();
-    return;
-    EnumWindows(EnumWindowsProc, 0);
-
-
-    SYSTEMID    SysID;
-    ULONG        ResultSize;
-    OTP            *pOtp;
-    int            VideoCaps;
-
-    /*
-    * Use the kernel IOCTL to retrieve PRID/BRDID/SCRATCH/GUID
-    */
-    KernelIoControl(IOCTL_OEM_GET_SYSTEMID, NULL, 0, &SysID, sizeof(SysID), &ResultSize);
-
-
-    pOtp = (OTP *)SysID.guid;
-
-    return;
-
-    /*    LPWSTR str = (LPWSTR)0x1304c;
-    LPVOID testPtr = VirtualAlloc(test, 512, MEM_COMMIT, PAGE_READONLY);
-    if(testPtr)
-    {
-        DWORD oldProtect;
-        BOOL bVal = VirtualProtect(testPtr, 4, PAGE_EXECUTE_READWRITE, &oldProtect);
-        VirtualFree(testPtr, 0, MEM_RELEASE);
-    }*/
-    wchar_t  name[256];
-    GetModuleFileName(NULL, (LPWSTR)&name, 256);
-
-    HANDLE hFile = CreateFile((LPWSTR)&name, GENERIC_READ , FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    HANDLE hMap = CreateFileMapping(hFile, NULL, PAGE_WRITECOPY , 0, 0x1000, NULL);
-
-    void *testPtr = MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0x200);
-    DWORD testD = 0;
-    BOOL bW = WriteProcessMemory(GetCurrentProcess(), (LPVOID)0x11000, &testD, 4,NULL);
-    DWORD xxx = GetLastError();
-
-    MEMORY_BASIC_INFORMATION mem;
-    VirtualQuery(testPtr, &mem, sizeof(mem));
-    SetLastError(0);
-    xxx = GetLastError();
-    DWORD oldProtect;
-    BOOL bVal = VirtualProtect(testPtr, 4, PAGE_WRITECOPY, NULL);
-    //DWORD imageBase = Utils::getCurrentProcessCodeBase();
-    xxx = GetLastError();
-
-    MessageBox(NULL, L"TEST", L"Caption1", 0);
-    //mempool_test();
-}
-#else
-PLAYER_HELPER_API void test()
-{
-
-}
-#endif
-
-
-PLAYER_HELPER_API int extCheckMediaFilesExtList(const LPWSTR extValue)
+int extCheckMediaFilesExtList(const LPWSTR extValue)
 {
     if(!extValue)
     {
@@ -383,7 +271,7 @@ PLAYER_HELPER_API int extCheckMediaFilesExtList(const LPWSTR extValue)
     return g_mediaExts.find(str) != g_mediaExts.end() ? 0 : 1;
 }
 
-PLAYER_HELPER_API int extCheckMediaFileMatch(const LPWSTR fileName)
+int extCheckMediaFileMatch(const LPWSTR fileName)
 {
     if(!fileName)
     {
@@ -400,39 +288,7 @@ PLAYER_HELPER_API int extCheckMediaFileMatch(const LPWSTR fileName)
     return g_mediaExts.find(str) != g_mediaExts.end() ? 0 : 1;
 }
 
-PLAYER_HELPER_API int extCheckMediaFileMatch2(const LPWSTR fileName)
+int extCheckMediaFileMatch2(const LPWSTR fileName)
 {
     return extCheckMediaFileMatch(fileName) == 0;
 }
-
-/*ModsWindowsHook* ModsWindowsHook::self = NULL;
-
-ModsWindowsHook::ModsWindowsHook()
-    :Utils::SystemWideUniqueInstance(L"ModsWindowsHookMutex")
-{
-    if(!isUnique())
-        return;
-    self = this;
-}
-
-ModsWindowsHook::~ModsWindowsHook()
-{
-
-}
-
-LRESULT CALLBACK ModsWindowsHook::WindowProcHookLink(int nCode, WPARAM wParam, LPARAM lParam)
-{
-    if(nCode == HC_ACTION && self != NULL)
-    {
-        PCWPSTRUCT params = reinterpret_cast<PCWPSTRUCT>(lParam);
-        self->WindowProcHook(params->hwnd, params->message, params->wParam, params->lParam);
-    }
-    return CallNextHookEx(hHook_, nCode, wParam, lParam);
-
-}
-
-void ModsWindowsHook::WindowProcHook(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-
-}
-*/

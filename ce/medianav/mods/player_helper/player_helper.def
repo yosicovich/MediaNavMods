@@ -4,4 +4,3 @@ EXPORTS
    extCheckMediaFilesExtList   @2
    extCheckMediaFileMatch @3
    extCheckMediaFileMatch2 @4
-   test   @100
