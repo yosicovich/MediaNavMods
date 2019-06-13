@@ -1,6 +1,3 @@
-// player_helper.cpp : Defines the entry point for the DLL application.
-//
-
 #include "stdafx.h"
 #include "compat.h"
 
@@ -20,13 +17,8 @@
 
 using namespace Utils;
 
-static bool g_inited = false;
 static CSimpleIni g_iniFile;
-static std::string compatSDManufacturer;
-static std::string compatSDSerial;
-static std::vector<BYTE> compatDevUUID;
-static SYSTEMID    g_sysID;
-
+static CompatRecPtr g_pCompatRec;
 
 BOOL APIENTRY DllMain( HANDLE hModule, 
                        DWORD  ul_reason_for_call, 
@@ -38,14 +30,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 	case DLL_PROCESS_ATTACH:
 	{
         DisableThreadLibraryCalls((HMODULE)hModule);
-        if(!g_inited)
-        {
-            envInit();
-            g_inited = true;
-        }
-        if(!isCurrentProcessMatch())
-            break;
-        patchImports();
+        debugPrintf(DBG_TRACE, TEXT("Compat: do envInit() GetCurrentProcessId() = 0x%08X\r\n"), GetCurrentProcessId());
+        envInit();
+        if(g_pCompatRec != NULL)
+            patchImports();
         break;
 	}
 	case DLL_THREAD_ATTACH:
@@ -56,83 +44,118 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     return TRUE;
 }
 
-
-static std::vector<std::wstring> g_iniFilesTable;
-static std::vector<std::wstring> g_hookFilter;
-static std::vector<std::wstring> g_createDirectoryFilter;
-
 static void envInit()
 {
+    SYSTEMID    sysID;
+    std::vector<BYTE> realDevUUID;
+    std::string realSDSerial;
+    TWStringVector iniFilesTable;
+
+    // Read real device ID
+    {
+        DWORD rSize;
+        POTP  pOtp;
+
+        if(KernelIoControl(IOCTL_OEM_GET_SYSTEMID, NULL, 0, &sysID, sizeof(sysID), &rSize) && rSize == sizeof(sysID))
+        {
+            pOtp = reinterpret_cast<POTP>(sysID.guid);
+
+            realDevUUID.resize(sizeof(OTP));
+            memcpy(&realDevUUID[0], sysID.guid, sizeof(OTP));
+
+            char buf[8+1];
+            buf[sizeof(buf) - 1] = '\0';
+            _snprintf(buf, sizeof(buf), "%08X", pOtp->ChipIDLo);
+            realSDSerial = buf;
+        }
+    }
+
+
     // Populate  ini files table in search order
 #ifndef PUBLIC_RELEASE
     if(detectPath(TEXT("MD"), 3))
-        g_iniFilesTable.push_back(TEXT("\\MD\\mods.ini"));
+        iniFilesTable.push_back(TEXT("\\MD\\mods.ini"));
 #endif
-    g_iniFilesTable.push_back(TEXT("\\Storage Card2\\mods.ini"));
-    g_iniFilesTable.push_back(TEXT("\\Storage Card\\System\\mods\\mods.ini"));
+    iniFilesTable.push_back(TEXT("\\Storage Card2\\mods.ini"));
+    iniFilesTable.push_back(TEXT("\\Storage Card\\System\\mods\\mods.ini"));
 
-    for(size_t i = 0; i < g_iniFilesTable.size(); ++i)
+    for(size_t i = 0; i < iniFilesTable.size(); ++i)
     {
-        if(g_iniFile.LoadFile(g_iniFilesTable[i].c_str()) == SI_OK)
+        if(g_iniFile.LoadFile(iniFilesTable[i].c_str()) == SI_OK)
             break;
     }
 
-
-    g_hookFilter = Utils::splitWString(Utils::toUpper(std::wstring(g_iniFile.GetValue(TEXT("Compat"), TEXT("ApplyFilter"), TEXT("")))), L',');
-    std::transform(g_hookFilter.begin(), g_hookFilter.end(), g_hookFilter.begin(), Utils::trim<std::wstring>);
-
-    DWORD rSize;
-    POTP  pOtp;
-
-    if(KernelIoControl(IOCTL_OEM_GET_SYSTEMID, NULL, 0, &g_sysID, sizeof(g_sysID), &rSize) && rSize == sizeof(g_sysID))
+    int idx = 0;
+    do 
     {
-        pOtp = reinterpret_cast<POTP>(g_sysID.guid);
+        std::wostringstream strStream;
+        strStream << TEXT("Compat_") << idx++;
+        std::wstring ctlSection = strStream.str();
+        if(g_iniFile.GetSectionSize(ctlSection.c_str()) == -1)
+            break;
+        const wchar_t* pSection = ctlSection.c_str();
+        TWStringVector& hookFilter = Utils::splitWString(Utils::toUpper(std::wstring(g_iniFile.GetValue(pSection, TEXT("ExeMatchFilter"), TEXT("")))), L',');
+        std::transform(hookFilter.begin(), hookFilter.end(), hookFilter.begin(), Utils::trim<std::wstring>);
+        
+        if(hookFilter.empty())
+            continue;
+        if(!isCurrentProcessMatch(hookFilter))
+            continue;
 
-        compatDevUUID.resize(sizeof(OTP));
-        memcpy(&compatDevUUID[0], g_sysID.guid, sizeof(OTP));
+        g_pCompatRec = new CompatRec(hookFilter, realDevUUID, realSDSerial);
 
-        char buf[8+1];
-        buf[sizeof(buf) - 1] = '\0';
-        _snprintf(buf, sizeof(buf), "%08X", pOtp->ChipIDLo);
-        compatSDSerial = buf;
-    }
+        g_pCompatRec->m_createDirectoryFilter = Utils::splitWString(Utils::toUpper(std::wstring(g_iniFile.GetValue(pSection, TEXT("CreateDirectoryFilter"), TEXT("")))), L',');
+        std::transform(g_pCompatRec->m_createDirectoryFilter.begin(), g_pCompatRec->m_createDirectoryFilter.end(), g_pCompatRec->m_createDirectoryFilter.begin(), Utils::trim<std::wstring>);
 
-    // Manufacturer
-    {
-        std::string sTmp = Utils::convertToAString(g_iniFile.GetValue(TEXT("Compat"), TEXT("SDManufacturer"), TEXT("")));
-        if(!sTmp.empty())
+        g_pCompatRec->m_fixDeviceID = g_iniFile.GetBoolValue(pSection, TEXT("FixDeviceID"), false);
+        if(g_pCompatRec->m_fixDeviceID)
         {
-            // STORAGE_IDENTIFICATION ATA max Manufacturer
-            if(sTmp.size() > 20)
-                sTmp.resize(20);
-            compatSDManufacturer = sTmp;
+            // Manufacturer
+            {
+                std::string sTmp = Utils::convertToAString(g_iniFile.GetValue(pSection, TEXT("SDManufacturer"), TEXT("")));
+                if(!sTmp.empty())
+                {
+                    // STORAGE_IDENTIFICATION ATA max Manufacturer
+                    if(sTmp.size() > 20)
+                        sTmp.resize(20);
+                    g_pCompatRec->m_sdManufacturer = sTmp;
+                }
+            }
+            
+            // Serial
+            {
+                std::string sTmp = Utils::convertToAString(g_iniFile.GetValue(pSection, TEXT("SDSerial"), TEXT("")));
+                if(!sTmp.empty())
+                {
+                    // STORAGE_IDENTIFICATION ATA max Serial
+                    if(sTmp.size() > 8)
+                        sTmp.resize(8);
+                    g_pCompatRec->m_sdSerial = sTmp;
+                }
+            }
+            // UUID
+            {
+                std::string sTmp = Utils::convertToAString(g_iniFile.GetValue(pSection, TEXT("DevUUID"), TEXT("")));
+                if(!sTmp.empty())
+                {
+                    if(sTmp.size() > sizeof(OTP))
+                        sTmp.resize(sizeof(OTP));
+                    g_pCompatRec->m_devUUID.resize(sTmp.size());
+                    memcpy(&g_pCompatRec->m_devUUID[0], sTmp.c_str(), sTmp.size());
+                }
+            }
         }
-    }
-    // Serial
-    {
-        std::string sTmp = Utils::convertToAString(g_iniFile.GetValue(TEXT("Compat"), TEXT("SDSerial"), TEXT("")));
-        if(!sTmp.empty())
-        {
-            // STORAGE_IDENTIFICATION ATA max Serial
-            if(sTmp.size() > 8)
-                sTmp.resize(8);
-            compatSDSerial = sTmp;
-        }
-    }
-    // UUID
-    {
-        std::string sTmp = Utils::convertToAString(g_iniFile.GetValue(TEXT("Compat"), TEXT("DevUUID"), TEXT("")));
-        if(!sTmp.empty())
-        {
-            if(sTmp.size() > sizeof(OTP))
-                sTmp.resize(sizeof(OTP));
-            compatDevUUID.resize(sTmp.size());
-            memcpy(&compatDevUUID[0], sTmp.c_str(), sTmp.size());
-        }
-    }
 
-    g_createDirectoryFilter = Utils::splitWString(Utils::toUpper(std::wstring(g_iniFile.GetValue(TEXT("Compat"), TEXT("CreateDirectoryFilter"), TEXT("")))), L',');
-    std::transform(g_createDirectoryFilter.begin(), g_createDirectoryFilter.end(), g_createDirectoryFilter.begin(), Utils::trim<std::wstring>);
+        TWStringVector& createFilePairs = Utils::splitWString(Utils::toUpper(std::wstring(g_iniFile.GetValue(pSection, TEXT("CreateFileMapping"), TEXT("")))), L',');
+        for(size_t i = 0; i < createFilePairs.size(); ++i)
+        {
+            TWStringVector& createFilePair = Utils::splitWString(createFilePairs[i], L'=');
+            if(createFilePair.size() != 2)
+                continue;
+            g_pCompatRec->m_createFileMapping.insert(std::make_pair(Utils::trim(createFilePair[0]), Utils::trim(createFilePair[1])));
+        }
+        break;
+    } while (true);
 
 };
 
@@ -141,12 +164,12 @@ int getVersion()
     return 0;
 }
 
-bool isCurrentProcessMatch()
+bool isCurrentProcessMatch(const TWStringVector& hookFilter)
 {
     std::wstring curExe = Utils::toUpper(Utils::getModuleName(NULL));
-    for(size_t i = 0; i < g_hookFilter.size(); ++i)
+    for(size_t i = 0; i < hookFilter.size(); ++i)
     {
-        if(curExe.find(g_hookFilter[i]) != std::wstring::npos)
+        if(curExe.find(hookFilter[i]) != std::wstring::npos)
             return true;
     }
     return false;
@@ -155,81 +178,97 @@ bool isCurrentProcessMatch()
 void patchImports()
 {
     PETools::ImportsAccesor patcher;
-
-    const void** pFunc = patcher.getFunctionPtr("COREDLL.DLL", 557);
-    if(pFunc)
-        *pFunc = hook_KernelIoControl;
-
-    pFunc = patcher.getFunctionPtr("COREDLL.DLL", 179);
-    if(pFunc)
-        *pFunc = hook_DeviceIoControl;
+    const void** pFunc;
 
     pFunc = patcher.getFunctionPtr("COREDLL.DLL", 530);
     if(pFunc)
         *pFunc = hook_GetProcAddressW;
 
-    pFunc = patcher.getFunctionPtr("COREDLL.DLL", 160);
-    if(pFunc)
-        *pFunc = hook_CreateDirectoryW;
+    if(g_pCompatRec->m_fixDeviceID)
+    {
+        pFunc = patcher.getFunctionPtr("COREDLL.DLL", 557);
+        if(pFunc)
+            *pFunc = hook_KernelIoControl;
+
+        pFunc = patcher.getFunctionPtr("COREDLL.DLL", 179);
+        if(pFunc)
+            *pFunc = hook_DeviceIoControl;
+    }
+
+    if(!g_pCompatRec->m_createDirectoryFilter.empty())
+    {
+        pFunc = patcher.getFunctionPtr("COREDLL.DLL", 160);
+        if(pFunc)
+            *pFunc = hook_CreateDirectoryW;
+    }
+
+    if(!g_pCompatRec->m_createFileMapping.empty())
+    {
+        pFunc = patcher.getFunctionPtr("COREDLL.DLL", 168);
+        if(pFunc)
+            *pFunc = hook_CreateFileW;
+    }
+
 }
 
 BOOL hook_KernelIoControl(DWORD dwIoControlCode, LPVOID lpInBuf, DWORD nInBufSize, LPVOID lpOutBuf, DWORD nOutBufSize, LPDWORD lpBytesReturned)
 {
-    debugPrintf(DBG, TEXT("hook_KernelIoControl(0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X)\r\n"), dwIoControlCode, lpInBuf, nInBufSize, lpOutBuf, nOutBufSize, lpBytesReturned);
+    debugPrintf(DBG_TRACE, TEXT("hook_KernelIoControl(0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X)\r\n"), dwIoControlCode, lpInBuf, nInBufSize, lpOutBuf, nOutBufSize, lpBytesReturned);
     if(dwIoControlCode ==  IOCTL_HAL_GET_UUID)
     {
-        if(nOutBufSize < compatDevUUID.size())
+        if(nOutBufSize < g_pCompatRec->m_devUUID.size())
         {
             SetLastError(ERROR_INSUFFICIENT_BUFFER);
             return FALSE;
         }
-        memcpy(lpOutBuf, &compatDevUUID[0], compatDevUUID.size());
-        *lpBytesReturned = compatDevUUID.size();
-        debugDump(DBG, lpOutBuf, *lpBytesReturned);
+        memcpy(lpOutBuf, &g_pCompatRec->m_devUUID[0], g_pCompatRec->m_devUUID.size());
+        *lpBytesReturned = g_pCompatRec->m_devUUID.size();
+        debugDump(DBG_TRACE, lpOutBuf, *lpBytesReturned);
         return TRUE;
     }
     BOOL bResult = KernelIoControl(dwIoControlCode, lpInBuf, nInBufSize, lpOutBuf, nOutBufSize, lpBytesReturned);
     if(bResult)
     {
-        debugDump(DBG, lpOutBuf, *lpBytesReturned);
+        if(lpOutBuf)
+            debugDump(DBG_TRACE, lpOutBuf, *lpBytesReturned);
     }
     return bResult;
 }
 
 BOOL hook_DeviceIoControl (HANDLE hDevice, DWORD dwIoControlCode, LPVOID lpInBuf, DWORD nInBufSize, LPVOID lpOutBuf, DWORD nOutBufSize, LPDWORD lpBytesReturned, LPOVERLAPPED lpOverlapped)
 {
-    debugPrintf(DBG, TEXT("hook_DeviceIoControl(0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X)\r\n"), hDevice, dwIoControlCode, lpInBuf, nInBufSize, lpOutBuf, nOutBufSize, lpBytesReturned, lpOverlapped);
+    debugPrintf(DBG_TRACE, TEXT("hook_DeviceIoControl(0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X)\r\n"), hDevice, dwIoControlCode, lpInBuf, nInBufSize, lpOutBuf, nOutBufSize, lpBytesReturned, lpOverlapped);
     if(dwIoControlCode == IOCTL_DISK_GET_STORAGEID)
     {
-        if(compatSDManufacturer.empty() && compatSDSerial.empty())
+        if(g_pCompatRec->m_sdManufacturer.empty() && g_pCompatRec->m_sdSerial.empty())
             return FALSE;
         PSTORAGE_IDENTIFICATION pInfo = reinterpret_cast<PSTORAGE_IDENTIFICATION>(lpOutBuf);
-        DWORD reqSize = sizeof(STORAGE_IDENTIFICATION) + (!compatSDManufacturer.empty() ? compatSDManufacturer.size() + 1 : 0) + (!compatSDSerial.empty() ? compatSDSerial.size() + 1 : 0);
+        DWORD reqSize = sizeof(STORAGE_IDENTIFICATION) + (!g_pCompatRec->m_sdManufacturer.empty() ? g_pCompatRec->m_sdManufacturer.size() + 1 : 0) + (!g_pCompatRec->m_sdSerial.empty() ? g_pCompatRec->m_sdSerial.size() + 1 : 0);
         if(reqSize > nOutBufSize)
         {
             SetLastError(ERROR_INSUFFICIENT_BUFFER);
             return FALSE;
         }
 
-        if(!compatSDManufacturer.empty())
+        if(!g_pCompatRec->m_sdManufacturer.empty())
         {
             pInfo->dwManufactureIDOffset = sizeof(STORAGE_IDENTIFICATION);
             char* pManfacturer = reinterpret_cast<char*>(reinterpret_cast<DWORD>(pInfo) + pInfo->dwManufactureIDOffset);
-            strcpy(pManfacturer, compatSDManufacturer.c_str());
+            strcpy(pManfacturer, g_pCompatRec->m_sdManufacturer.c_str());
         }else
         {
             pInfo->dwManufactureIDOffset = 0;
             pInfo->dwFlags |= MANUFACTUREID_INVALID;
         }
 
-        if(!compatSDSerial.empty())
+        if(!g_pCompatRec->m_sdSerial.empty())
         {
             if(pInfo->dwManufactureIDOffset != 0)
-                pInfo->dwSerialNumOffset = pInfo->dwManufactureIDOffset + compatSDManufacturer.size() + 1;
+                pInfo->dwSerialNumOffset = pInfo->dwManufactureIDOffset + g_pCompatRec->m_sdSerial.size() + 1;
             else
                 pInfo->dwSerialNumOffset = sizeof(STORAGE_IDENTIFICATION);
             char* pSerial = reinterpret_cast<char*>(reinterpret_cast<DWORD>(pInfo) + pInfo->dwSerialNumOffset);
-            strcpy(pSerial, compatSDSerial.c_str());
+            strcpy(pSerial, g_pCompatRec->m_sdSerial.c_str());
         }else
         {
             pInfo->dwSerialNumOffset = 0;
@@ -238,15 +277,15 @@ BOOL hook_DeviceIoControl (HANDLE hDevice, DWORD dwIoControlCode, LPVOID lpInBuf
 
         pInfo->dwSize = reqSize;
         *lpBytesReturned = reqSize;
-        debugDump(DBG, lpOutBuf, *lpBytesReturned);
-        return TRUE;
-    
+        debugDump(DBG_TRACE, lpOutBuf, *lpBytesReturned);
+        return TRUE;   
     }
 
     BOOL bResult = DeviceIoControl(hDevice, dwIoControlCode, lpInBuf, nInBufSize, lpOutBuf, nOutBufSize, lpBytesReturned, lpOverlapped);
     if(bResult)
     {
-        debugDump(DBG, lpOutBuf, *lpBytesReturned);
+        if(lpOutBuf)
+            debugDump(DBG_TRACE, lpOutBuf, *lpBytesReturned);
     }
     return bResult;
 }
@@ -257,15 +296,25 @@ void* hook_GetProcAddressW(HMODULE hModule, const wchar_t* procName)
     {
         if(reinterpret_cast<DWORD>(procName) >= 0x10000)
         {
-            if(wcscmp(procName, TEXT("DeviceIoControl")) == 0)
+            if(g_pCompatRec->m_fixDeviceID && wcscmp(procName, TEXT("DeviceIoControl")) == 0)
             {
                 return hook_DeviceIoControl;
             }
+
+            if(!g_pCompatRec->m_createFileMapping.empty() && wcscmp(procName, TEXT("CreateFileW")) == 0)
+            {
+                return hook_CreateFileW;
+            }
         }else
         {
-            if(reinterpret_cast<DWORD>(procName) == 530)
+            if(g_pCompatRec->m_fixDeviceID && reinterpret_cast<DWORD>(procName) == 530)
             {
                 return hook_DeviceIoControl;
+            }
+
+            if(!g_pCompatRec->m_createFileMapping.empty() && reinterpret_cast<DWORD>(procName) == 168)
+            {
+                return hook_CreateFileW;
             }
         }
     }
@@ -274,15 +323,28 @@ void* hook_GetProcAddressW(HMODULE hModule, const wchar_t* procName)
 
 BOOL WINAPI hook_CreateDirectoryW(LPCWSTR lpPathName, LPSECURITY_ATTRIBUTES lpSecurityAttributes)
 {
-    debugPrintf(DBG, TEXT("hook_CreateDirectoryW(%s)\r\n"), lpPathName);
+    debugPrintf(DBG_TRACE, TEXT("hook_CreateDirectoryW(%s)\r\n"), lpPathName);
     std::wstring createPath = Utils::toUpper(std::wstring(lpPathName));
-    for(size_t i = 0; i < g_createDirectoryFilter.size(); ++i)
+    for(size_t i = 0; i < g_pCompatRec->m_createDirectoryFilter.size(); ++i)
     {
-        if(createPath.find(g_createDirectoryFilter[i]) != std::wstring::npos)
+        if(createPath.find(g_pCompatRec->m_createDirectoryFilter[i]) != std::wstring::npos)
         {
-            debugPrintf(DBG, TEXT("hook_CreateDirectoryW(%s) - denied\r\n"), lpPathName);
+            debugPrintf(DBG_TRACE, TEXT("hook_CreateDirectoryW(%s) - denied\r\n"), lpPathName);
             return FALSE;
         }
     }
     return CreateDirectory(lpPathName, lpSecurityAttributes);
+}
+
+HANDLE WINAPI hook_CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+{
+    debugPrintf(DBG_TRACE, TEXT("hook_CreateFileW(%s)\r\n"), lpFileName);
+    std::wstring fileName = Utils::toUpper(std::wstring(lpFileName));
+    TWStringWStringMap::const_iterator it = g_pCompatRec->m_createFileMapping.find(fileName);
+    if(it != g_pCompatRec->m_createFileMapping.end())
+    {
+        lpFileName = it->second.c_str();
+    }
+
+    return CreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 }

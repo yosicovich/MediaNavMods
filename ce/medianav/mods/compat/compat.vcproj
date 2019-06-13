@@ -99,7 +99,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory="\MD\RtNavi"
+				RemoteDirectory="\MD\Navi"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
