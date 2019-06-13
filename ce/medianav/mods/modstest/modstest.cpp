@@ -315,12 +315,44 @@ void processTest()
     return;
 }
 
+void gps_test()
+{
+    Utils::RegistryAccessor::setString(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\GPS", L"Dll", L"\\MD\\debug\\GPS_driver\\GPS_driver.dll");
+    Utils::RegistryAccessor::setString(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\GPS", L"Prefix", L"GPS");
+    Utils::RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\GPS", L"Order", 1);
+    Utils::RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\GPS", L"Index", 1);
+
+    Utils::RegistryAccessor::setString(HKEY_LOCAL_MACHINE, L"\\Drivers\\Builtin\\GPS", L"DevicePathName", L"COM4:");
+
+    HANDLE devHandle = ActivateDeviceEx(L"\\Drivers\\BuiltIn\\GPS",NULL,0,NULL);
+    DWORD err = GetLastError();
+    HANDLE hFile = CreateFile(L"GPS1:", GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    DWORD size = 100;
+    void* pBuf = malloc(size);
+    DWORD bytesRead;
+    
+    int x = 30;
+    while(--x)
+    {
+        if(ReadFile(hFile, pBuf, size, &bytesRead, NULL))
+        {
+            std::string str((char*)pBuf, bytesRead);
+            debugPrintf(1, L"%S", str.c_str());
+        }
+
+    }
+    CloseHandle(hFile);
+    free(pBuf);
+    //DeactivateDevice(devHandle);
+}
+
 int WINAPI WinMain(HINSTANCE hInstance,
                    HINSTANCE hPrevInstance,
                    LPTSTR    lpCmdLine,
                    int       nCmdShow)
 {
-    processTest();
+    gps_test();
+    //processTest();
     //micomMgrTest();
     //micomTest();
     //sndTest();
@@ -564,7 +596,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 
-#ifdef TESTMODE
+#if 0
 void mempool_test()
 {
 	DEVMGR_DEVICE_INFORMATION di;

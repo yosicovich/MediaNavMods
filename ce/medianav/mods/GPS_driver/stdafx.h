@@ -28,11 +28,6 @@
 // Windows Header Files:
 #include <windows.h>
 
-// C RunTime Header Files
-#include <stdlib.h>
-#include <malloc.h>
-#include <memory.h>
-#include <tchar.h>
 
 #if defined(WIN32_PLATFORM_PSPC) || defined(WIN32_PLATFORM_WFSP)
 #ifndef _DEVICE_RESOLUTION_AWARE
@@ -56,5 +51,22 @@
 #endif
 
 #include <altcecrt.h>
+
+#ifdef _DEBUG
+#define TESTMODE
+#else
 //#define TESTMODE
+#endif
+
+//#define LOGTOFILE
+#include <utils.h>
+
+#ifdef TESTMODE
+#define DBG 1
+#define DBG_TRACE 0 
+#else
+#define DBG 0
+#define DBG_TRACE 0 
+#endif
+
 // TODO: reference additional headers your program requires here

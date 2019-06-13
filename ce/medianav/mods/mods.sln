@@ -110,6 +110,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "compat", "compat\compat.vcp
 		{1F71555E-8F6E-4929-B425-04E006387F07} = {1F71555E-8F6E-4929-B425-04E006387F07}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GPS_driver", "GPS_driver\GPS_driver.vcproj", "{6AD575D8-297F-4988-9333-B417B0777360}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1F71555E-8F6E-4929-B425-04E006387F07} = {1F71555E-8F6E-4929-B425-04E006387F07}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|DbAu13xx (MIPSII) = Debug|DbAu13xx (MIPSII)
@@ -284,6 +289,15 @@ Global
 		{91ADA5B8-9E74-4659-8139-3CDAE8CDAC0F}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
 		{91ADA5B8-9E74-4659-8139-3CDAE8CDAC0F}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
 		{91ADA5B8-9E74-4659-8139-3CDAE8CDAC0F}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
+		{6AD575D8-297F-4988-9333-B417B0777360}.Debug|DbAu13xx (MIPSII).ActiveCfg = Debug|DbAu13xx (MIPSII)
+		{6AD575D8-297F-4988-9333-B417B0777360}.Debug|DbAu13xx (MIPSII).Build.0 = Debug|DbAu13xx (MIPSII)
+		{6AD575D8-297F-4988-9333-B417B0777360}.Debug|DbAu13xx (MIPSII).Deploy.0 = Debug|DbAu13xx (MIPSII)
+		{6AD575D8-297F-4988-9333-B417B0777360}.Public-release|DbAu13xx (MIPSII).ActiveCfg = Public-release|DbAu13xx (MIPSII)
+		{6AD575D8-297F-4988-9333-B417B0777360}.Public-release|DbAu13xx (MIPSII).Build.0 = Public-release|DbAu13xx (MIPSII)
+		{6AD575D8-297F-4988-9333-B417B0777360}.Public-release|DbAu13xx (MIPSII).Deploy.0 = Public-release|DbAu13xx (MIPSII)
+		{6AD575D8-297F-4988-9333-B417B0777360}.Release|DbAu13xx (MIPSII).ActiveCfg = Release|DbAu13xx (MIPSII)
+		{6AD575D8-297F-4988-9333-B417B0777360}.Release|DbAu13xx (MIPSII).Build.0 = Release|DbAu13xx (MIPSII)
+		{6AD575D8-297F-4988-9333-B417B0777360}.Release|DbAu13xx (MIPSII).Deploy.0 = Release|DbAu13xx (MIPSII)
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,12 @@
+LIBRARY	"GPS_driver"
+EXPORTS
+	GPS_Init
+	GPS_Deinit
+	GPS_Open
+	GPS_Close
+	GPS_Seek
+	GPS_Read
+	GPS_Write
+	GPS_IOControl
+	GPS_PowerDown
+	GPS_PowerUp
