@@ -14,6 +14,8 @@ struct CompatRec
         ,m_devUUID(devUUID)
         ,m_sdSerial(sdSerial)
         ,m_fixDeviceID(false)
+        ,m_navitel(false)
+        ,m_navitelRealWindowProc(NULL)
     {
     }
     TWStringVector m_hookFilter;
@@ -23,6 +25,8 @@ struct CompatRec
     std::vector<BYTE> m_devUUID;
     std::string m_sdManufacturer;
     std::string m_sdSerial;
+    bool m_navitel;
+    WNDPROC m_navitelRealWindowProc;
 };
 typedef smart_ptr<CompatRec> CompatRecPtr;
 
@@ -39,3 +43,8 @@ BOOL hook_DeviceIoControl (HANDLE hDevice, DWORD dwIoControlCode, LPVOID lpInBuf
 void* hook_GetProcAddressW(HMODULE hModule, const wchar_t* procName);
 BOOL WINAPI hook_CreateDirectoryW(LPCWSTR lpPathName, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
 HANDLE WINAPI hook_CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
+ATOM hook_RegisterClassW(const WNDCLASSW *lpWndClass);
+
+
+LRESULT CALLBACK navitelWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+

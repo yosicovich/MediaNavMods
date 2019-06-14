@@ -6,6 +6,7 @@
 #include <set>
 #include "SimpleIni.h"
 #include <pwindbas.h>
+#include <Devload.h>
 #include <CmnDLL.h>
 
 using namespace Utils;
@@ -54,7 +55,7 @@ static void globalEnvInit()
         g_iniFilesTable.push_back(TEXT("\\MD\\mods.ini"));
 #endif
     g_iniFilesTable.push_back(TEXT("\\Storage Card2\\mods.ini"));
-    g_iniFilesTable.push_back(TEXT("\\Storage Card\\System\\mods\\mods.ini"));
+    g_iniFilesTable.push_back(MODS_ROOT_PATH TEXT("mods.ini"));
 
     for(size_t i = 0; i < g_iniFilesTable.size(); ++i)
     {
@@ -110,7 +111,7 @@ static void startOnce()
     if(!g_onceChecker.isUnique())
         return;
     
-    std::wstring uiPath = Utils::makeFolderPath(std::wstring() + g_iniFile.GetValue(TEXT("Player"), TEXT("UIPath"), TEXT("\\Storage Card\\System\\mods\\UI\\")));
+    std::wstring uiPath = Utils::makeFolderPath(std::wstring() + g_iniFile.GetValue(TEXT("Player"), TEXT("UIPath"), MODS_ROOT_PATH TEXT("UI\\")));
     RegistryAccessor::setString(HKEY_LOCAL_MACHINE, TEXT("Software\\Microsoft\\DirectX\\DirectShow\\Video Renderer"), TEXT("UIPath"), uiPath);
 
     const CSimpleIniW::TKeyVal* cmnDebug = g_iniFile.GetSection(TEXT("CmnDebug"));
@@ -156,7 +157,7 @@ static void startOnce()
     // 1. Default once
     if(!g_iniFile.GetBoolValue(TEXT("Debug"), TEXT("NoDefaultStarts"), false) && (!g_iniFile.GetBoolValue(TEXT("Debug"), TEXT("NoDefaultStartsWithMD"), false) || !isPathPresent(TEXT("MD"))))
     {
-        startPorcesses.push_back(StartProcessEntry(TEXT("\\Storage Card\\System\\mods\\USBTags.exe"), TEXT("")));
+        startPorcesses.push_back(StartProcessEntry(MODS_ROOT_PATH TEXT("USBTags.exe"), TEXT("")));
     }
 
     // 2. Load from ini
@@ -168,6 +169,30 @@ static void startOnce()
             startPorcesses.push_back(StartProcessEntry(it->first.pItem, it->second));
             debugPrintf(DBG, TEXT("startOnce(): Add from ini : process %s, with command line - %s\r\n"), it->first.pItem, it->second);
         }
+    }
+
+    // Activate GPS Driver
+    if(!g_iniFile.GetBoolValue(TEXT("Debug"), TEXT("NoGPSDriver"), false))
+    {
+        Utils::RegistryAccessor::setString(HKEY_LOCAL_MACHINE, DEVLOAD_BUILT_IN_KEY TEXT("\\GPS"), DEVLOAD_DLLNAME_VALNAME, MODS_ROOT_PATH TEXT("GPS_driver.dll"));
+        Utils::RegistryAccessor::setString(HKEY_LOCAL_MACHINE, DEVLOAD_BUILT_IN_KEY TEXT("\\GPS"), DEVLOAD_PREFIX_VALNAME, TEXT("GPS"));
+        Utils::RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, DEVLOAD_BUILT_IN_KEY TEXT("\\GPS"), DEVLOAD_LOADORDER_VALNAME, 1);
+        Utils::RegistryAccessor::setInt(HKEY_LOCAL_MACHINE, DEVLOAD_BUILT_IN_KEY TEXT("\\GPS"), DEVLOAD_INDEX_VALNAME, 1);
+
+        Utils::RegistryAccessor::setString(HKEY_LOCAL_MACHINE, DEVLOAD_BUILT_IN_KEY TEXT("\\GPS"), TEXT("DevicePathName"), TEXT("COM4:"));
+
+        HANDLE devHandle = ActivateDeviceEx(DEVLOAD_BUILT_IN_KEY TEXT("\\GPS"), NULL, 0, NULL);
+        if(devHandle == INVALID_HANDLE_VALUE || devHandle == NULL)
+            debugPrintf(DBG, TEXT("startOnce(): Activate GPS Driver has failed!\r\n"));
+    }
+
+    // Inject Dll
+    if(!g_iniFile.GetBoolValue(TEXT("Debug"), TEXT("NoInjectDll"), false))
+    {
+        std::vector<std::wstring> dlls = Utils::RegistryAccessor::getStrings(HKEY_LOCAL_MACHINE, TEXT("SYSTEM\\KERNEL"), TEXT("InjectDLL"), std::vector<std::wstring>());
+        dlls.push_back(MODS_ROOT_PATH TEXT("compat.dll"));
+        if(!Utils::RegistryAccessor::setStrings(HKEY_LOCAL_MACHINE, TEXT("SYSTEM\\KERNEL"), TEXT("InjectDLL"), dlls))
+            debugPrintf(DBG, TEXT("startOnce(): Inject Dll has failed!\r\n"));
     }
 
     // Run
@@ -223,7 +248,7 @@ bool fixCodecsPath()
     
     RegistryData registryPathInfo;
 
-    std::wstring codecsPath = Utils::makeFolderPath(std::wstring() + g_iniFile.GetValue(TEXT("Player"), TEXT("CodecsPath"), TEXT("\\Storage Card\\System\\mods\\codecs\\")));
+    std::wstring codecsPath = Utils::makeFolderPath(std::wstring() + g_iniFile.GetValue(TEXT("Player"), TEXT("CodecsPath"), MODS_ROOT_PATH TEXT("codecs\\")));
 
     // Demux
     registryPathInfo.push_back(RegistryEntry(HKEY_CLASSES_ROOT, L"\\CLSID\\{D24C840C-C469-4368-A363-0913B44AEF5C}\\InprocServer32", L"", codecsPath + L"avidmx.dll"));

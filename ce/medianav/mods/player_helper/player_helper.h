@@ -2,6 +2,8 @@
 #include "stdafx.h"
 #include "utils.h"
 
+#define MODS_ROOT_PATH TEXT("\\Storage Card\\System\\mods\\")
+
 static void globalEnvInit();
 static void startOnce();
 

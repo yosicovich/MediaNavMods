@@ -13,6 +13,7 @@
 #include "db13xx.h"
 #include <pwindbas.h>
 #include <diskio.h>
+#include <WindowsX.h>
 #include <CmnDLL.h>
 
 using namespace Utils;
@@ -154,9 +155,26 @@ static void envInit()
                 continue;
             g_pCompatRec->m_createFileMapping.insert(std::make_pair(Utils::trim(createFilePair[0]), Utils::trim(createFilePair[1])));
         }
+
+        g_pCompatRec->m_navitel = g_iniFile.GetBoolValue(pSection, TEXT("Navitel"), false);
         break;
     } while (true);
 
+#ifdef PUBLIC_RELEASE
+    if(!g_pCompatRec)
+    {
+        TWStringVector hookFilter;
+        hookFilter.push_back(TEXT("NNGNAVI.EXE")); // Must be upper-case.
+        if(isCurrentProcessMatch(hookFilter))
+        {
+            g_pCompatRec = new CompatRec(hookFilter, realDevUUID, realSDSerial);
+            g_pCompatRec->m_createFileMapping.insert(std::make_pair(TEXT("COM4:"), TEXT("GPS1:")));
+        }
+    }
+#endif
+
+    if(g_pCompatRec != NULL)
+        debugPrintf(DBG, TEXT("compat.dll: envInit() ExeMatchFilter has matched with %s\r\n"), Utils::getModuleName(NULL).c_str());
 };
 
 int getVersion()
@@ -209,6 +227,12 @@ void patchImports()
             *pFunc = hook_CreateFileW;
     }
 
+    if(g_pCompatRec->m_navitel)
+    {
+        pFunc = patcher.getFunctionPtr("COREDLL.DLL", 95);
+        if(pFunc)
+            *pFunc = hook_RegisterClassW;
+    }
 }
 
 BOOL hook_KernelIoControl(DWORD dwIoControlCode, LPVOID lpInBuf, DWORD nInBufSize, LPVOID lpOutBuf, DWORD nOutBufSize, LPDWORD lpBytesReturned)
@@ -305,6 +329,11 @@ void* hook_GetProcAddressW(HMODULE hModule, const wchar_t* procName)
             {
                 return hook_CreateFileW;
             }
+
+            if(g_pCompatRec->m_navitel && wcscmp(procName, TEXT("RegisterClassW")) == 0)
+            {
+                return hook_RegisterClassW;
+            }
         }else
         {
             if(g_pCompatRec->m_fixDeviceID && reinterpret_cast<DWORD>(procName) == 530)
@@ -315,6 +344,11 @@ void* hook_GetProcAddressW(HMODULE hModule, const wchar_t* procName)
             if(!g_pCompatRec->m_createFileMapping.empty() && reinterpret_cast<DWORD>(procName) == 168)
             {
                 return hook_CreateFileW;
+            }
+
+            if(g_pCompatRec->m_navitel && reinterpret_cast<DWORD>(procName) == 95)
+            {
+                return hook_RegisterClassW;
             }
         }
     }
@@ -347,4 +381,91 @@ HANDLE WINAPI hook_CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD 
     }
 
     return CreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+}
+
+ATOM hook_RegisterClassW(const WNDCLASSW *lpWndClass)
+{
+    debugPrintf(DBG_TRACE, TEXT("hook_RegisterClassW() lpszClassName=%s, lpfnWndProc=0x%08X\r\n"), lpWndClass->lpszClassName, lpWndClass->lpfnWndProc);
+    if(g_pCompatRec->m_navitel && wcscmp(lpWndClass->lpszClassName, TEXT("navitel")) == 0)
+    {
+        WNDCLASSW wndClass = *lpWndClass;
+        g_pCompatRec->m_navitelRealWindowProc = lpWndClass->lpfnWndProc;
+        wndClass.lpfnWndProc = navitelWindowProc;
+        return RegisterClassW(&wndClass);
+    }
+    return RegisterClassW(lpWndClass);
+}
+
+LRESULT CALLBACK navitelWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    static bool timerActive = false;
+    static bool longTapDetected = false;
+    static UINT cLongTapDetectTimerID = 1412;
+    static RECT cHideButtonRect = {0, 419, 134,480};
+    static LPARAM clickPoint = 0;
+    POINT pt;
+
+    switch(uMsg)
+    {
+    case WM_DESTROY:
+        if(timerActive)
+        {
+            KillTimer(hwnd, cLongTapDetectTimerID);
+            timerActive = false;
+        }
+        break;
+    case WM_LBUTTONDOWN:
+        {
+            pt.x = GET_X_LPARAM(lParam);
+            pt.y = GET_Y_LPARAM(lParam);
+            if(PtInRect(&cHideButtonRect, pt))
+            {
+                clickPoint = lParam;
+                longTapDetected = false;
+                SetTimer(hwnd, cLongTapDetectTimerID, 500, NULL);
+                timerActive = true;
+                return TRUE;
+            }else
+            {
+                if(timerActive)
+                {
+                    KillTimer(hwnd, cLongTapDetectTimerID);
+                    timerActive = false;
+                }
+                longTapDetected = true;
+            }
+            break;
+        }
+    case WM_LBUTTONUP:
+        {
+            pt.x = GET_X_LPARAM(lParam);
+            pt.y = GET_Y_LPARAM(lParam);
+            if(timerActive)
+            {
+                KillTimer(hwnd, cLongTapDetectTimerID);
+                timerActive = false;
+            }
+
+            if(!PtInRect(&cHideButtonRect, pt) || longTapDetected)
+                break;
+
+            ShowWindow(hwnd, SW_HIDE);
+            return TRUE;
+            break;
+        }
+    case WM_TIMER:
+        if(wParam == cLongTapDetectTimerID)
+        {
+            longTapDetected = true;
+            KillTimer(hwnd, cLongTapDetectTimerID);
+            timerActive = false;
+            lParam = clickPoint;
+            uMsg = WM_LBUTTONDOWN;
+        }
+        break;
+    };
+
+    if(g_pCompatRec->m_navitelRealWindowProc)
+        return g_pCompatRec->m_navitelRealWindowProc(hwnd, uMsg, wParam, lParam);
+    return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 }

@@ -24,11 +24,13 @@ namespace Utils
     public:
         static bool setValue(HKEY hRootKey, const std::wstring& subKey, DWORD dwType, const std::wstring& valueName, const std::vector<BYTE>& data);
         static bool setString(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, const std::wstring& value);
+        static bool setStrings(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, const std::vector<std::wstring>& value);
         static bool setInt(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, unsigned int value);
         static bool setBool(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, bool value);
 
         static bool getValue(HKEY hRootKey, const std::wstring& subKey, DWORD dwType, const std::wstring& valueName, std::vector<BYTE>& data);
         static std::wstring getString(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, const std::wstring& defaultValue);
+        static std::vector<std::wstring> getStrings(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, const std::vector<std::wstring>& defaultValue);
         static DWORD getInt(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, DWORD defaultValue);
         static bool getBool(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, bool defaultValue);
 

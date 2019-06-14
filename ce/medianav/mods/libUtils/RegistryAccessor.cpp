@@ -21,9 +21,29 @@ namespace Utils {
 
     bool RegistryAccessor::setString(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, const std::wstring& value)
     {
-        std::vector<BYTE> data((value.size()+1) * 2);
-        memcpy(&data[0], value.c_str(), data.size() + 2);
+        std::vector<BYTE> data((value.size()+1) * sizeof(wchar_t));
+        memcpy(&data[0], value.c_str(), data.size() + sizeof(wchar_t));
         return RegistryAccessor::setValue(hRootKey, subKey, REG_SZ, valueName, data);
+    }
+
+    bool RegistryAccessor::setStrings(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, const std::vector<std::wstring>& value)
+    {
+        size_t totalDataSize = 0;
+        for(size_t i = 0; i < value.size(); ++i)
+        {
+            totalDataSize += value[i].size() + 1;
+        }
+        ++totalDataSize;
+        std::vector<BYTE> data(totalDataSize * sizeof(wchar_t));
+        memset(&data[0], 0 ,data.size());
+        size_t pos = 0;
+        for(size_t i = 0; i < value.size(); ++i)
+        {
+            wcscpy(reinterpret_cast<wchar_t *>(&data[pos]), value[i].c_str());
+            pos += (value[i].size() + 1) * sizeof(wchar_t);
+        }
+
+        return RegistryAccessor::setValue(hRootKey, subKey, REG_MULTI_SZ, valueName, data);
     }
 
     bool RegistryAccessor::setInt(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, unsigned int value)
@@ -77,7 +97,22 @@ namespace Utils {
 
         std::wstring data;
         data.assign(reinterpret_cast<wchar_t *>(&pureData[0]), pureData.size());
-        data.resize(wcslen(&data[0]));
+        data.resize(wcslen(data.c_str()));
+        return data;
+    }
+
+    std::vector<std::wstring> RegistryAccessor::getStrings(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, const std::vector<std::wstring>& defaultValue)
+    {
+        std::vector<BYTE> pureData;
+        if(!RegistryAccessor::getValue(hRootKey, subKey, REG_MULTI_SZ, valueName, pureData))
+            return defaultValue;
+
+        std::vector<std::wstring> data;
+        const wchar_t* pPureData = reinterpret_cast<const wchar_t*>(&pureData[0]);
+        size_t pureDataSize = pureData.size() / sizeof(wchar_t);
+        for (const wchar_t* pPureData = reinterpret_cast<const wchar_t*>(&pureData[0]); *pPureData; pPureData += wcslen (pPureData)+1) 
+            data.push_back(pPureData);
+
         return data;
     }
 

@@ -55,7 +55,9 @@
 #ifdef _DEBUG
 #define TESTMODE
 #else
-//#define TESTMODE
+#ifndef PUBLIC_RELEASE
+#define TESTMODE
+#endif
 #endif
 
 //#define LOGTOFILE
