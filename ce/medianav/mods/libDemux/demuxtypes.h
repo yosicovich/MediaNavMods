@@ -365,12 +365,18 @@ public:
     {
         return (DWORD)m_Tracks.size();
     }
+
     MovieTrackPtr Track(DWORD nTrack) const
     {
         return m_Tracks[nTrack];
     }
         
     HRESULT ReadAbsolute(LONGLONG llPos, BYTE* pBuffer, DWORD cBytes);
+
+    LONGLONG Length() const
+    {
+        return m_pRoot->Length();
+    }
 
 protected:
     typedef std::vector<MovieTrackPtr> MovieTracks;

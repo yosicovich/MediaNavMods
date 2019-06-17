@@ -21,6 +21,15 @@ NoChangeHandler::PrepareOutput(IMediaSample* pSample, Movie* pMovie, LONGLONG ll
     BYTE* pBuffer;
     pSample->GetPointer(&pBuffer);
 
+    if(llPos >= pMovie->Length())
+        return 0; // Tried to read out of the movie.
+
+    if(llPos + cBytes > pMovie->Length())
+    {
+        debugPrintf(DEMUX_DBG, TEXT("NoChangeHandler::PrepareOutput(): read beyond movie length, truncating. llPos=%I64d, pMovie->Length()= %I64d, cBytes = %d\r\n"), llPos, pMovie->Length(), cBytes);
+        cBytes = static_cast<DWORD>(pMovie->Length() - llPos);
+    }
+
     if (pMovie->ReadAbsolute(llPos, pBuffer, cBytes) == S_OK)
     {
         return cBytes;

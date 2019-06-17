@@ -24,6 +24,9 @@ Atom::Read(LONGLONG llOffset, DWORD cBytes, void* pBuffer)
     HRESULT hr = S_OK;
     if (IsBuffered())
     {
+        if(llOffset + cBytes > m_llLength)
+            return E_FAIL;
+
         const BYTE* pSrc = Buffer() + DWORD(llOffset);
         CopyMemory(pBuffer,  pSrc,  cBytes);
         BufferRelease();

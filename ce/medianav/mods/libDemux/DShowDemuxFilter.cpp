@@ -723,6 +723,7 @@ DemuxOutputPin::ThreadProc()
                 }
 
                 // format-specific handler does read from file and any conversion/wrapping needed
+                DWORD wantSampleSize = cSample;
                 cSample = pHandler->PrepareOutput(pSample, m_pTrack->GetMovie(), llPos, cSample);
 
                 if (cSample > 0)
@@ -787,6 +788,14 @@ DemuxOutputPin::ThreadProc()
 
                     if(hr != S_OK)
                         break;
+
+                    if(wantSampleSize > cSample)
+                    {
+                        // Premature end of file condition. Deliver end of stream in this case.
+                        pinDebugPrintf(DEMUX_DBG, L"DemuxOutputPin::ThreadProc: DeliverEndOfStream() case 4 wantSampleSize = %d, cSample = %d\r\n", wantSampleSize, cSample);
+                        DeliverEndOfStream();
+                        break;
+                    }
                 }else
                 {
                     // Most likely media has been removed
