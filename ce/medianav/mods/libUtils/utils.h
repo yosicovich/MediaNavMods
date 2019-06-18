@@ -171,6 +171,8 @@ namespace Utils
     std::string convertToAString(const std::wstring& str);
     std::vector<std::wstring> splitWString(const std::wstring& str, wchar_t token);
 
+    bool isWildcardMatch(const std::wstring& str, const std::wstring& wildcard);
+
     bool checkRectCompleteCovered(HWND hWnd, RECT rect, const std::set<HWND>& skipWindows = std::set<HWND>());
 
 #pragma pack(push,1)

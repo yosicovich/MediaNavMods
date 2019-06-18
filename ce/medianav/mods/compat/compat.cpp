@@ -164,7 +164,7 @@ static void envInit()
     if(!g_pCompatRec)
     {
         TWStringVector hookFilter;
-        hookFilter.push_back(TEXT("NNGNAVI.EXE")); // Must be upper-case.
+        hookFilter.push_back(TEXT("*\\NNGNAVI.EXE")); // Must be upper-case.
         if(isCurrentProcessMatch(hookFilter))
         {
             g_pCompatRec = new CompatRec(hookFilter, realDevUUID, realSDSerial);
@@ -187,7 +187,7 @@ bool isCurrentProcessMatch(const TWStringVector& hookFilter)
     std::wstring curExe = Utils::toUpper(Utils::getModuleName(NULL));
     for(size_t i = 0; i < hookFilter.size(); ++i)
     {
-        if(curExe.find(hookFilter[i]) != std::wstring::npos)
+        if(Utils::isWildcardMatch(curExe, hookFilter[i]))
             return true;
     }
     return false;
@@ -396,6 +396,7 @@ ATOM hook_RegisterClassW(const WNDCLASSW *lpWndClass)
     return RegisterClassW(lpWndClass);
 }
 
+#define WM_NAVI_RESTORE 1413
 LRESULT CALLBACK navitelWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     static bool timerActive = false;
@@ -452,6 +453,13 @@ LRESULT CALLBACK navitelWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
             ShowWindow(hwnd, SW_HIDE);
             return TRUE;
             break;
+        }
+    case WM_NAVI_RESTORE:
+        {
+            ShowWindow(hwnd, SW_SHOW);
+            ShowWindow(hwnd, SW_RESTORE);
+            SetForegroundWindow(hwnd);
+            return TRUE;
         }
     case WM_TIMER:
         if(wParam == cLongTapDetectTimerID)

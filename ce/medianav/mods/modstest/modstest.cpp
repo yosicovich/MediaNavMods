@@ -346,12 +346,26 @@ void gps_test()
     //DeactivateDevice(devHandle);
 }
 
+void wildcardTest()
+{
+    bool bVal = Utils::isWildcardMatch(TEXT("\\storage card4\\nng\\nngnavi.exe"), TEXT("*navi.exe"));
+    bVal = Utils::isWildcardMatch(TEXT("\\storage card4\\nng\\navi.exe"), TEXT("*navi.exe"));
+    bVal = Utils::isWildcardMatch(TEXT("\\storage card4\\nng\\nngnavi.exe"), TEXT("*nngnavi.exe"));
+    bVal = Utils::isWildcardMatch(TEXT("\\storage card4\\nng\\nngnavi.exe"), TEXT("*nngnavi.exe"));
+    bVal = Utils::isWildcardMatch(TEXT("\\storage card4\\nng\\nngnavi.exe"), TEXT("*\\???navi.exe"));
+    bVal = Utils::isWildcardMatch(TEXT("\\storage card4\\nng\\nngnavi.exe"), TEXT("*\\navi.exe"));
+    bVal = Utils::isWildcardMatch(TEXT("\\storage card4\\nng\\navi.exe"), TEXT("*\\navi.exe"));
+    bVal = Utils::isWildcardMatch(TEXT("\\storage card4\\nng\\navi.exe"), TEXT("*\\na?i.exe"));
+}
+
 int WINAPI WinMain(HINSTANCE hInstance,
                    HINSTANCE hPrevInstance,
                    LPTSTR    lpCmdLine,
                    int       nCmdShow)
 {
-    gps_test();
+
+    wildcardTest();
+    //gps_test();
     //processTest();
     //micomMgrTest();
     //micomTest();

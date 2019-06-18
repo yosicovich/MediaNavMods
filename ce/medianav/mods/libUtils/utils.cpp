@@ -158,6 +158,50 @@ std::vector<std::wstring> splitWString(const std::wstring& str, wchar_t token)
     return results;
 }
 
+size_t strFindWildcard(const std::wstring& searchStr, const std::wstring& strToFind)
+{
+    if(strToFind.empty())
+        return 0;
+
+    for(size_t i = 0; i < searchStr.size(); ++i)
+    {
+        bool match = true;
+        for(size_t u = 0; u < strToFind.size() && i + u < searchStr.size(); ++u)
+        {
+            if(searchStr[i + u] != strToFind[u] && strToFind[u] != L'?')
+            {
+                match = false;
+                break;
+            }
+        }
+        if(match)
+            return i;
+    }
+    return std::wstring::npos;
+}
+
+bool isWildcardMatch(const std::wstring& str, const std::wstring& wildcard)
+{
+    std::vector<std::wstring> parts = splitWString(wildcard, L'*');
+    if(parts.empty())
+        return false;
+
+    bool firstMatch = !parts[0].empty();
+    std::wstring sTmp = str;
+    for(size_t i = 0; i < parts.size() && !sTmp.empty(); ++i)
+    {
+        size_t matchPos = strFindWildcard(sTmp, parts[i]);
+        if(matchPos == std::wstring::npos)
+            return false;
+
+        if(i == 0 && matchPos != 0)
+            return false;
+
+        sTmp = sTmp.substr(matchPos + parts[i].size());
+    }
+    return true;
+}
+
 bool checkRectCompleteCovered(HWND hWnd, RECT rect, const std::set<HWND>& skipWindows/* = std::set<HWND>()*/)
 {
     HRGN selfRgn = CreateRectRgnIndirect(&rect);

@@ -65,6 +65,7 @@ void CDevDlg::createControls(CGUIEmptyDlg* pPrevDialog)
     beginX += UI_SMALL_ICON_WIDTH + btnGap;
 
     m_perfButton.m_bAdvancedClicks = TRUE;
+    m_infoButton.m_bAdvancedClicks = TRUE;
 
     if(pSettings->HMI_CNF_ECO && pSettings->ROAD_EN)
     {
@@ -120,7 +121,16 @@ BOOL CDevDlg::onBtnClick(DWORD controlID, ButtonClickType clickType)
         AppMain::Dialogs::CEcoScoringDlg::singleton()->changeDialog(this, FALSE);
         break;
     case 1002:
-        AppMain::Dialogs::C4x4InfoDlg::singleton()->changeDialog(this, FALSE);
+        if(clickType == ButtonClickType_LButtonUp)
+            AppMain::Dialogs::C4x4InfoDlg::singleton()->changeDialog(this, FALSE);
+        else if(clickType == ButtonClickType_RButtonDown)
+        {
+            HWND hwnd = FindWindow(TEXT("navitel"), NULL);
+            if(hwnd)
+            {
+                PostMessage(hwnd, 1413,0, 0);
+            }
+        }
         break;
     case 1005:
         //CDevMaketDlg::singleton()->changeDialog(this, FALSE);

@@ -46,6 +46,9 @@
 
 #include <altcecrt.h>
 
+//#define LOGTOFILE
+#include <utils.h>
+
 #ifdef _DEBUG
 #define TESTMODE
 #else
