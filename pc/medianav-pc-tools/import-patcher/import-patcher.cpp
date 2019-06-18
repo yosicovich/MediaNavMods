@@ -13,6 +13,7 @@ void patchAppMain(const std::string& srcFile, const std::string& dstFile);
 void patchMgrUsb(const std::string& srcFile, const std::string& dstFile);
 void patchRVC(const std::string& srcFile, const std::string& dstFile);
 void patchMicomManager(const std::string& srcFile, const std::string& dstFile);
+void patchNavitel(const std::string& srcFile, const std::string& dstFile);
 
 
 int main(int argc, char* argv[])
@@ -23,10 +24,16 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    patchAppMain(std::string(argv[1]) + "\\AppMain.exe", std::string(argv[2]) + "\\AppMain.exe");
+#if 1
+	patchAppMain(std::string(argv[1]) + "\\AppMain.exe", std::string(argv[2]) + "\\AppMain.exe");
     patchMgrUsb(std::string(argv[1]) + "\\MgrUSB.exe", std::string(argv[2]) + "\\MgrUSB.exe");
     //patchRVC(std::string(argv[1]) + "\\RVC.dll", std::string(argv[2]) + "\\RVC.dll");
     patchMicomManager(std::string(argv[1]) + "\\MicomManager.exe", std::string(argv[2]) + "\\MicomManager.exe");
+#endif
+#if 0
+//	patchNavitel(std::string(argv[1]) + "\\MobileNavigator.exe", std::string(argv[2]) + "\\MobileNavigator.exe");
+	patchNavitel(std::string(argv[1]) + "\\nngnavi.exe", std::string(argv[2]) + "\\nngnavi.exe");
+#endif
 
     printf("Successfully patched!\r\n");
     return 0;
@@ -354,4 +361,17 @@ void patchMicomManager(const std::string& srcFile, const std::string& dstFile)
 #endif
 
     pe.saveToFile(dstFile.c_str());
+}
+
+void patchNavitel(const std::string& srcFile, const std::string& dstFile)
+{
+	PEFile pe(srcFile.c_str());
+
+	// Add import
+	PE_IMPORT_ENTRIES functions = {
+		{ "getVersion", 0 }
+	};
+	pe.addImport("compat.dll", functions);
+
+	pe.saveToFile(dstFile.c_str());
 }
