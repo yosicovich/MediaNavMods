@@ -16,6 +16,9 @@
 #define CResManager_destructor_CResManager 0x0001F3B8
 #define CResManager__imageTable 0x0018A784
 
+#define CNaviManager__CNaviManager 0x000D8FA4
+
+
 #define CMgrSys_setAccOff 0x000D0140
 #define CMgrSys_save 0x000D0CB4
 #define CMgrSys_m_instance 0x001902DC
@@ -61,7 +64,7 @@ struct CSettings
     int field_7C;
     int field_80;
     int m_hMapMcmShm;
-    MediaNav::MicomManager::MicomManagerInfo *m_pMcmShr;
+    volatile MediaNav::MicomManager::MicomManagerInfo *m_pMcmShr;
     int m_hMapIpod;
     int m_pIpodMem;
     int m_hMapIpodList;
@@ -239,6 +242,67 @@ private:
     DWORD m_oldMaxImages;
 };
 
+class CNaviManager
+{
+public:
+    CNaviManager()
+    {
+        reinterpret_cast<void(*)(CNaviManager*)>(CNaviManager__CNaviManager)(this);
+    }
+
+    virtual CNaviManager* close(BOOL bFree)
+    {
+        return NULL;
+    }
+
+    struct NaviStr
+    {
+        DWORD index;
+        wchar_t data[MAX_PATH];// 260
+    };
+
+    DWORD m_0x04;
+    UINT m_mSYSTEMtoNAVI;
+    UINT m_mNAVItoSYSTEM;
+    UINT m_mSYNCTOOLtoSYSTEM;
+    HWND m_hNavi;
+    BOOL m_bNaviStarted;
+    DWORD m_0x1C;
+    DWORD m_0x20;
+    DWORD m_0x24;
+    DWORD m_NaviActiveStatus;
+    DWORD m_0x2C;
+    DWORD m_0x30;
+    DWORD m_0x34;
+    DWORD m_0x38;
+    DWORD m_0x3C;
+    DWORD m_0x40;
+    DWORD m_0x44;
+    BOOL m_bOSOverlayEnable;
+    DWORD m_0x4C;
+    DWORD m_0x50;
+    BOOL m_bNaviActive;
+    DWORD m_0x58;
+    DWORD nMapScreenType;
+    DWORD m_0x60;
+    DWORD m_0x64;
+    DWORD m_0x68;
+    DWORD m_0x6C;
+    BOOL m_bUpdateStarted;
+    BOOL m_bSynctoolStarted;
+
+    NaviStr m_0x78[0x0B];
+    NaviStr m_0x16FC;
+    NaviStr m_0x1908;
+    wchar_t m_0x1B14[270];
+    wchar_t m_0x1D30[100];
+    BOOL m_0x1DF8;
+    DWORD m_0x1DFC;
+    BOOL m_bManualTimeSet;
+    NaviStr m_naviMediaString;
+
+};
+
 class CMgrSys
 {
 public:
@@ -255,4 +319,67 @@ public:
     {
         reinterpret_cast<void (*)(CMgrSys*)>(CMgrSys_save)(this);
     }
+
+    DWORD m_0x00;
+    DWORD m_0x04;
+    DWORD m_0x08;
+    DWORD m_0x0C;
+    DWORD m_0x10;
+    DWORD m_0x14;
+    DWORD m_0x18;
+    DWORD m_0x1C;
+
+    struct struc1
+    {
+        DWORD m_0x00;
+        DWORD m_0x04;
+        DWORD m_0x08;
+        DWORD m_0x0C;
+        DWORD m_0x10;
+        DWORD m_0x14;
+        DWORD m_0x18;
+        DWORD m_0x1C;
+        DWORD m_0x20;
+        DWORD m_0x24;
+        DWORD m_0x28;
+        DWORD m_0x2C;
+        DWORD m_0x30;
+        DWORD m_0x34;
+        DWORD m_0x38;
+        DWORD m_0x3C;
+        DWORD m_0x40;
+        DWORD m_0x44;
+        DWORD m_0x48;
+        DWORD m_0x4C;
+        DWORD m_0x50;
+        DWORD m_0x54;
+        DWORD m_0x58;
+        DWORD m_0x5C;
+    };
+    struc1 m_0x20;
+
+    struct struc2
+    {
+        DWORD m_0x00;
+        DWORD m_0x04;
+        DWORD m_0x08;
+        DWORD m_0x0C;
+        DWORD m_0x10;
+        DWORD m_0x14;
+        DWORD m_0x18;
+        DWORD m_0x1C;
+        DWORD m_0x20;
+        DWORD m_0x24;
+        DWORD m_0x28;
+        DWORD m_0x2C;
+        DWORD m_0x30;
+        DWORD m_0x34;
+        DWORD m_0x38;
+        DWORD m_0x3C;
+    };
+    struc2 m_0x80;
+
+    // 0xC0
+    CNaviManager m_naviManager;
+    // ....
 };

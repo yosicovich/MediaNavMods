@@ -329,6 +329,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\CNavMenuDlg.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\common.cpp"
 				>
 			</File>
@@ -392,6 +396,10 @@
 			</File>
 			<File
 				RelativePath=".\CDevMaketDlg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\CNavMenuDlg.h"
 				>
 			</File>
 			<File

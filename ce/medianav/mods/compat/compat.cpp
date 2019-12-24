@@ -400,11 +400,11 @@ ATOM hook_RegisterClassW(const WNDCLASSW *lpWndClass)
 LRESULT CALLBACK navitelWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     static bool timerActive = false;
-    static bool longTapDetected = false;
+//    static bool longTapDetected = false;
     static UINT cLongTapDetectTimerID = 1412;
-    static RECT cHideButtonRect = {0, 419, 134,480};
-    static LPARAM clickPoint = 0;
-    POINT pt;
+//    static RECT cHideButtonRect = {0, 419, 134,480};
+//    static LPARAM clickPoint = 0;
+//    POINT pt;
 
     switch(uMsg)
     {
@@ -417,41 +417,17 @@ LRESULT CALLBACK navitelWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
         break;
     case WM_LBUTTONDOWN:
         {
-            pt.x = GET_X_LPARAM(lParam);
-            pt.y = GET_Y_LPARAM(lParam);
-            if(PtInRect(&cHideButtonRect, pt))
-            {
-                clickPoint = lParam;
-                longTapDetected = false;
-                SetTimer(hwnd, cLongTapDetectTimerID, 500, NULL);
-                timerActive = true;
-                return TRUE;
-            }else
-            {
-                if(timerActive)
-                {
-                    KillTimer(hwnd, cLongTapDetectTimerID);
-                    timerActive = false;
-                }
-                longTapDetected = true;
-            }
+            SetTimer(hwnd, cLongTapDetectTimerID, 1000, NULL);
+            timerActive = true;
             break;
         }
     case WM_LBUTTONUP:
         {
-            pt.x = GET_X_LPARAM(lParam);
-            pt.y = GET_Y_LPARAM(lParam);
             if(timerActive)
             {
                 KillTimer(hwnd, cLongTapDetectTimerID);
                 timerActive = false;
             }
-
-            if(!PtInRect(&cHideButtonRect, pt) || longTapDetected)
-                break;
-
-            ShowWindow(hwnd, SW_HIDE);
-            return TRUE;
             break;
         }
     case WM_NAVI_RESTORE:
@@ -464,11 +440,11 @@ LRESULT CALLBACK navitelWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
     case WM_TIMER:
         if(wParam == cLongTapDetectTimerID)
         {
-            longTapDetected = true;
             KillTimer(hwnd, cLongTapDetectTimerID);
             timerActive = false;
-            lParam = clickPoint;
-            uMsg = WM_LBUTTONDOWN;
+            lParam = 0;
+            uMsg = WM_LBUTTONUP;
+            ShowWindow(hwnd, SW_HIDE);
         }
         break;
     };

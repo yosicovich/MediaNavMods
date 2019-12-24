@@ -308,6 +308,7 @@ public:
 };
 
 
+// 0x58 in total
 class CGUIImageControl: public CGUIControl
 {
 public:
@@ -352,6 +353,7 @@ public:
     ControlCoords m_progressRect;
 };
 
+// 0x54C in total
 class CGUITextControl: public CGUIImageControl
 {
 public:
@@ -399,6 +401,7 @@ public:
     BYTE m_vars[0x4F4];
 };
 
+// 0x78 in total
 class CGUIButtonControl: public CGUIImageControl
 {
 public:
@@ -431,6 +434,7 @@ public:
     BYTE m_0x79;
 };
 
+// 0x810 in total
 class CGUITextButtonControl: public CGUIButtonControl
 {
 public:
@@ -815,7 +819,12 @@ public:
     DWORD m_rightBtnClickDetectTimout;
     DWORD m_rightBtnStillHeldNotifyTimeout;
     WNDCLASS m_windowClass;
-    BYTE m_0xB8[520];
+
+    // Here is a small hack to maintain original class size and use additional vars. 
+    wchar_t m_wndClassStrBuf[MAX_PATH];
+    //wchar_t m_wndClassStrBuf[MAX_PATH - 2];
+    //ImplVTable* m_implVTable;
+
     DWORD m_0x2C0;
     DWORD m_0x2C4;
     DWORD m_screenID;

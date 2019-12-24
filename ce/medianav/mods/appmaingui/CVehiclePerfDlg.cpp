@@ -161,7 +161,7 @@ BOOL CVehiclePerfDlg::onTimer(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 #endif
 #else
         int speed;
-        speed = CSettings::singleton()->m_pMcmShr->m_speedCm_s;
+        speed = *reinterpret_cast<WORD *>(CSettings::singleton()->m_pMcmShr->m_speedCm_s); // the cast is to force read word with one CPU instruction.
 #endif
         
         if(++m_speedDisplayCounter == cSpeedDisplayCount)
@@ -187,7 +187,7 @@ BOOL CVehiclePerfDlg::onTimer(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
         if(speed >= cStartDetectEdge && speed < m_prevSpeed)
         {
-            if(m_prevSpeed - speed > cStartDetectEdge)
+            if(m_prevSpeed - speed > cSlowdownDetectEdge)
                 stopMeasure();// Slow down condition. The measurement is definitely over.
             return TRUE;
         }

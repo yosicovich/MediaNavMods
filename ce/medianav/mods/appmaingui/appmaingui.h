@@ -6,6 +6,7 @@
 #include "utils.h"
 #include <SimpleIni.h>
 
+// 0x2DC in total
 template<typename T> class CGUIFixedEmptyDlg: public CGUIEmptyDlg
 {
 public:

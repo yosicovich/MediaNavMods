@@ -22,7 +22,7 @@ namespace Utils {
     bool RegistryAccessor::setString(HKEY hRootKey, const std::wstring& subKey, const std::wstring& valueName, const std::wstring& value)
     {
         std::vector<BYTE> data((value.size()+1) * sizeof(wchar_t));
-        memcpy(&data[0], value.c_str(), data.size() + sizeof(wchar_t));
+        memcpy(&data[0], value.c_str(), data.size());
         return RegistryAccessor::setValue(hRootKey, subKey, REG_SZ, valueName, data);
     }
 
@@ -96,7 +96,7 @@ namespace Utils {
             return defaultValue;
 
         std::wstring data;
-        data.assign(reinterpret_cast<wchar_t *>(&pureData[0]), pureData.size());
+        data.assign(reinterpret_cast<wchar_t *>(&pureData[0]), pureData.size() / sizeof(wchar_t));
         data.resize(wcslen(data.c_str()));
         return data;
     }

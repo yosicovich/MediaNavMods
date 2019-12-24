@@ -24,6 +24,7 @@ private:
     static const int cSpeedDisplayCount = 4;
     static const int cMaesureFlashCount = 5;
     static const int cStartDetectEdge = 55;// 2 km/h
+    static const int cSlowdownDetectEdge = 140;// 5 km/h
 
     CGUITextControl m_caption;
     CGUIImageControl m_headerLine;
