@@ -27,12 +27,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VideoRenderer", "VideoRende
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SecureConnection", "SecureConnection\SecureConnection.vcproj", "{459481D8-85A7-47DD-86DC-FA9B05D330A3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DummyVideoRenderer", "DummyVideoRenderer\DummyVideoRenderer.vcproj", "{AADD89BF-42ED-4CA4-805A-C8FFE6AF4E16}"
-	ProjectSection(ProjectDependencies) = postProject
-		{1F71555E-8F6E-4929-B425-04E006387F07} = {1F71555E-8F6E-4929-B425-04E006387F07}
-		{459481D8-85A7-47DD-86DC-FA9B05D330A3} = {459481D8-85A7-47DD-86DC-FA9B05D330A3}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mp4demux", "mp4demux\mp4demux.vcproj", "{1276D053-ABC6-4D2B-B89B-07FE401FEAD7}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1F71555E-8F6E-4929-B425-04E006387F07} = {1F71555E-8F6E-4929-B425-04E006387F07}

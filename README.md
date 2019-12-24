@@ -24,6 +24,8 @@ If respective owners of this code feel that their rights are broken please email
 2. Windows CE 6.0 R3 platform builder with latest publicity available updates.
 3. au1300 platform SDK that is at **ce/au1300sdk**
 
-* Checkout repository. Correct **ce\medianav\mods\mediasdk.vsprops** accordingly(set correct path to installed Media part of SDK).
-* Open **mods.sln**.
+* Checkout repository. Correct **ce/medianav/mods/mediasdk.vsprops** accordingly(set correct path to installed Media part of SDK).
+* Open **ce/medianav/thirdparty/thirdparty.sln**.
+* Build it.
+* Open **ce/medianav/mods/mods.sln**.
 * Build.
