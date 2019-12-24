@@ -78,7 +78,7 @@ GPSDriverData* GPS_Init(const wchar_t* pRegistryPath)
     }
     COMSTAT comStat;
     DWORD commError;
-    ClearCommError(pData->m_port, &commError, &comStat);
+    if(!ClearCommError(pData->m_port, &commError, &comStat))
     {
         debugPrintf(DBG, TEXT("GPS: GPS_Init ClearCommError() failed.\r\n"));
     }

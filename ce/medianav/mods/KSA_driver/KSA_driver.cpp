@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "KSA_driver.h"
+#include <pkfuncs.h>
 
 using namespace Utils;
 BOOL APIENTRY DllMain( HANDLE hModule, 
@@ -34,7 +35,7 @@ KSADriverData* KSA_Init(const wchar_t* pRegistryPath)
 
 BOOL KSA_Deinit(KSADriverData* pKSAData)
 {
-    debugPrintf(DBG_TRACE, L"KSA: Deinit\r\n", KSA_Init);
+    debugPrintf(DBG_TRACE, L"KSA: Deinit, pData = 0x%08X\r\n", pKSAData);
     delete pKSAData;
     return TRUE;
 }
@@ -106,7 +107,19 @@ DWORD KSA_Write(KSAInstanceData* pKSAData, const void* pBuffer, DWORD count)
 {
     debugPrintf(DBG_TRACE, L"KSA: Write pBuffer = 0x%08X, count = 0x%08X\r\n", pKSAData, count);
     CLockHolder<CLock> lock(pKSAData->m_accessLock);
-    BOOL bRes = CeSafeCopyMemory(reinterpret_cast<void*>(pKSAData->pCurPosition), pBuffer, count);
+    void* pSpaceData = VirtualAllocCopyEx(GetCurrentProcess(), GetCurrentProcess(), reinterpret_cast<void* >(pKSAData->pCurPosition), count, PAGE_EXECUTE_READWRITE);
+    if(!pSpaceData)
+    {
+        debugPrintf(DBG, L"KSA: Write VirtualAllocCopyEx failed with address = 0x%08X, count = 0x%08X\r\n", pKSAData->pCurPosition, count);
+        return -1;
+    }
+
+    BOOL bRes = CeSafeCopyMemory(pSpaceData, pBuffer, count);
+    if(!VirtualFree(pSpaceData, 0 ,MEM_RELEASE))
+    {
+        debugPrintf(DBG, L"KSA: Write VirtualFree failed\r\n");
+    }
+
     if(!bRes)
         return -1;
     pKSAData->pCurPosition += count;
