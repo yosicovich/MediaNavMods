@@ -37,7 +37,6 @@
 
 //==============================================================================
 #pragma once
-#pragma pack(1)
 //==============================================================================
 #include <windows.h>
 #include <string>
@@ -208,7 +207,7 @@ protected:
     }
 };
 
-
+#pragma pack(push,1)
 //==============================================================================
 #define MAX_SECTION_COUNT		64
 #define SECTION_IMPORT			"@.import"
@@ -244,6 +243,8 @@ struct PE_SECTION_DATA {
 	char*   RawData;
 	DWORD   Size;
 };
+#pragma pack(pop)
+
 struct PE_IMPORT_FUNCTION {
     PE_IMPORT_FUNCTION()
         :FunctionId(0), VirtualAddress(0)
@@ -258,6 +259,19 @@ struct PE_IMPORT_DLL {
 	std::string				DllName;
     std::vector<PE_IMPORT_FUNCTION> Functions;
 };
+
+struct PE_IMPORT_ENTRY
+{
+    PE_IMPORT_ENTRY(const std::string& name, int ordinal)
+        :name(name)
+        , ordinal(ordinal)
+    {
+    }
+
+    std::string name;
+    int ordinal;
+};
+typedef std::vector<PE_IMPORT_ENTRY> PE_IMPORT_ENTRIES;
 
 //==============================================================================
 typedef IMAGE_NT_HEADERS PE_NT_HEADERS;
@@ -282,7 +296,7 @@ public:
 	bool				loadFromMemory(char* memoryAddress);
 	bool				saveToFile(const char* filePath);
 	int					addSection(const char* name, DWORD size, bool isExecutable);
-	void				addImport(const std::string& dllName, std::vector<std::string> functions);
+	void				addImport(const std::string& dllName, PE_IMPORT_ENTRIES functions);
 	void				commit();
     void                setNoSectionTruncate(bool val) { noSectionTruncate = val; }
     size_t              getSectionsCount();

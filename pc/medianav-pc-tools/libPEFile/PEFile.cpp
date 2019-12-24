@@ -556,14 +556,15 @@ int PEFile::addSection(const char* name, DWORD size, bool isExecutable) {
 	return peHeaders.FileHeader.NumberOfSections - 1;
 }
 //==============================================================================
-void PEFile::addImport(const std::string& dllName, std::vector<std::string> functions)
+void PEFile::addImport(const std::string& dllName, PE_IMPORT_ENTRIES functions)
 {
     PE_IMPORT_DLL importDll;
     importDll.DllName = dllName;
     for (auto importFunction : functions)
     {
         PE_IMPORT_FUNCTION newFunc;
-        newFunc.FunctionName = importFunction;
+        newFunc.FunctionName = importFunction.name;
+		newFunc.FunctionId = importFunction.ordinal;
         importDll.Functions.push_back(newFunc);
     }
     newImports.push_back(importDll);
