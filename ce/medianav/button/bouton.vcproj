@@ -49,6 +49,7 @@
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
 				Optimization="0"
+				AdditionalIncludeDirectories="..\mods\libutils"
 				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;_DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;DEBUG;_WINDOWS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;STANDARDSHELL_UI_MODEL"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
@@ -228,6 +229,7 @@
 				Optimization="2"
 				FavorSizeOrSpeed="2"
 				WholeProgramOptimization="true"
+				AdditionalIncludeDirectories="..\mods\libutils"
 				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_WINDOWS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;STANDARDSHELL_UI_MODEL"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -627,7 +629,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\SystemMeter.cpp"
+				RelativePath="..\mods\libutils\SystemMeter.cpp"
 				>
 			</File>
 			<File
@@ -649,7 +651,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SimpleIni.h"
+				RelativePath="..\mods\libutils\SimpleIni.h"
 				>
 			</File>
 			<File
@@ -657,7 +659,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SystemMeter.h"
+				RelativePath="..\mods\libutils\SystemMeter.h"
 				>
 			</File>
 			<File
