@@ -3,12 +3,12 @@ Famous medianav.ru mod EvoTech source code. Recovered to the state as on 18.06.2
 
 This repository contains famous EvoTech mod for MediaNav Evolution Head unit set into many Renault/Vaz/others cars.
 Russian speaking forum is located at forum.medianav.ru. This source code is not complete since complete source code has been lost after ssd drive crash(Very thank you SAMSUNG for this!). 
-This is the latest backup available. It was done at 18.06.2019. It is the very beginning of EvoTech development but it contains complete code for video player since it was not modified and many ideas behind EvoTech itself. 
-This code can be used for education purposes or re-used for other Windows CE based projects as long as this projects are not commercial, see license.
+This is the latest backup available. It was done at 18.06.2019. It is the very beginning of EvoTech development but it contains complete code of video player since it was not modified and many ideas behind EvoTech itself. 
+This code can be used for education purposes or re-used for other Windows CE based projects as long as these projects are not commercial, see license.
 The mod is based on original MediaNav Evolution firmware version 9.1.3 and can work with this version only since it applies binary patches in order to operate!
 
 The source code contains a bunch of third-party code. We've tried to preserve all licenses possible but it can still be incomplete.
-If respective owners of this code feel that their rights are broken please email to webmaster@medianav.ru with you concerns and fixes are to be applied on your request.
+If respective owners of this code feel that their rights are broken please email to webmaster@medianav.ru with your concerns and fixes are to be applied on your request.
 
 ## Repository structure
 1. **build** folder contains build scripts.
@@ -22,7 +22,7 @@ If respective owners of this code feel that their rights are broken please email
 
 ### Pre-requires
 1. Visual studio 2008
-2. Windows CE 6.0 R3 platform builder with latest publicity available updates.
+2. Windows CE 6.0 R3 platform builder with the latest publicity available updates.
 3. au1300 platform SDK that is at **ce/au1300sdk**
 
 * Checkout repository. Correct **ce/medianav/mods/mediasdk.vsprops** accordingly(set correct path to installed Media part of SDK).
